@@ -8,12 +8,21 @@ mytemplate.add_to_preamble(r"\usepackage{ctex}")
 
 #parameters
 length=1
+"""键长"""
 edge=0.25
+"""键边距"""
 txt_size=35
+"""文字大小"""
 title_size=60
+"""标题大小"""
 ratio_transition_state=1.2
+"""过渡态键长比例"""
 title_height=3
+"""标题高度"""
+description_height=-2
+"""描述性文本高度"""
 default_charge_edge=0.07
+"""默认电荷边距"""
 
 
 class OutBond(Polygon):

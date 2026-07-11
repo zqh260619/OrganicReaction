@@ -1,6 +1,8 @@
 #manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qh/-qm/-ql]/*分辨率(由高到低)*/
 #manim SubstitutionReaction1.py test -pqh
 
+from poplib import CR
+
 from OrganicReactionTools import *
 
 class test(Scene):
@@ -61,7 +63,7 @@ class test(Scene):
 
         self.play(Create(OH1),Create(OH1_negative))
 
-        self.wait(1.5)
+        self.wait(1)
 
         #dashedbond5    C1-Br1
         dashedbond5=DashedLine(color=WHITE,
@@ -118,7 +120,7 @@ class test(Scene):
                   AnimationGroup(*[Create(x) for x in transition_bracket],lag_ratio=0),
                   Create(ddagger))
 
-        self.wait(1.5)
+        self.wait(0.5)
 
         #bond7 C1-OH1
         end_point7=[-length+edge,0,0]
@@ -154,10 +156,10 @@ class test(Scene):
 
         #text
         text1=Text("产物全部构型翻转",color=WHITE,font_size=txt_size)
-        text1.move_to([0,-2,0])
+        text1.move_to([0,description_height,0])
         self.play(Write(text1))
 
-        self.wait(1.5)
+        self.wait(1)
 
         self.play(FadeOut(bond1),
                   FadeOut(bond3),
@@ -172,7 +174,7 @@ class test(Scene):
                   FadeOut(SN2_reaction),
                   FadeOut(text1))
 
-        self.wait(2)
+        self.wait(1.5)
 
         #-----------------------SN1 reaction-----------------------
 
@@ -282,7 +284,7 @@ class test(Scene):
                   R2_copy.animate.shift([-2,0,0]),
                   R3_copy.animate.shift([-2,0,0]),
                   C2_positive_copy.animate.shift([-2,0,0]))
-
+         
         self.wait(1)
 
         #Nu1
@@ -300,7 +302,7 @@ class test(Scene):
                   Write(Nu1_copy),
                   Create(Nu1_negative_copy))
 
-        self.wait()
+        self.wait(1)
 
         #bond12 C2-Nu1
         bond12=Line(color=WHITE,start=[2,0,0],end=[2+length-edge,0,0])
@@ -347,11 +349,11 @@ class test(Scene):
 
         #text
         text2=Text("两边进攻的机会相等",color=WHITE,font_size=txt_size)
-        text2.move_to([0,-2,0])
+        text2.move_to([0,description_height,0])
 
         #text
         text3=Text("产物完全外消旋化",color=WHITE,font_size=txt_size)
-        text3.move_to([0,-2,0])
+        text3.move_to([0,description_height,0])
         self.play(Write(text2))
         self.wait(0.5)
         self.play(ReplacementTransform(text2,text3))
@@ -381,43 +383,75 @@ class test(Scene):
 
         #-----------------------Ion pair reaction-----------------------
 
-        Ion_pair_reaction=MathTex(r"Winstein\text{离子对机理}",color=WHITE,font_size=title_size,tex_template=mytemplate)
+        Ion_pair_reaction=MathTex(r"\text{离子对机理}",color=WHITE,font_size=title_size,tex_template=mytemplate)
         Ion_pair_reaction.move_to([0,title_height,0])
         self.play(Write(Ion_pair_reaction))
         self.wait(0.5)
 
-        text3=MathTex(r"\text{以}\alpha-\text{甲基苄氯水解为例（40\%水-丙酮）}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        #text
+        text3=MathTex(r"\text{然而绝大多数反应并不是完全的}S_N1\text{或}S_N2",
+                      color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text3.move_to([0,0,0])
-        text4=MathTex(r"&\text{产物95\%外消旋化，}\\&\text{既不是完全构型翻转，也不是完全外消旋化}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text4=MathTex(r"\text{以}\alpha-\text{甲基苄氯水解为例（40\%水-丙酮）}",
+                      color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text4.move_to([0,0,0])
-        text5=MathTex(r"\text{因此机理介于}S_N1\text{和}S_N2\text{之间}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text5=MathTex(r"&\text{产物95\%外消旋化，}\\&\text{既不是完全构型翻转，也不是完全外消旋化}",
+                      color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text5.move_to([0,0,0])
-        text6=MathTex(r"&\text{Winstein认为，在溶剂作用下，}\\&\alpha-\text{甲基苄氯的逐步解离经过一下的步骤：}\\&\text{分子，紧密离子对，松散离子对，自由离子}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text6=MathTex(r"\text{因此机理介于}S_N1\text{和}S_N2\text{之间}",
+                      color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text6.move_to([0,0,0])
-        text7=MathTex(r"&\text{此时}\alpha-\text{甲基苄氯的主要存在形式并非两种自由离子，}\\&\text{而是形成了一个松散离子对，}\\&\text{但不如紧密离子对紧密}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
-        text7.move_to([0,0,0])
-        text8=MathTex(r"&\text{亲核试剂可以从离子对的两侧进攻，}\\&\text{但离去基团的相反一面进攻占比较多，}\\&\text{因此产物以构型翻转为主}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
-        text8.move_to([0,0,0])
-
-        #Ph1
-        Ph1=MathTex(r"Ph",color=WHITE,font_size=txt_size)
 
         self.play(Write(text3))
-        self.wait(4)
+        self.wait(2)
 
         self.play(ReplacementTransform(text3,text4))
-        self.wait(4)
+        self.wait(2)
 
         self.play(ReplacementTransform(text4,text5))
-        self.wait(4)
+        self.wait(3)
 
         self.play(ReplacementTransform(text5,text6))
-        self.wait(4)
+        self.wait(2)
 
-        self.play(ReplacementTransform(text6,text7))
-        self.wait(4)
+        self.play(FadeOut(text6))
 
-        self.play(ReplacementTransform(text7,text8))
-        self.wait(4)
+        #bond13  C3-R4
+        angle13=120*DEGREES
+        end_point13=[(length-edge)*np.cos(angle13),(length-edge)*np.sin(angle13),0]
+        bond13=Line(color=WHITE,start=[0,0,0],end=end_point13)
 
-        self.play(FadeOut(text8))
+        #bond14  C3-X2
+        end_point14=[length-edge,0,0]
+        bond14=Line(color=WHITE,start=[0,0,0],end=end_point14)
+
+        #bond15 C3-R5
+        angle15=-120*DEGREES
+        bond15=OutBond(direction=angle15,length=length-edge)
+
+        #bond16 C3-R6
+        angle16=-150*DEGREES
+        bond16=InBond(direction=angle16,length=length-edge)
+
+        R4=MathTex(r"R_1",color=WHITE,font_size=txt_size)
+        R4.move_to([length*np.cos(angle13),length*np.sin(angle13),0])
+
+        X2=MathTex(r"X",color=WHITE,font_size=txt_size)
+        X2.move_to([length,0,0])
+
+        R_5=MathTex(r"R_2",color=WHITE,font_size=txt_size)
+        R_5.move_to([length*np.cos(angle15),length*np.sin(angle15),0])
+
+        R_6=MathTex(r"R_3",color=WHITE,font_size=txt_size)
+        R_6.move_to([length*np.cos(angle16),length*np.sin(angle16),0])
+
+        self.play(Create(bond13),
+                  Create(bond14),
+                  Create(bond15),
+                  Create(bond16),
+                  Create(R4),
+                  Create(X2),
+                  Create(R_5),
+                  Create(R_6))
+
+        self.wait(1)
