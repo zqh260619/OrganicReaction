@@ -1,8 +1,6 @@
 #manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qh/-qm/-ql]/*分辨率(由高到低)*/
 #manim SubstitutionReaction1.py test -pqh
 
-from poplib import CR
-
 from OrganicReactionTools import *
 
 class test(Scene):
@@ -224,9 +222,8 @@ class test(Scene):
         self.wait(1)
 
         #X1_negative
-        X1_temp=X1.copy()
-        X1_temp.shift([length,0,0])
-        X1_negative=NegativeCharge(text=X1_temp,pos=UL,edge=default_charge_edge)
+        X1_negative=NegativeCharge(text=X1,pos=UL,edge=default_charge_edge)
+        X1_negative.shift([length,0,0])
 
         #C2_positive
         C2_positive=PositiveChargeByCoordinate(position=[0.2,0.2,0])
@@ -439,11 +436,11 @@ class test(Scene):
         X2=MathTex(r"X",color=WHITE,font_size=txt_size)
         X2.move_to([length,0,0])
 
-        R_5=MathTex(r"R_2",color=WHITE,font_size=txt_size)
-        R_5.move_to([length*np.cos(angle15),length*np.sin(angle15),0])
+        R5=MathTex(r"R_2",color=WHITE,font_size=txt_size)
+        R5.move_to([length*np.cos(angle15),length*np.sin(angle15),0])
 
-        R_6=MathTex(r"R_3",color=WHITE,font_size=txt_size)
-        R_6.move_to([length*np.cos(angle16),length*np.sin(angle16),0])
+        R6=MathTex(r"R_3",color=WHITE,font_size=txt_size)
+        R6.move_to([length*np.cos(angle16),length*np.sin(angle16),0])
 
         self.play(Create(bond13),
                   Create(bond14),
@@ -451,7 +448,30 @@ class test(Scene):
                   Create(bond16),
                   Create(R4),
                   Create(X2),
-                  Create(R_5),
-                  Create(R_6))
+                  Create(R5),
+                  Create(R6))
 
         self.wait(1)
+
+        #X2_negative
+        X2_negative=NegativeCharge(text=X2,pos=UL,edge=default_charge_edge)
+        X2_negative.shift([length*(ratio_transition_state-1),0,0])
+
+        #C3_positive
+        C3_postive=PositiveChargeByCoordinate(position=[0.2,0.2,0])
+
+        #R4_path_1
+        R4_path_1=Arc(radius=1,start_angle=120*DEGREES,angle=-30*DEGREES,arc_center=ORIGIN)
+
+        #R5_path_1
+        R5_path_1=Arc(radius=1,start_angle=-120*DEGREES,angle=45*DEGREES,arc_center=ORIGIN)
+
+        #R6_path_1
+        R6_path_1=Arc(radius=1,start_angle=-150*DEGREES,angle=45*DEGREES,arc_center=ORIGIN)
+
+        #Nu2
+        Nu2=MathTex(r"Nu",color=WHITE,font_size=txt_size)
+        Nu2.move_to([0,2*length,0])
+
+        #Nu2_negative
+        Nu2_negative=NegativeCharge(text=Nu2,pos=UR,edge=default_charge_edge)
