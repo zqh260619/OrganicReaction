@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/media/Tex
+/media/texts
+/media/videos/SubstitutionReaction1/1080p60/partial_movie_files/test
