@@ -475,3 +475,5 @@ class test(Scene):
 
         #Nu2_negative
         Nu2_negative=NegativeCharge(text=Nu2,pos=UR,edge=default_charge_edge)
+
+

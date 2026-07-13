@@ -1,7 +1,7 @@
 from manim import *
 from manim.typing import Vector3D
 import numpy as np
-from manim import TexTemplate
+from typing import Iterable, Union
 
 mytemplate = TexTemplate()
 mytemplate.add_to_preamble(r"\usepackage{ctex}")
@@ -162,3 +162,19 @@ class BracketBetweenPoints(VGroup):
         edge_end=Line(start=end,end=end2,**kwargs)
 
         super().__init__(edge_start,main,edge_end)
+
+def play_timeline(scene:Scene,timeline:dict[float,Union[Iterable[Animation],Animation]]):
+    pretime=0
+    ending=0
+    for time,animation in sorted(timeline.items()):
+        if time<pretime:
+            raise ValueError("The timeline is not in order")
+        if time<ending:
+            raise ValueError("The timeline is overlapping")
+        scene.wait(time-pretime)
+        if isinstance(animation,Iterable):
+            scene.play(*animation)
+        else:
+            scene.play(animation)
+        pretime=time
+        ending=scene.renderer.time
