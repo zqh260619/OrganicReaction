@@ -1,3 +1,5 @@
+from os import wait
+
 from manim import *
 from manim.typing import Vector3D
 import numpy as np
@@ -167,14 +169,15 @@ def play_timeline(scene:Scene,timeline:dict[float,Union[Iterable[Animation],Anim
     pretime=0
     ending=0
     for time,animation in sorted(timeline.items()):
-        if time<pretime:
-            raise ValueError("The timeline is not in order")
-        if time<ending:
-            raise ValueError("The timeline is overlapping")
-        scene.wait(time-pretime)
-        if isinstance(animation,Iterable):
-            scene.play(*animation)
-        else:
-            scene.play(animation)
+        to_wait=time-pretime
+        if to_wait>0:
+            scene.wait(to_wait)
         pretime=time
-        ending=scene.renderer.time
+        if not isinstance(animation,Iterable):
+            animation=[animation]
+        for anim in animation:
+            turn_animation_into_updater(anim)
+            scene.add(anim.mobject)
+            ending=max(ending,anim.run_time+time)
+    if ending>pretime:
+        wait(ending-pretime)
