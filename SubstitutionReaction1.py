@@ -490,23 +490,63 @@ class test(Scene):
 
         #S1
         S1=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
-        S1.move_to([1.9,1.3,0]).set_opacity(0.3)
+        S1.move_to([1.7,1.1,0]).set_opacity(0.3)
 
         #S2
         S2=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
-        S2.move_to([-0.7,-2.2,0]).set_opacity(0.3)
+        S2.move_to([-0.5,-1.3,0]).set_opacity(0.3)
 
         #S3
         S3=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
-        S3.move_to([-2.0,-1.6,0]).set_opacity(0.3)
+        S3.move_to([-1.3,-0.9,0]).set_opacity(0.3)
 
         #S4
         S4=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
-        S4.move_to([1.8,-1.8,0]).set_opacity(0.3)
+        S4.move_to([1.6,-0.7,0]).set_opacity(0.3)
 
         #S5
         S5=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
-        S5.move_to([-2.6,0.6,0]).set_opacity(0.3)
+        S5.move_to([-1.4,0.4,0]).set_opacity(0.3)
+
+        #S6
+        S6=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S6.move_to([1.6,0.2,0]).set_opacity(0.3)
+
+        #S7
+        S7=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S7.move_to([0.8,-2.0,0]).set_opacity(0.3)
+
+        #S8
+        S8=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S8.move_to([0.7,1.0,0]).set_opacity(0.3)
+
+        #S9
+        S9=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S9.move_to([-1.9,-0.7,0]).set_opacity(0.3)
+
+        #S10
+        S10=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S10.move_to([-0.6,-1.7,0]).set_opacity(0.3)
+
+        #S11
+        S11=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S11.move_to([-1.5,2.0,0]).set_opacity(0.3)
+
+        #S12
+        S12=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S12.move_to([0.8,-0.6,0]).set_opacity(0.3)
+
+        #S13
+        S13=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S13.move_to([-1.6,0.6,0]).set_opacity(0.3)
+
+        #S14
+        S14=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S14.move_to([1.4,-1.8,0]).set_opacity(0.3)
+
+        #S15
+        S15=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S15.move_to([-0.4,0.7,0]).set_opacity(0.3)
 
         self.play(Write(Nu2),
                   Write(Nu2_negative),
@@ -514,6 +554,16 @@ class test(Scene):
                   Write(S2),
                   Write(S3),
                   Write(S4),
-                  Write(S5))
+                  Write(S5),
+                  Write(S6),
+                  Write(S7),
+                  Write(S8),
+                  Write(S9),
+                  Write(S10),
+                  Write(S11),
+                  Write(S12),
+                  Write(S13),
+                  Write(S14),
+                  Write(S15))
 
         self.wait(1)
