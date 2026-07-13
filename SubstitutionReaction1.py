@@ -380,9 +380,7 @@ class test(Scene):
 
         #-----------------------Ion pair reaction-----------------------
 
-        Ion_pair_reaction=MathTex(r"\text{离子对机理}",color=WHITE,font_size=title_size,tex_template=mytemplate)
-        Ion_pair_reaction.move_to([0,title_height,0])
-        self.play(Write(Ion_pair_reaction))
+        
         self.wait(0.5)
 
         #text
@@ -412,6 +410,12 @@ class test(Scene):
         self.wait(2)
 
         self.play(FadeOut(text6))
+        
+        Ion_pair_reaction=MathTex(r"\text{离子对机理}",color=WHITE,font_size=title_size,tex_template=mytemplate)
+        Ion_pair_reaction.move_to([0,title_height,0])
+        self.play(Write(Ion_pair_reaction))
+
+        self.wait(0.5)
 
         #bond13  C3-R4
         angle13=120*DEGREES
@@ -455,7 +459,6 @@ class test(Scene):
 
         #X2_negative
         X2_negative=NegativeCharge(text=X2,pos=UL,edge=default_charge_edge)
-        X2_negative.shift([length*(ratio_transition_state-1),0,0])
 
         #C3_positive
         C3_postive=PositiveChargeByCoordinate(position=[0.2,0.2,0])
@@ -476,4 +479,41 @@ class test(Scene):
         #Nu2_negative
         Nu2_negative=NegativeCharge(text=Nu2,pos=UR,edge=default_charge_edge)
 
+        self.play(FadeIn(C3_postive),
+                  ReplacementTransform(bond14,X2_negative),
+                  MoveAlongPath(R4,R4_path_1),
+                  MoveAlongPath(R5,R5_path_1),
+                  MoveAlongPath(R6,R6_path_1),
+                  bond13.animate.rotate(about_point=[0,0,0],angle=-30*DEGREES),
+                  bond15.animate.rotate(about_point=[0,0,0],angle=45*DEGREES),
+                  bond16.animate.rotate(about_point=[0,0,0],angle=45*DEGREES))
 
+        #S1
+        S1=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S1.move_to([1.9,1.3,0]).set_opacity(0.3)
+
+        #S2
+        S2=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S2.move_to([-0.7,-2.2,0]).set_opacity(0.3)
+
+        #S3
+        S3=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S3.move_to([-2.0,-1.6,0]).set_opacity(0.3)
+
+        #S4
+        S4=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S4.move_to([1.8,-1.8,0]).set_opacity(0.3)
+
+        #S5
+        S5=MathTex(r"S",color=0x77DDFF,font_size=txt_size)
+        S5.move_to([-2.6,0.6,0]).set_opacity(0.3)
+
+        self.play(Write(Nu2),
+                  Write(Nu2_negative),
+                  Write(S1),
+                  Write(S2),
+                  Write(S3),
+                  Write(S4),
+                  Write(S5))
+
+        self.wait(1)

@@ -1,5 +1,3 @@
-from os import wait
-
 from manim import *
 from manim.typing import Vector3D
 import numpy as np
@@ -179,5 +177,5 @@ def play_timeline(scene:Scene,timeline:dict[float,Union[Iterable[Animation],Anim
             turn_animation_into_updater(anim)
             scene.add(anim.mobject)
             ending=max(ending,anim.run_time+time)
-    if ending>pretime:
-        wait(ending-pretime)
+    if ending>time:
+        scene.wait(ending-pretime)
