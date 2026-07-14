@@ -1,6 +1,8 @@
 #manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qk/-qh/-qm/-ql]/*分辨率(由高到低)*/
 #manim SubstitutionReaction1.py test -pqh
 
+from manim.utils import tex_templates
+
 from OrganicReactionTools import *
 
 class test(Scene):
@@ -597,9 +599,17 @@ class test(Scene):
                            opacity=0.9)
         arrow2.set_stroke(opacity=0.9)
 
-        #
+        #text
+        text7=MathTex(r"\text{左侧进攻}",
+                      color=WHITE,font_size=txt_size/2,tex_template=mytemplate)
+        text7.move_to([-1.3,1.5,0])
+        text8=MathTex(r"\text{右侧进攻}",
+                      color=WHITE,font_size=txt_size/2,tex_template=mytemplate)
+        text8.move_to([1.3,1.5,0])
 
         self.play(Create(arrow1),
-                  Create(arrow2))
+                  Create(arrow2),
+                  Write(text7),
+                  Write(text8))
 
         self.wait(2)
