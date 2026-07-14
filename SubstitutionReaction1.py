@@ -1,4 +1,4 @@
-#manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qh/-qm/-ql]/*分辨率(由高到低)*/
+#manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qk/-qh/-qm/-ql]/*分辨率(由高到低)*/
 #manim SubstitutionReaction1.py test -pqh
 
 from OrganicReactionTools import *
@@ -384,7 +384,7 @@ class test(Scene):
         self.wait(0.5)
 
         #text
-        text3=MathTex(r"\text{然而绝大多数反应并不是完全的}S_N1\text{或}S_N2",
+        text3=MathTex(r"\text{然而绝大多}sp^3C\text{上的亲核取代反应并不是完全的}S_N1\text{或}S_N2",
                       color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text3.move_to([0,0,0])
         text4=MathTex(r"\text{以}\alpha-\text{甲基苄氯水解为例（40\%水-丙酮）}",
@@ -443,8 +443,8 @@ class test(Scene):
         R5=MathTex(r"R_2",color=WHITE,font_size=txt_size)
         R5.move_to([length*np.cos(angle15),length*np.sin(angle15),0])
 
-        R6=MathTex(r"R_3",color=WHITE,font_size=txt_size)
-        R6.move_to([length*np.cos(angle16),length*np.sin(angle16),0])
+        R6=MathTex(r"(H)R_3",color=WHITE,font_size=txt_size)
+        R6.move_to([length*np.cos(angle16)-0.25,length*np.sin(angle16),0])
 
         self.play(Create(bond13),
                   Create(bond14),
@@ -470,7 +470,7 @@ class test(Scene):
         R5_path_1=Arc(radius=1,start_angle=-120*DEGREES,angle=45*DEGREES,arc_center=ORIGIN)
 
         #R6_path_1
-        R6_path_1=Arc(radius=1,start_angle=-150*DEGREES,angle=45*DEGREES,arc_center=ORIGIN)
+        R6_path_1=Arc(radius=1,start_angle=-150*DEGREES,angle=45*DEGREES,arc_center=[-0.25,0,0])
 
         #Nu2
         Nu2=MathTex(r"Nu",color=WHITE,font_size=txt_size)
@@ -567,3 +567,39 @@ class test(Scene):
                   Write(S15))
 
         self.wait(1)
+
+        #pionts of bezier arrow for Nu2
+        start1=np.array([0.3,2.0,0])
+        start_handle_1=np.array([1.0,1.5,0])
+        end1=np.array([0.4,0.1,0])
+        end_handle_1=np.array([1.2,0.7,0])
+        start2=np.array([-0.3,2.0,0])
+        start_handle_2=np.array([-1.0,1.5,0])
+        end2=np.array([-0.4,0.1,0])
+        end_handle_2=np.array([-1.2,0.7,0])
+
+        #arrow1 & 2
+        arrow1=BezierArrow(start_anchor=start1,
+                           start_handle=start_handle_1,
+                           end_handle=end_handle_1,
+                           end_anchor=end1,
+                           color=WHITE,
+                           stroke_width=2,
+                           arrow_size=0.3,
+                           opacity=0.1)
+        arrow2=BezierArrow(start_anchor=start2,
+                           start_handle=start_handle_2,
+                           end_handle=end_handle_2,
+                           end_anchor=end2,
+                           color=WHITE,
+                           stroke_width=2,
+                           arrow_size=0.3,
+                           opacity=0.9)
+        arrow2.set_stroke(opacity=0.9)
+
+        #
+
+        self.play(Create(arrow1),
+                  Create(arrow2))
+
+        self.wait(2)

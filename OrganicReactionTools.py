@@ -24,7 +24,7 @@ description_height=-2
 default_charge_edge=0.07
 """默认电荷边距"""
 
-
+#classes
 class OutBond(Polygon):
     def __init__(self,*,start_point=ORIGIN,direction=0.0,length=1.0,
                  base_ratio=0.2,color=WHITE):
@@ -49,7 +49,6 @@ class OutBond(Polygon):
             fill_opacity=1,
             stroke_width=0
         )
-        
 
 class InBond(VGroup):
     def __init__(self,*,start_point=ORIGIN,direction=0.0,length=1.0,base_ratio=0.2,
@@ -141,7 +140,7 @@ class PositiveChargeByCoordinate(VGroup):
         super().__init__(circle,line1,line2)
 
 class BracketBetweenPoints(VGroup):
-    def __init__(self,*,start=ORIGIN,end=ORIGIN,ratio_edge=0.1,**kwargs):
+    def __init__(self,*,start:Vector3D,end:Vector3D,ratio_edge=0.1,**kwargs):
 
         """
         According to the left bracket
@@ -163,6 +162,24 @@ class BracketBetweenPoints(VGroup):
 
         super().__init__(edge_start,main,edge_end)
 
+class BezierArrow(VGroup):
+    def __init__(self,*,start_anchor:Vector3D,start_handle:Vector3D,end_anchor:Vector3D,end_handle:Vector3D,
+                 color=WHITE,stroke_width=2,arrow_size=-1.0,opacity=1.0,**kwargs):
+
+        bezier=CubicBezier(start_anchor=start_anchor,start_handle=start_handle,end_handle=end_handle,end_anchor=end_anchor,
+                      color=color,stroke_width=stroke_width,**kwargs)
+        bezier.set_stroke(opacity=opacity)
+
+        if arrow_size==-1:
+            arrow_size=np.sqrt((start_anchor[0]-end_anchor[0])**2+(start_anchor[1]-end_anchor[1])**2)*0.15
+
+        angle=np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])
+        tip=ArrowTriangleFilledTip(color=color,fill_opacity=opacity)
+        tip.scale(arrow_size).rotate(angle+PI).move_to(end_anchor)
+
+        super().__init__(bezier,tip)
+        
+#functions
 def play_timeline(scene:Scene,timeline:dict[float,Union[Iterable[Animation],Animation]]):
     pretime=0
     ending=0
