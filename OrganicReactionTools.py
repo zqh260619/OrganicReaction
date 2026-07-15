@@ -166,16 +166,25 @@ class BezierArrow(VGroup):
     def __init__(self,*,start_anchor:Vector3D,start_handle:Vector3D,end_anchor:Vector3D,end_handle:Vector3D,
                  color=WHITE,stroke_width=2,arrow_size=-1.0,opacity=1.0,**kwargs):
 
-        bezier=CubicBezier(start_anchor=start_anchor,start_handle=start_handle,end_handle=end_handle,end_anchor=end_anchor,
-                      color=color,stroke_width=stroke_width,**kwargs)
-        bezier.set_stroke(opacity=opacity)
-
         if arrow_size==-1:
             arrow_size=np.sqrt((start_anchor[0]-end_anchor[0])**2+(start_anchor[1]-end_anchor[1])**2)*0.15
 
         angle=np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])
         tip=ArrowTriangleFilledTip(color=color,fill_opacity=opacity)
         tip.scale(arrow_size).rotate(angle+PI).move_to(end_anchor)
+
+        end_anchor=np.array(end_anchor)
+        end_handle=np.array(end_handle)
+        end_anchor-=arrow_size/11*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
+                                           np.sin(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
+                                           0])
+        end_handle-=arrow_size/11*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
+                                           np.sin(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
+                                           0])
+
+        bezier=CubicBezier(start_anchor=start_anchor,start_handle=start_handle,end_handle=end_handle,end_anchor=end_anchor,
+                      color=color,stroke_width=stroke_width,**kwargs)
+        bezier.set_stroke(opacity=opacity)
 
         super().__init__(bezier,tip)
         
