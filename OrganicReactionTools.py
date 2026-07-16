@@ -170,17 +170,19 @@ class BezierArrow(VGroup):
             arrow_size=np.sqrt((start_anchor[0]-end_anchor[0])**2+(start_anchor[1]-end_anchor[1])**2)*0.15
 
         angle=np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])
-        tip=ArrowTriangleFilledTip(color=color,fill_opacity=opacity)
-        tip.scale(arrow_size).rotate(angle+PI).move_to(end_anchor)
 
         end_anchor=np.array(end_anchor)
         end_handle=np.array(end_handle)
-        end_anchor-=arrow_size/11*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
+
+        tip=ArrowTriangleFilledTip(color=color,fill_opacity=opacity)
+        tip.scale(arrow_size).rotate(angle+PI).move_to(end_anchor)
+
+        end_anchor-=arrow_size*(1/8.9*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
                                            np.sin(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
-                                           0])
-        end_handle-=arrow_size/11*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
+                                           0])+np.array([0,0.0363,0]))
+        end_handle-=arrow_size*(1/8.9*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
                                            np.sin(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
-                                           0])
+                                           0])+np.array([0,0.0363,0]))
 
         bezier=CubicBezier(start_anchor=start_anchor,start_handle=start_handle,end_handle=end_handle,end_anchor=end_anchor,
                       color=color,stroke_width=stroke_width,**kwargs)
