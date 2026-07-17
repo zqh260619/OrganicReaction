@@ -193,7 +193,10 @@ class BezierArrow(VGroup):
         super().__init__(bezier,tip)
         
 #functions
-def play_timeline(scene:Scene,timeline:dict[float,Union[Iterable[Animation],Animation]]):
+def play_timeline(scene:Scene,timeline:dict[float,Animation]):
+
+    # Inspired by github.com/abul4fia/manim-play-timeline's timeline implementation
+
     pretime=0
     ending=0
     for time,animation in sorted(timeline.items()):
@@ -201,8 +204,6 @@ def play_timeline(scene:Scene,timeline:dict[float,Union[Iterable[Animation],Anim
         if to_wait>0:
             scene.wait(to_wait)
         pretime=time
-        if not isinstance(animation,Iterable):
-            animation=[animation]
         for anim in animation:
             turn_animation_into_updater(anim)
             scene.add(anim.mobject)
@@ -223,29 +224,29 @@ def merging_timeline(timeline1:dict[float,Union[Iterable[Animation],Animation]],
             rslt[time]=anims
     return rslt
 
-def brownian_motion(items:Union[Mobject,Iterable[Mobject]],num:int,time:float=1.0):
-    if isinstance(items,Iterable):
+def brownian_motion(items:Union[Mobject,list],num:int,time:float=1.0):
+    if isinstance(items,list):
         temp={}
         for item in items:
             temp=merging_timeline(temp,brownian_motion(item,num,time))
         return temp
-    
-    node=[]
-    while len(node)<num:
-        temp_node=np.random.uniform(0,time)
-        node.append(temp_node)
-    node=sorted(node)
-    node.append(time)
+    else:
+        node=[]
+        while len(node)<num:
+            temp_node=np.random.uniform(0,time)
+            node.append(temp_node)
+        node=sorted(node)
+        node.append(time)
 
-    rslt={}
-    destination=items.get_center()
-    for i in range(num):
-        destination+=np.array([np.random.uniform(-1,1),np.random.uniform(-1,1),0])
-        if np.abs(destination[0])>7 or np.abs(destination[1])>4:
-            destination[0]=destination[0]/7*6
-            destination[1]=destination[1]/4*3
-        if i==0:
-            rslt[0]=items.animate.move_to(destination,run_time=node[i],rate_func=linear)
-        else:
-            rslt[node[i-1]]=items.animate.move_to(destination,run_time=node[i]-node[i-1],rate_func=linear)
-    return rslt
+        rslt={}
+        destination=items.get_center()
+        for i in range(num):
+            destination+=np.array([np.random.uniform(-1,1),np.random.uniform(-1,1),0])
+            if np.abs(destination[0])>7 or np.abs(destination[1])>4:
+                destination[0]=destination[0]/7*6
+                destination[1]=destination[1]/4*3
+            if i==0:
+                rslt[0]=items.animate.move_to(destination,run_time=node[i],rate_func=linear)
+            else:
+                rslt[node[i-1]]=items.animate.move_to(destination,run_time=node[i]-node[i-1],rate_func=linear)
+        return rslt
