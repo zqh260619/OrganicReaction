@@ -1,8 +1,6 @@
 #manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qk/-qh/-qm/-ql]/*分辨率(由高到低)*/
 #manim SubstitutionReaction1.py test -pqh
 
-from manim.utils import tex_templates
-
 from OrganicReactionTools import *
 
 class test(Scene):
@@ -612,4 +610,7 @@ class test(Scene):
                   Write(text7),
                   Write(text8))
 
-        self.wait(2)
+        self.wait(1)
+
+        #animation of Solvent molecules
+        Solvent_anim=brownian_motion([S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15],10,5.0)

@@ -6,6 +6,8 @@ from typing import Iterable, Union
 mytemplate = TexTemplate()
 mytemplate.add_to_preamble(r"\usepackage{ctex}")
 
+np.random.seed(0)
+
 #parameters
 length=1
 """键长"""
@@ -207,3 +209,43 @@ def play_timeline(scene:Scene,timeline:dict[float,Union[Iterable[Animation],Anim
             ending=max(ending,anim.run_time+time)
     if ending>time:
         scene.wait(ending-pretime)
+
+def merging_timeline(timeline1:dict[float,Union[Iterable[Animation],Animation]],timeline2:dict[float,Union[Iterable[Animation],Animation]]):
+    rslt=timeline1.copy()
+    for time,anims in timeline2.items():
+        if time in rslt:
+            if not isinstance(rslt[time],Iterable):
+                rslt[time]=[rslt[time]]
+            if not isinstance(anims,Iterable):
+                anims=[anims]
+            rslt[time].extend(anims)
+        else:
+            rslt[time]=anims
+    return rslt
+
+def brownian_motion(items:Union[Mobject,Iterable[Mobject]],num:int,time:float=1.0):
+    if isinstance(items,Iterable):
+        temp={}
+        for item in items:
+            temp=merging_timeline(temp,brownian_motion(item,num,time))
+        return temp
+    
+    node=[]
+    while len(node)<num:
+        temp_node=np.random.uniform(0,time)
+        node.append(temp_node)
+    node=sorted(node)
+    node.append(time)
+
+    rslt={}
+    destination=items.get_center()
+    for i in range(num):
+        destination+=np.array([np.random.uniform(-1,1),np.random.uniform(-1,1),0])
+        if np.abs(destination[0])>7 or np.abs(destination[1])>4:
+            destination[0]=destination[0]/7*6
+            destination[1]=destination[1]/4*3
+        if i==0:
+            rslt[0]=items.animate.move_to(destination,run_time=node[i],rate_func=linear)
+        else:
+            rslt[node[i-1]]=items.animate.move_to(destination,run_time=node[i]-node[i-1],rate_func=linear)
+    return rslt
