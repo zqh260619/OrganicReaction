@@ -613,4 +613,6 @@ class test(Scene):
         self.wait(1)
 
         #animation of Solvent molecules
-        Solvent_anim=brownian_motion([S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15],10,5.0)
+        Solvent_anim=brownian_motion([S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15],5,5.0)
+
+        play_timeline(self,Solvent_anim)

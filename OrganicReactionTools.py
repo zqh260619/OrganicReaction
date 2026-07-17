@@ -241,12 +241,21 @@ def brownian_motion(items:Union[Mobject,list],num:int,time:float=1.0):
         rslt={}
         destination=items.get_center()
         for i in range(num):
-            destination+=np.array([np.random.uniform(-1,1),np.random.uniform(-1,1),0])
-            if np.abs(destination[0])>7 or np.abs(destination[1])>4:
+            dx=np.array([np.random.uniform(-0.5,0.5),np.random.uniform(-0.5,0.5),0])
+            destination+=dx
+            if np.abs(destination[0])>5 or np.abs(destination[1])>3:
                 destination[0]=destination[0]/7*6
                 destination[1]=destination[1]/4*3
-            if i==0:
-                rslt[0]=items.animate.move_to(destination,run_time=node[i],rate_func=linear)
+            if i == 0:
+                rslt[0] = [ApplyMethod(
+                    items.shift,
+                    dx,
+                    run_time=node[i],
+                    rate_func=smooth)]
             else:
-                rslt[node[i-1]]=items.animate.move_to(destination,run_time=node[i]-node[i-1],rate_func=linear)
+                rslt[node[i-1]] = [ApplyMethod(
+                    items.shift,
+                    dx,
+                    run_time=node[i] - node[i-1],
+                    rate_func=smooth)]
         return rslt
