@@ -634,8 +634,29 @@ class test(Scene):
                        color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text12.move_to([0,description_height,0])
 
-        anims=merging_timeline(Solvent_anim,{0:[X2_anim,X2_negative_anim,ReplacementTransform(text9,text10)],
-                                             3:[ReplacementTransform(text10,text11)],
-                                             6:[ReplacementTransform(text11,text12)]})
+        anims=merging_timeline(Solvent_anim,{
+            0: [
+                X2_anim, 
+                X2_negative_anim, 
+                AnimationGroup(
+                    Transform(text9, text10), # 使用 copy 来生成变形的起始形状
+                    lag_ratio=0
+                )
+            ],
+            3: [
+                AnimationGroup(
+                    FadeOut(text9,run_time=0),
+                    Transform(text10, text11),
+                    lag_ratio=0
+                )
+            ],
+            6: [
+                AnimationGroup(
+                    FadeOut(text10,run_time=0),
+                    Transform(text11, text12),
+                    lag_ratio=0
+                )
+            ]
+        })
         
         play_timeline(self,anims)
