@@ -6,7 +6,7 @@ from typing import Iterable, Union
 mytemplate = TexTemplate()
 mytemplate.add_to_preamble(r"\usepackage{ctex}")
 
-np.random.seed(0)
+RNG=np.random.default_rng(seed=2)
 
 #parameters
 length=1
@@ -233,7 +233,7 @@ def brownian_motion(items:Union[Mobject,list],num:int,time:float=1.0):
     else:
         node=[]
         while len(node)<num:
-            temp_node=np.random.uniform(0,time)
+            temp_node=RNG.uniform(0,time)
             node.append(temp_node)
         node=sorted(node)
         node.append(time)
@@ -241,7 +241,7 @@ def brownian_motion(items:Union[Mobject,list],num:int,time:float=1.0):
         rslt={}
         destination=items.get_center()
         for i in range(num):
-            dx=np.array([np.random.uniform(-0.5,0.5),np.random.uniform(-0.5,0.5),0])
+            dx=np.array([RNG.uniform(-0.5,0.5),RNG.uniform(-0.5,0.5),0])
             destination+=dx
             if np.abs(destination[0])>5 or np.abs(destination[1])>3:
                 destination[0]=destination[0]/7*6

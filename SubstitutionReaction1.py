@@ -604,15 +604,38 @@ class test(Scene):
         text8=MathTex(r"\text{右侧进攻}",
                       color=WHITE,font_size=txt_size/2,tex_template=mytemplate)
         text8.move_to([1.3,1.5,0])
-
+        text9=MathTex(r"S\text{代表溶剂分子}",
+                      color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text9.move_to([0,description_height,0])
+        
         self.play(Create(arrow1),
                   Create(arrow2),
                   Write(text7),
-                  Write(text8))
+                  Write(text8),
+                  Write(text9))
 
         self.wait(1)
 
         #animation of Solvent molecules
-        Solvent_anim=brownian_motion([S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15],5,5.0)
+        Solvent_anim=brownian_motion([S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15],8,8.0)
 
-        play_timeline(self,Solvent_anim)
+        #animation of X2
+        X2_anim=ApplyMethod(X2.shift,[5,0,0],rate_func=linear,run_time=8.0)
+        X2_negative_anim=ApplyMethod(X2_negative.shift,[5,0,0],rate_func=linear,run_time=8.0)
+
+        #text
+        text10=MathTex(r"\text{一开始两个离子紧密贴合在一起，形成紧密离子对}",
+                       color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text10.move_to([0,description_height,0])
+        text11=MathTex(r"\text{溶剂介入，离子对解离}",
+                       color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text11.move_to([0,description_height,0])
+        text12=MathTex(r"\text{空间位阻解除，两侧进攻概率趋于等同}",
+                       color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text12.move_to([0,description_height,0])
+
+        anims=merging_timeline(Solvent_anim,{0:[X2_anim,X2_negative_anim,ReplacementTransform(text9,text10)],
+                                             3:[ReplacementTransform(text10,text11)],
+                                             6:[ReplacementTransform(text11,text12)]})
+        
+        play_timeline(self,anims)
