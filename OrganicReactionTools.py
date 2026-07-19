@@ -112,6 +112,14 @@ class PositiveCharge(VGroup):
 
         super().__init__(circle,line1,line2)
 
+class SingleCharge(Circle):
+    def __init__(self,*,color=WHITE,text:MathTex,radius:float,
+                 pos:Vector3D,edge:float):
+
+        position=text.get_center(pos)+pos*edge
+
+        super().__init__(radius=radius,color=color,arc_center=position,fill_opacity=1)
+
 class NegativeChargeByCoordinate(VGroup):
     def __init__(self,*,color=WHITE,radius=0.05,
                  ratio=0.6,stroke_width=1.2,position:Vector3D):
@@ -141,6 +149,11 @@ class PositiveChargeByCoordinate(VGroup):
         line2=Line(start=line2_start,end=line2_end,color=color,stroke_width=stroke_width)
 
         super().__init__(circle,line1,line2)
+
+class SingleChargeByCoordinate(Circle):
+    def __init__(self,*,color=WHITE,radius:float,position:Vector3D):
+
+        super().__init__(radius=radius,color=color,arc_center=position,fill_opacity=1)
 
 class BracketBetweenPoints(VGroup):
     def __init__(self,*,start:Vector3D,end:Vector3D,ratio_edge=0.1,**kwargs):

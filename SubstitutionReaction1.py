@@ -11,7 +11,7 @@ class test(Scene):
         self.wait(1.5)
         self.play(FadeOut(text0))
 
-        #-----------------------SN2 reaction-----------------------
+        #-----------------------SN2 mechanism-----------------------
 
         SN2_reaction=MathTex(r"S_N2\text{（双分子亲核取代）}",color=WHITE,font_size=title_size,tex_template=mytemplate)
         SN2_reaction.move_to([0,title_height,0])
@@ -174,7 +174,7 @@ class test(Scene):
 
         self.wait(1.5)
 
-        #-----------------------SN1 reaction-----------------------
+        #-----------------------SN1 mechanism-----------------------
 
         SN1_reaction=MathTex(r"S_N1\text{（单分子亲核取代）}",color=WHITE,font_size=title_size,tex_template=mytemplate)
         SN1_reaction.move_to([0,title_height,0])
@@ -378,8 +378,7 @@ class test(Scene):
                   FadeOut(SN1_reaction),
                   FadeOut(text3))
 
-        #-----------------------Ion pair reaction-----------------------
-
+        #-----------------------Ion pair mechanism-----------------------
         
         self.wait(0.5)
 
@@ -664,5 +663,8 @@ class test(Scene):
                   FadeOut(S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15),
                   FadeOut(Nu2,Nu2_negative),
                   FadeOut(arrow1,arrow2),
-                  FadeOut(text7,text8,text12)
-                  )
+                  FadeOut(text7,text8,text12))
+
+        #-----------------------Free radical mechanism-----------------------
+
+
