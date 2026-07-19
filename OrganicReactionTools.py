@@ -1,12 +1,13 @@
 from manim import *
 from manim.typing import Vector3D
+from manim.utils.rate_functions import unit_interval
 import numpy as np
-from typing import Iterable, Union
+from typing import Iterable,Union,Callable
 
 mytemplate = TexTemplate()
 mytemplate.add_to_preamble(r"\usepackage{ctex}")
 
-RNG=np.random.default_rng(seed=2)
+RNG=np.random.default_rng(seed=3)
 
 #parameters
 length=1
@@ -26,7 +27,7 @@ description_height=-2
 default_charge_edge=0.07
 """默认电荷边距"""
 
-#classes
+#Mobject classes
 class OutBond(Polygon):
     def __init__(self,*,start_point=ORIGIN,direction=0.0,length=1.0,
                  base_ratio=0.2,color=WHITE):
@@ -176,8 +177,8 @@ class BezierArrow(VGroup):
         end_anchor=np.array(end_anchor)
         end_handle=np.array(end_handle)
 
-        tip=ArrowTriangleFilledTip(color=color,fill_opacity=opacity)
-        tip.scale(arrow_size).rotate(angle+PI).move_to(end_anchor)
+        self.tip=ArrowTriangleFilledTip(color=color,fill_opacity=opacity)
+        self.tip.scale(arrow_size).rotate(angle+PI).move_to(end_anchor)
 
         end_anchor-=arrow_size*(1/8.9*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
                                            np.sin(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
@@ -186,11 +187,27 @@ class BezierArrow(VGroup):
                                            np.sin(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
                                            0])+np.array([0,0.0363,0]))
 
-        bezier=CubicBezier(start_anchor=start_anchor,start_handle=start_handle,end_handle=end_handle,end_anchor=end_anchor,
+        self.bezier=CubicBezier(start_anchor=start_anchor,start_handle=start_handle,end_handle=end_handle,end_anchor=end_anchor,
                       color=color,stroke_width=stroke_width,**kwargs)
-        bezier.set_stroke(opacity=opacity)
+        self.bezier.set_stroke(opacity=opacity)
 
-        super().__init__(bezier,tip)
+        super().__init__(self.bezier,self.tip)
+
+#Animation classes
+class OpacityEffect(Animation):
+    def __init__(self,*,mobject:Mobject,initial_opacity:float,final_opacity:float,run_time:float,func:Callable[[float],float]=linear,**kwargs):
+        self.initial_opacity=initial_opacity
+        self.final_opacity=final_opacity
+        self.func=func
+        super().__init__(mobject=mobject,run_time=run_time,**kwargs)
+
+    def interpolate_mobject(self, alpha:float):
+        opacity=self.func(alpha)*(self.final_opacity-self.initial_opacity)+self.initial_opacity
+        if isinstance(self.mobject,BezierArrow):
+            self.mobject.tip.set_fill(opacity=opacity)
+            self.mobject.bezier.set_stroke(opacity=opacity)
+        else:
+            self.mobject.set_opacity(opacity)
         
 #functions
 def play_timeline(scene:Scene,timeline:dict[float,Animation]):

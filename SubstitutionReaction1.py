@@ -617,46 +617,37 @@ class test(Scene):
         self.wait(1)
 
         #animation of Solvent molecules
-        Solvent_anim=brownian_motion([S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15],8,8.0)
+        Solvent_anim=brownian_motion([S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15],8,9.0)
 
         #animation of X2
-        X2_anim=ApplyMethod(X2.shift,[5,0,0],rate_func=linear,run_time=8.0)
-        X2_negative_anim=ApplyMethod(X2_negative.shift,[5,0,0],rate_func=linear,run_time=8.0)
+        X2_anim=ApplyMethod(X2.shift,[5,0,0],rate_func=smoothstep,run_time=9.0)
+        X2_negative_anim=ApplyMethod(X2_negative.shift,[5,0,0],rate_func=smoothstep,run_time=9.0)
 
         #text
         text10=MathTex(r"\text{一开始两个离子紧密贴合在一起，形成紧密离子对}",
                        color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text10.move_to([0,description_height,0])
-        text11=MathTex(r"\text{溶剂介入，离子对解离}",
+        text11=MathTex(r"\text{左侧位阻小，易进攻；右侧位阻大，难进攻}",
                        color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text11.move_to([0,description_height,0])
-        text12=MathTex(r"\text{空间位阻解除，两侧进攻概率趋于等同}",
+        text12=MathTex(r"\text{溶剂介入，离子对解离}",
                        color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text12.move_to([0,description_height,0])
+        text13=MathTex(r"\text{空间位阻解除，两侧进攻概率趋于等同}",
+                       color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text13.move_to([0,description_height,0]) 
 
         anims=merging_timeline(Solvent_anim,{
-            0: [
-                X2_anim, 
-                X2_negative_anim, 
-                AnimationGroup(
-                    Transform(text9, text10), # 使用 copy 来生成变形的起始形状
-                    lag_ratio=0
-                )
-            ],
-            3: [
-                AnimationGroup(
-                    FadeOut(text9,run_time=0),
-                    Transform(text10, text11),
-                    lag_ratio=0
-                )
-            ],
-            6: [
-                AnimationGroup(
-                    FadeOut(text10,run_time=0),
-                    Transform(text11, text12),
-                    lag_ratio=0
-                )
-            ]
+            0:[X2_anim,
+               X2_negative_anim,
+               Transform(text9, text10),
+               OpacityEffect(mobject=arrow1,initial_opacity=0.1,final_opacity=0.5,run_time=9.0,func=linear),
+               OpacityEffect(mobject=arrow2,initial_opacity=0.9,final_opacity=0.5,run_time=9.0,func=linear)],
+            3:[FadeOut(text9,run_time=0),Transform(text10, text11)],
+            6:[FadeOut(text10,run_time=0),Transform(text11, text12)],
+            8:[FadeOut(text11,run_time=0),Transform(text12,text13)]
         })
         
         play_timeline(self,anims)
+
+        self.wait(2)
