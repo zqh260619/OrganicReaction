@@ -665,6 +665,34 @@ class test(Scene):
                   FadeOut(arrow1,arrow2),
                   FadeOut(text7,text8,text12))
 
+        self.wait(1.5)
+
         #-----------------------Free radical mechanism-----------------------
 
+        Free_radical_reaction=MathTex(r"\text{自由基机理}",color=WHITE,font_size=title_size,tex_template=mytemplate)
+        Free_radical_reaction.move_to([0,title_height,0])
+        self.play(Write(Free_radical_reaction))
 
+        subtitle1=MathTex(r"\text{链引发阶段}",color=WHITE,font_size=subtitle_size,tex_template=mytemplate)
+        subtitle1.move_to([0,subtitle_height,0])
+
+        #Cl
+        Cl1=MathTex(r"Cl",color=WHITE,font_size=txt_size)
+        Cl1.move_to([-length/2,0,0])
+
+        #Cl2
+        Cl2=MathTex(r"Cl",color=WHITE,font_size=txt_size)
+        Cl2.move_to([length/2,0,0])
+
+        #bond17 Cl1-Cl2
+        bond17=Line(color=WHITE,start=[-length/2+edge,0,0],end=[length/2-edge,0,0])
+
+        #h\nu1
+        hnu1=LightArrow(end=ORIGIN)
+
+        self.play(Create(Cl1),
+                  Create(Cl2),
+                  Create(bond17),
+                  Create(hnu1))
+
+        self.wait(2)

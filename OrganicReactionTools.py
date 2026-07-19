@@ -14,16 +14,20 @@ length=1
 """键长"""
 edge=0.25
 """键边距"""
-txt_size=35
-"""文字大小"""
-title_size=60
-"""标题大小"""
 ratio_transition_state=1.2
 """过渡态键长比例"""
 title_height=3
 """标题高度"""
+title_size=60
+"""标题大小"""
+subtitle_height=2.3
+"""副标题高度"""
+subtitle_size=30
+"""副标题大小"""
 description_height=-2
 """描述性文本高度"""
+txt_size=35
+"""文字大小"""
 default_charge_edge=0.07
 """默认电荷边距"""
 
@@ -205,6 +209,22 @@ class BezierArrow(VGroup):
         self.bezier.set_stroke(opacity=opacity)
 
         super().__init__(self.bezier,self.tip)
+
+class LightArrow(VGroup):
+    def __init__(self,*,end:Vector3D,length:float=1.5,pos:Vector3D=UL,color=YELLOW,mark:bool=True,width=1,end_edge:float=0,**kwargs):
+
+        self.length=length
+        self.start=[end[0]+pos[0]*length,end[1]+pos[1]*length,0]
+        self.end=[end[0]+pos[0]*end_edge,end[1]+pos[1]*end_edge,0]
+
+        arrow=Arrow(start=self.start,end=self.end,stroke_width=width,color=color,tip_length=0.1,**kwargs)
+
+        if mark==True:
+            text=MathTex(r"h\nu",color=color,font_size=15,**kwargs)
+            text.move_to([end[0]+pos[0]*(length/2-0.1*np.sqrt(2)),end[1]+pos[1]*(length/2-0.1*np.sqrt(2))+0.2,0])
+            super().__init__(arrow,text)
+        else:
+            super().__init__(arrow)
 
 #Animation classes
 class OpacityEffect(Animation):
