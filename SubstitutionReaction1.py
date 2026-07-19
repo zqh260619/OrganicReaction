@@ -650,4 +650,19 @@ class test(Scene):
         
         play_timeline(self,anims)
 
-        self.wait(2)
+        self.wait(1)
+
+        self.play(FadeOut(Ion_pair_reaction),
+                  FadeOut(bond13),
+                  FadeOut(bond15),
+                  FadeOut(bond16),
+                  FadeOut(R4),
+                  FadeOut(X2,X2_negative),
+                  FadeOut(R5),
+                  FadeOut(R6),
+                  FadeOut(C3_postive),
+                  FadeOut(S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15),
+                  FadeOut(Nu2,Nu2_negative),
+                  FadeOut(arrow1,arrow2),
+                  FadeOut(text7,text8,text12)
+                  )
