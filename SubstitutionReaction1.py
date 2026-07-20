@@ -1,6 +1,8 @@
 #manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qk/-qh/-qm/-ql]/*分辨率(由高到低)*/
 #manim SubstitutionReaction1.py test -pqh
 
+from turtle import st
+
 from OrganicReactionTools import *
 
 class test(Scene):
@@ -826,5 +828,166 @@ class test(Scene):
         self.play(Write(text15))
         self.wait(2)
         self.play(ReplacementTransform(text15,text16))
+
+        self.wait(2)
+
+        subtitle3=MathTex(r"\text{链终止阶段}",color=WHITE,font_size=subtitle_size,tex_template=mytemplate)
+        subtitle3.move_to([0,subtitle_height,0])
+
+        self.play(ReplacementTransform(subtitle2,subtitle3),
+                  FadeOut(Cl4,C4,H5,H6,H7,bond19,bond20,bond21,bond24))
+
+        #Cl5
+        Cl5=MathTex(r"Cl",color=WHITE,font_size=txt_size)
+        Cl5.move_to([length*0.5,0,0])
+
+        #Cl5_single
+        Cl5_single=SingleCharge(text=Cl5,pos=LEFT)
+
+        self.play(Write(Cl5),
+                  Create(Cl5_single))
+
+        #bond25
+        bond25=Line(color=WHITE,start=[-length/2+edge,0,0],end=[length/2-edge,0,0])
+
+        self.play(ReplacementTransform(VGroup(Cl3_single,Cl5_single),bond25))
+
+        self.wait(0.5)
+
+        self.play(FadeOut(Cl3,Cl5,bond25))
+
+        #Cl6
+        Cl6=MathTex(r"Cl",color=WHITE,font_size=txt_size)
+        Cl6.move_to([-length*0.5,0,0])
+        Cl6_single=SingleCharge(text=Cl6,pos=RIGHT)
+
+        #C5
+        C5=MathTex(r"C",color=WHITE,font_size=txt_size)
+        C5.move_to([length*0.5,0,0])
+        C5_single=SingleCharge(text=C5,pos=LEFT)
+
+        #H8
+        H8=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H8.move_to([length*0.5,length,0])
+
+        #H9
+        H9=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H9.move_to([length*1.5,0,0])
+
+        #H10
+        H10=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H10.move_to([length*0.5,-length,0])
+
+        #bond26 C5-Cl6
+        bond26=Line(color=WHITE,start=[length*0.5-edge,0,0],end=[-length*0.5+edge,0,0])
+
+        #bond27 C5-H8
+        bond27=Line(color=WHITE,start=[length*0.5,edge,0],end=[length*0.5,length-edge,0])
+
+        #bond28 C5-H9
+        bond28=Line(color=WHITE,start=[length*0.5+edge,0,0],end=[length*1.5-edge,0,0])
+
+        #bond29 C5-H10
+        bond29=Line(color=WHITE,start=[length*0.5,-edge,0],end=[length*0.5,-length+edge,0])
+
+        self.play(Write(Cl6),
+                  Create(Cl6_single),
+                  Write(C5),
+                  Create(C5_single),
+                  Write(H8),
+                  Write(H9),
+                  Write(H10),
+                  Create(bond27),
+                  Create(bond28),
+                  Create(bond29))
+
+        self.wait(0.5)
+
+        self.play(ReplacementTransform(VGroup(Cl6_single,C5_single),bond26))
+
+        self.wait(0.5)
+
+        self.play(FadeOut(bond26,Cl6,C5,H8,H9,H10,bond27,bond28,bond29))
+
+        #C6
+        C6=MathTex(r"C",color=WHITE,font_size=txt_size)
+        C6.move_to([length*0.5,0,0])
+        C6_single=SingleCharge(text=C6,pos=LEFT)
+
+        #H11
+        H11=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H11.move_to([length*0.5,length,0])
+
+        #H12
+        H12=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H12.move_to([length*1.5,0,0])
+
+        #H13
+        H13=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H13.move_to([length*0.5,-length,0])
+
+        #bond30 C6-H11
+        bond30=Line(color=WHITE,start=[length*0.5,edge,0],end=[length*0.5,length-edge,0])
+
+        #bond31 C6-H12
+        bond31=Line(color=WHITE,start=[length*0.5+edge,0,0],end=[length*1.5-edge,0,0])
+
+        #bond32 C6-H13
+        bond32=Line(color=WHITE,start=[length*0.5,-edge,0],end=[length*0.5,-length+edge,0])
+
+        #C7
+        C7=MathTex(r"C",color=WHITE,font_size=txt_size)
+        C7.move_to([-length*0.5,0,0])
+        C7_single=SingleCharge(text=C7,pos=RIGHT)
+
+        #H14
+        H14=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H14.move_to([-length*0.5,length,0])
+
+        #H15
+        H15=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H15.move_to([-length*1.5,0,0])
+
+        #H16
+        H16=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H16.move_to([-length*0.5,-length,0])
+
+        #bond33 C7-H14
+        bond33=Line(color=WHITE,start=[-length*0.5,edge,0],end=[-length*0.5,length-edge,0])
+
+        #bond34 C7-H15
+        bond34=Line(color=WHITE,start=[-length*0.5-edge,0,0],end=[-length*1.5+edge,0,0])
+
+        #bond35 C7-H16
+        bond35=Line(color=WHITE,start=[-length*0.5,-edge,0],end=[-length*0.5,-length+edge,0])
+
+        #bond36 C6-C7
+        bond36=Line(color=WHITE,start=[-length*0.5+edge,0,0],end=[length*0.5-edge,0,0])
+
+        self.play(Write(C6),
+                  Write(C7),
+                  Write(H11),
+                  Write(H12),
+                  Write(H13),
+                  Write(H14),
+                  Write(H15),
+                  Write(H16),
+                  Create(bond30),
+                  Create(bond31),
+                  Create(bond32),
+                  Create(bond33),
+                  Create(bond34),
+                  Create(bond35),
+                  Create(C6_single),
+                  Create(C7_single))
+
+        self.wait(0.5)
+
+        self.play(ReplacementTransform(VGroup(C6_single,C7_single),bond36))
+
+        self.wait(0.5)
+
+        self.play(FadeOut(C6,C7,H11,H12,H13,H14,H15,H16,bond30,bond31,bond32,bond33,bond34,bond35,bond36,
+                          Free_radical_reaction,subtitle3,text16))
 
         self.wait(2)
