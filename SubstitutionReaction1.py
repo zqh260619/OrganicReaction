@@ -702,8 +702,11 @@ class test(Scene):
 
         self.wait(0.5)
 
-        self.play(Create(hnu1,run_time=0.7))
-        self.play(FadeOut(hnu1,run_time=0.3),
-                  ReplacementTransform(bond17,VGroup(Cl1_single,Cl2_single)))
+        #text
+        text14=MathTex(r"\text{在光照条件下，氯氯键均裂，产生两个氯自由基}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text14.move_to([0,description_height,0])
+
+        play_timeline(self,{0:[Create(hnu1,run_time=0.7),Write(text14)],
+                       0.7:[FadeOut(hnu1,run_time=0.3),ReplacementTransform(bond17,VGroup(Cl1_single,Cl2_single))]})
 
         self.wait(2)
