@@ -690,9 +690,20 @@ class test(Scene):
         #h\nu1
         hnu1=LightArrow(end=ORIGIN)
 
+        #Cl1_single
+        Cl1_single=SingleCharge(text=Cl1,pos=RIGHT)
+
+        #Cl2_single
+        Cl2_single=SingleCharge(text=Cl2,pos=LEFT)
+
         self.play(Create(Cl1),
                   Create(Cl2),
-                  Create(bond17),
-                  Create(hnu1))
+                  Create(bond17))
+
+        self.wait(0.5)
+
+        self.play(Create(hnu1,run_time=0.7))
+        self.play(FadeOut(hnu1,run_time=0.3),
+                  ReplacementTransform(bond17,VGroup(Cl1_single,Cl2_single)))
 
         self.wait(2)

@@ -117,10 +117,10 @@ class PositiveCharge(VGroup):
         super().__init__(circle,line1,line2)
 
 class SingleCharge(Circle):
-    def __init__(self,*,color=WHITE,text:MathTex,radius:float,
-                 pos:Vector3D,edge:float):
+    def __init__(self,*,color=WHITE,text:MathTex,radius:float=0.01,
+                 pos:Vector3D,edge:float=default_charge_edge):
 
-        position=text.get_center(pos)+pos*edge
+        position=text.get_corner(pos)+pos*edge
 
         super().__init__(radius=radius,color=color,arc_center=position,fill_opacity=1)
 
@@ -155,7 +155,7 @@ class PositiveChargeByCoordinate(VGroup):
         super().__init__(circle,line1,line2)
 
 class SingleChargeByCoordinate(Circle):
-    def __init__(self,*,color=WHITE,radius:float,position:Vector3D):
+    def __init__(self,*,color=WHITE,radius:float=0.01,position:Vector3D):
 
         super().__init__(radius=radius,color=color,arc_center=position,fill_opacity=1)
 
