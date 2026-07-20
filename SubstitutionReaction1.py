@@ -788,3 +788,43 @@ class test(Scene):
                   ReplacementTransform(bond18.copy(),C4_single))
 
         self.wait(0.5)
+
+        self.play(FadeOut(Cl1,H4,bond22))
+
+        #Cl3
+        Cl3=MathTex(r"Cl",color=WHITE,font_size=txt_size)
+        Cl3.move_to([-length*0.5,0,0])
+
+        #Cl4
+        Cl4=MathTex(r"Cl",color=WHITE,font_size=txt_size)
+        Cl4.move_to([length*0.5,0,0])
+
+        #bond23 Cl3-Cl4
+        bond23=Line(color=WHITE,start=[-length/2+edge,0,0],end=[length/2-edge,0,0])
+
+        self.play(Write(Cl3),
+                  Write(Cl4),
+                  Create(bond23))
+
+        self.wait(1)
+
+        #bond24 Cl4-C4
+        bond24=Line(color=WHITE,start=[length*0.5+edge,0,0],end=[length*1.5-edge,0,0])
+
+        #Cl3_single
+        Cl3_single=SingleCharge(text=Cl3,pos=RIGHT)
+
+        self.play(ReplacementTransform(bond23.copy(),Cl3_single),
+                  ReplacementTransform(VGroup(C4_single,bond23),bond24))
+
+        #text
+        text15=MathTex(r"\text{此时产生的氯离子可能会回到上一步反应中去和另一分子甲烷反应}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text15.move_to([0,description_height,0])
+        text16=MathTex(r"\text{也可能发生如下的链终止反应}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
+        text16.move_to([0,description_height,0])
+
+        self.play(Write(text15))
+        self.wait(2)
+        self.play(ReplacementTransform(text15,text16))
+
+        self.wait(2)
