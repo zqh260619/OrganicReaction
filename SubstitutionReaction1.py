@@ -649,7 +649,7 @@ class test(Scene):
         
         play_timeline(self,anims)
 
-        self.wait(1)
+        self.wait(2)
 
         self.play(FadeOut(Ion_pair_reaction),
                   FadeOut(bond13),
@@ -698,15 +698,93 @@ class test(Scene):
 
         self.play(Create(Cl1),
                   Create(Cl2),
-                  Create(bond17))
+                  Create(bond17),
+                  Write(subtitle1))
 
-        self.wait(0.5)
+        self.wait(1)
 
         #text
         text14=MathTex(r"\text{在光照条件下，氯氯键均裂，产生两个氯自由基}",color=WHITE,font_size=txt_size,tex_template=mytemplate)
         text14.move_to([0,description_height,0])
 
-        play_timeline(self,{0:[Create(hnu1,run_time=0.7),Write(text14)],
-                       0.7:[FadeOut(hnu1,run_time=0.3),ReplacementTransform(bond17,VGroup(Cl1_single,Cl2_single))]})
+        self.play(FadeIn(text14),
+                  Create(hnu1,run_time=1))
 
-        self.wait(2)
+        self.play(FadeOut(hnu1,run_time=0.5),
+                  ReplacementTransform(bond17,Cl1_single),
+                  ReplacementTransform(bond17.copy(),Cl2_single))
+
+        self.wait(1)
+
+        subtitle2=MathTex(r"\text{链增长阶段}",color=WHITE,font_size=subtitle_size,tex_template=mytemplate)
+        subtitle2.move_to([0,subtitle_height,0])
+
+        self.play(FadeOut(Cl2),
+                  FadeOut(Cl2_single),
+                  ReplacementTransform(subtitle1,subtitle2))
+
+        #C4
+        C4=MathTex(r"C",color=WHITE,font_size=txt_size)
+        C4.move_to([length*1.5,0,0])
+
+        #H4
+        H4=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H4.move_to([length*0.5,0,0])
+
+        #H5
+        H5=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H5.move_to([length*1.5,length,0])
+
+        #H6
+        H6=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H6.move_to([length*2.5,0,0])
+
+        #H7
+        H7=MathTex(r"H",color=WHITE,font_size=txt_size)
+        H7.move_to([length*1.5,-length,0])
+
+        #bond18 C4-H4
+        start_point18=[length*1.5-edge,0,0]
+        end_point18=[length*0.5+edge,0,0]
+        bond18=Line(color=WHITE,start=start_point18,end=end_point18)
+
+        #bond19 C4-H5
+        start_point19=[length*1.5,edge,0]
+        end_point19=[length*1.5,length-edge,0]
+        bond19=Line(color=WHITE,start=start_point19,end=end_point19)
+
+        #bond20 C4-H6
+        start_point20=[length*1.5+edge,0,0]
+        end_point20=[length*2.5-edge,0,0]
+        bond20=Line(color=WHITE,start=start_point20,end=end_point20)
+
+        #bond21 C4-H7
+        start_point21=[length*1.5,-edge,0]
+        end_point21=[length*1.5,-length+edge,0]
+        bond21=Line(color=WHITE,start=start_point21,end=end_point21)
+
+        self.play(Create(C4),
+                  Create(H4),
+                  Create(H5),
+                  Create(H6),
+                  Create(H7),
+                  Create(bond18),
+                  Create(bond19),
+                  Create(bond20),
+                  Create(bond21),
+                  FadeOut(text14))
+
+        self.wait(0.5)
+
+        #bond22 Cl1-H4
+        start_point22=[-length*0.5+edge,0,0]
+        end_point22=[length*0.5-edge,0,0]
+        bond22=Line(color=WHITE,start=start_point22,end=end_point22)
+
+        #C4_single
+        C4_single=SingleCharge(text=C4,pos=LEFT)
+
+        self.play(ReplacementTransform(VGroup(bond18,Cl1_single),bond22),
+                  ReplacementTransform(bond18.copy(),C4_single))
+
+        self.wait(0.5)
