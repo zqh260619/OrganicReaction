@@ -18,14 +18,20 @@ ratio_transition_state=1.2
 """过渡态键长比例"""
 title_height=3
 """标题高度"""
+title_coordinate=[0,title_height,0]
+"""标题坐标"""
 title_size=60
 """标题大小"""
 subtitle_height=2.3
 """副标题高度"""
+subtitle_coordinate=[0,subtitle_height,0]
+"""副标题坐标"""
 subtitle_size=30
 """副标题大小"""
 description_height=-2
 """描述性文本高度"""
+description_coordinate=[0,description_height,0]
+"""描述性文本坐标"""
 txt_size=35
 """文字大小"""
 default_charge_edge=0.07
@@ -241,6 +247,28 @@ class OpacityEffect(Animation):
             self.mobject.bezier.set_stroke(opacity=opacity)
         else:
             self.mobject.set_opacity(opacity)
+
+#Text classes
+class Title(MathTex):
+    def __init__(self,*,text:str,pos:Vector3D=title_coordinate,color=WHITE,size=title_size):
+
+        super().__init__(text,color=color,tex_template=mytemplate,font_size=size)
+
+        self.move_to(pos)
+
+class Subtitle(MathTex):
+    def __init__(self,*,text:str,pos:Vector3D=subtitle_coordinate,color=WHITE,size=subtitle_size):
+
+        super().__init__(text,color=color,tex_template=mytemplate,font_size=size)
+
+        self.move_to(pos)
+
+class Description(MathTex):
+    def __init__(self,*,text:str,pos:Vector3D=description_coordinate,color=WHITE,size=txt_size):
+
+        super().__init__(text,color=color,tex_template=mytemplate,font_size=size)
+
+        self.move_to(pos)
         
 #functions
 def play_timeline(scene:Scene,timeline:dict[float,Animation]):
