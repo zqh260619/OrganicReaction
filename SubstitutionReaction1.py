@@ -1,8 +1,6 @@
 #manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qk/-qh/-qm/-ql]/*分辨率(由高到低)*/
 #manim SubstitutionReaction1.py test -pqh
 
-from turtle import st
-
 from OrganicReactionTools import *
 
 class test(Scene):
