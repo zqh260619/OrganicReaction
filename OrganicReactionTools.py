@@ -3,6 +3,7 @@ from manim.typing import Vector3D
 from manim.utils.rate_functions import unit_interval
 import numpy as np
 from typing import Iterable,Union,Callable
+from enum import Enum
 
 mytemplate = TexTemplate()
 mytemplate.add_to_preamble(r"\usepackage{ctex}")
@@ -87,6 +88,11 @@ class InBond(VGroup):
             lines.append(temp)
 
         super().__init__(*lines)
+
+class DashedBond(DashedLine):
+    def __init__(self,*,color=WHITE,start:Vector3D,end=Vector3D,dash_length=0.1,dashed_ratio=0.5):
+
+        super.__init__(color=color,start=start,end=end,dash_length=dash_length,dashed_ratio=dashed_ratio)
 
 class NegativeCharge(VGroup):
     def __init__(self,*,color=WHITE,text:MathTex,radius=0.05,
@@ -231,6 +237,12 @@ class LightArrow(VGroup):
             super().__init__(arrow,text)
         else:
             super().__init__(arrow)
+
+class Bond(Enum):
+    NORMAL_BOND=Line
+    IN_BOND=InBond
+    OUT_BOND=OutBond
+    DASHED_BOND=DashedBond
 
 #Animation classes
 class OpacityEffect(Animation):
