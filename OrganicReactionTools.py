@@ -11,7 +11,7 @@ mytemplate.add_to_preamble(r"\usepackage{ctex}")
 RNG=np.random.default_rng(seed=3)
 
 #parameters
-length=1
+bond_length=1
 """键长"""
 edge=0.25
 """键边距"""
@@ -40,21 +40,15 @@ default_charge_edge=0.07
 
 #Mobject classes
 class OutBond(Polygon):
-    def __init__(self,*,start_point=ORIGIN,direction=0.0,length=1.0,
-                 base_ratio=0.2,color=WHITE):
+    def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder'):
 
-        """
-
-        direction: angle in radians
-
-        """
-        
-        end_point=start_point+length*np.array([np.cos(direction),np.sin(direction),0])
+        start_point=start+start_edge*attributes.edge_global*np.array([np.cos(direction),np.sin(direction),0])
+        end_point=start+(attributes.length_global-end_edge*attributes.edge_global)*np.array([np.cos(direction),np.sin(direction),0])
         
         vertices=[start_point,
-                  end_point + base_ratio*length/2 * np.array(
+                  end_point + attributes.base_ratio_outbond*(attributes.length_global-(start_edge+end_edge)*attributes.edge_global)/2 * np.array(
                       [-np.sin(direction), np.cos(direction), 0]),
-                  end_point - base_ratio*length/2 * np.array(
+                  end_point - attributes.base_ratio_outbond*(attributes.length_global-(start_edge+end_edge)*attributes.edge_global)/2 * np.array(
                       [-np.sin(direction), np.cos(direction), 0]),]
 
         super().__init__(
@@ -65,21 +59,16 @@ class OutBond(Polygon):
         )
 
 class InBond(VGroup):
-    def __init__(self,*,start_point=ORIGIN,direction=0.0,length=1.0,base_ratio=0.2,
-                 color=WHITE,num=5):
+    def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder'):
         
-        """
-
-        <length> means the length from start(including edge) to end(excluding edge)
-
-        """
-
-        end_point=start_point+length*np.array([np.cos(direction),np.sin(direction),0])
-        end_point_1=end_point+base_ratio*length/2*np.array(
+        start_point=start+start_edge*attributes.edge_global*np.array([np.cos(direction),np.sin(direction),0])
+        end_point=start+(attributes.length_global-end_edge*attributes.edge_global)*np.array([np.cos(direction),np.sin(direction),0])
+        end_point_1=end_point+attributes.base_ratio_inbond*(attributes.length_global-(start_edge+end_edge)*attributes.edge_global)/2*np.array(
             [-np.sin(direction),np.cos(direction),0])
-        end_point_2=end_point-base_ratio*length/2*np.array(
+        end_point_2=end_point-attributes.base_ratio_inbond*(attributes.length_global-(start_edge+end_edge)*attributes.edge_global)/2*np.array(
             [-np.sin(direction),np.cos(direction),0])
 
+        num=attributes.num_inbond
         lines=[]
         for i in range(1,num+1):
             start_point_temp=end_point_1*i/num+start_point*(num-i)/num
@@ -90,9 +79,21 @@ class InBond(VGroup):
         super().__init__(*lines)
 
 class DashedBond(DashedLine):
-    def __init__(self,*,color=WHITE,start:Vector3D,end=Vector3D,dash_length=0.1,dashed_ratio=0.5):
+    def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder'):
 
-        super.__init__(color=color,start=start,end=end,dash_length=dash_length,dashed_ratio=dashed_ratio)
+        start_point=start+np.array([np.cos(direction),np.sin(direction),0])*attributes.edge_global*start_edge
+        end_point=start+np.array([np.cos(direction),np.sin(direction),0])*\
+            (attributes.length_global*attributes.ratio_transition_state_dashedbond-attributes.edge_global*end_edge)
+        super.__init__(color=attributes.color,start=start_point,end=end_point,
+                       dash_length=attributes.dashed_length_dashedbond,
+                       dashed_ratio=attributes.dashed_ratio_dashedbond)
+
+class NormalBond(Line):
+    def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder'):
+
+        start_point=start+np.array([np.cos(direction),np.sin(direction),0])*start_edge*attributes.edge_global
+        end_point=start+np.array([np.cos(direction),np.sin(direction),0])*(attributes.length_global-end_edge*attributes.edge_global)
+        super().__init__(start=start_point,end=end_point,color=color)
 
 class NegativeCharge(VGroup):
     def __init__(self,*,color=WHITE,text:MathTex,radius=0.05,
@@ -238,11 +239,64 @@ class LightArrow(VGroup):
         else:
             super().__init__(arrow)
 
-class Bond(Enum):
-    NORMAL_BOND=Line
+class BondType(Enum):
+    NORMAL_BOND=NormalBond
     IN_BOND=InBond
     OUT_BOND=OutBond
     DASHED_BOND=DashedBond
+
+class AtomicCluster(MathTex):
+    def __init__(self,*,
+                 text:str|None=None,
+                 pos:Vector3D,
+                 color=WHITE,
+                 font_size=txt_size):
+        super().__init__(text,color=color,font_size=font_size)
+        self.move_to(pos)
+
+class AttributeHolder:
+    def __init__(self,*,
+                 base_ratio_outbond:float,
+                 base_ratio_inbond:float,
+                 num_inbond:int,
+                 dashed_length_dashedbond:float,
+                 dashed_ratio_dashedbond:float,
+                 length_dashedbond:float,
+                 ratio_transition_state_dashedbond:float,
+                 length_global:float,
+                 color:ManimColor,
+                 edge_global:float):
+
+        self.base_ratio_outbond=base_ratio_outbond
+        self.base_ratio_inbond=base_ratio_inbond
+        self.num_inbond=num_inbond
+        self.dashed_length_dashedbond=dashed_length_dashedbond
+        self.dashed_ratio_dashedbond=dashed_ratio_dashedbond
+        self.length_dashedbond=length_dashedbond
+        self.ratio_transition_state_dashedbond=ratio_transition_state_dashedbond
+        self.length_global=length_global
+        self.color=color
+        self.edge_global=edge_global
+
+class Bond(VGroup):
+    def __init__(self,*,
+                 bond_type:BondType,
+                 start:AtomicCluster,
+                 end=AtomicCluster,
+                 start_edge=False,
+                 end_edge=True,
+                 attributes:AttributeHolder):
+        self.bond_type=bond_type
+        self.start=start
+        self.end=end
+        self.start_edge=start_edge
+        self.end_edge=end_edge
+        angle_vector=end.get_center()-start.get_center()
+        self.direction=np.atan2(angle_vector[1],angle_vector[0])
+
+class StructuralFormula(VGroup):
+    def __init__(self,*,a):
+        pass
 
 #Animation classes
 class OpacityEffect(Animation):
