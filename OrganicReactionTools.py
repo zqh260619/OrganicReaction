@@ -355,8 +355,7 @@ class StructuralFormula(VGroup):
                  pos:Vector3D,
                  text:str|None=None,
                  bond_type:list[BondType],
-                 adjacency:list[str],
-                 direction:list[float]):
+                 adjacency:list[str]):
 
         if text!=None:
             self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
