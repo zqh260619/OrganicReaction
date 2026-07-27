@@ -10,13 +10,17 @@ mytemplate.add_to_preamble(r"\usepackage{ctex}")
 
 RNG=np.random.default_rng(seed=3)
 
-#parameters
+#PARAMETERS
+#structures
 bond_length=1
 """键长"""
 edge=0.25
 """键边距"""
 ratio_transition_state=1.2
 """过渡态键长比例"""
+default_charge_edge=0.07
+"""默认电荷边距"""
+#texts
 title_height=3
 """标题高度"""
 title_coordinate=[0,title_height,0]
@@ -35,8 +39,6 @@ description_coordinate=[0,description_height,0]
 """描述性文本坐标"""
 txt_size=35
 """文字大小"""
-default_charge_edge=0.07
-"""默认电荷边距"""
 
 #Mobject classes
 class OutBond(Polygon):
@@ -247,11 +249,11 @@ class BondType(Enum):
 
 class AtomicCluster(MathTex):
     def __init__(self,*,
-                 text:str|None=None,
+                 text:str,
                  pos:Vector3D,
-                 color=WHITE,
-                 font_size=txt_size):
-        super().__init__(text,color=color,font_size=font_size)
+                 attributes:'AttributeHolder'):
+
+        super().__init__(text,color=attributes.color,font_size=attributes.font_size)
         self.move_to(pos)
 
 class AttributeHolder:
@@ -261,42 +263,147 @@ class AttributeHolder:
                  num_inbond:int,
                  dashed_length_dashedbond:float,
                  dashed_ratio_dashedbond:float,
-                 length_dashedbond:float,
                  ratio_transition_state_dashedbond:float,
                  length_global:float,
                  color:ManimColor,
-                 edge_global:float):
+                 edge_global:float,
+                 font_size:float):
 
         self.base_ratio_outbond=base_ratio_outbond
         self.base_ratio_inbond=base_ratio_inbond
         self.num_inbond=num_inbond
         self.dashed_length_dashedbond=dashed_length_dashedbond
         self.dashed_ratio_dashedbond=dashed_ratio_dashedbond
-        self.length_dashedbond=length_dashedbond
         self.ratio_transition_state_dashedbond=ratio_transition_state_dashedbond
         self.length_global=length_global
         self.color=color
         self.edge_global=edge_global
+        self.font_size=font_size
 
 class Bond(VGroup):
     def __init__(self,*,
                  bond_type:BondType,
-                 start:AtomicCluster,
-                 end=AtomicCluster,
+                 start:AtomicCluster|Vector3D,
+                 end=AtomicCluster|Vector3D,
                  start_edge=False,
                  end_edge=True,
                  attributes:AttributeHolder):
+
+        super().__init__(color=attributes.color)
+
         self.bond_type=bond_type
         self.start=start
         self.end=end
+        if isinstance(start,AtomicCluster):
+            self.start=self.start.get_center()
+        if isinstance(end,AtomicCluster):
+            self.end=self.end.get_center()
         self.start_edge=start_edge
         self.end_edge=end_edge
-        angle_vector=end.get_center()-start.get_center()
+        angle_vector=end-start
         self.direction=np.atan2(angle_vector[1],angle_vector[0])
 
+        bond=self.bond_type.value(start=self.start,direction=self.direction,
+                                  start_edge=self.start_edge,end_edge=self.end_edge,
+                                  attributes=attributes)
+
+        self.add(bond)
+
 class StructuralFormula(VGroup):
-    def __init__(self,*,a):
-        pass
+    def __init__(self,*,
+                 base_ratio_outbond=0.2,
+                 base_ratio_inbond=0.2,
+                 num_inbond=5,
+                 dashed_length_dashedbond=0.1,
+                 dashed_ratio_dashedbond=0.5,
+                 ratio_transition_state_dashedbond=bond_length*ratio_transition_state,
+                 length_global=bond_length,
+                 color=WHITE,
+                 edge_global=edge,
+                 font_size=txt_size,
+                 name:str,
+                 pos:Vector3D,
+                 text:str|None=None,
+                 ):
+
+        self.attributes=AttributeHolder(base_ratio_outbond=base_ratio_outbond,
+                                        base_ratio_inbond=base_ratio_inbond,
+                                        num_inbond=num_inbond,
+                                        dashed_length_dashedbond=dashed_length_dashedbond,
+                                        dashed_ratio_dashedbond=dashed_ratio_dashedbond,
+                                        ratio_transition_state_dashedbond=ratio_transition_state_dashedbond,
+                                        length_global=length_global,
+                                        color=color,
+                                        edge_global=edge_global,
+                                        font_size=font_size)
+
+        super().__init__(color=self.attributes.color)
+
+        self.atomic_clusters={}
+
+        if text!=None:
+            self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
+                                        "pos":pos,
+                                        "adjs":[],
+                                        Bond:[]}
+            self.add(self.atomic_clusters[name][Mobject])
+        else:
+            self.atomic_clusters[name]={Mobject:None,"pos":pos,"adjs":[],Bond:[]}
+
+    def add_atom(self,*,
+                 name:str,
+                 pos:Vector3D,
+                 text:str|None=None,
+                 bond_type:list[BondType],
+                 adjacency:list[str],
+                 direction:list[float]):
+
+        if text!=None:
+            self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
+                                        "pos":pos,
+                                        "adj":adjacency,
+                                        Bond:[]}
+
+            for i in range(len(adjacency)):
+                if self.atomic_clusters[adjacency[i]]!=None:
+                    self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
+                                                                 start=self.atomic_clusters[adjacency[i]][Mobject],
+                                                                 end=self.atomic_clusters[name][Mobject],
+                                                                 start_edge=True,
+                                                                 end_edge=True,
+                                                                 attributes=self.attributes))
+                else:
+                    self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
+                                             start=self.atomic_clusters[adjacency[i]][Mobject],
+                                             end=self.atomic_clusters[name][Mobject],
+                                             start_edge=False,
+                                             end_edge=True,
+                                             attributes=self.attributes))
+
+        else:
+            self.atomic_clusters[name]={Mobject:None,
+                                        "pos":pos,
+                                        "adj":adjacency,
+                                        Bond:[]}
+
+            for i in range(len(adjacency)):
+                if self.atomic_clusters[adjacency[i]]!=None:
+                    self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
+                                                                 start=self.atomic_clusters[adjacency[i]][Mobject],
+                                                                 end=self.atomic_clusters[name][Mobject],
+                                                                 start_edge=True,
+                                                                 end_edge=False,
+                                                                 attributes=self.attributes))
+                else:
+                    self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
+                                             start=self.atomic_clusters[adjacency[i]][Mobject],
+                                             end=self.atomic_clusters[name][Mobject],
+                                             start_edge=False,
+                                             end_edge=False,
+                                             attributes=self.attributes))
+
+        for i in range(len(adjacency)):
+            self.atomic_clusters[adjacency[i]]["adj"].append(name)
 
 #Animation classes
 class OpacityEffect(Animation):
