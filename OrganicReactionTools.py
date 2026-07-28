@@ -1,6 +1,5 @@
 from manim import *
 from manim.typing import Vector3D
-from manim.utils.rate_functions import unit_interval
 import numpy as np
 from typing import Iterable,Union,Callable
 from enum import Enum
@@ -303,7 +302,7 @@ class Bond(VGroup):
     def __init__(self,*,
                  bond_type:BondType,
                  start:AtomicCluster|Vector3D,
-                 end=AtomicCluster|Vector3D,
+                 end:AtomicCluster|Vector3D,
                  start_edge=False,
                  end_edge=True,
                  attributes:AttributeHolder):
@@ -410,59 +409,56 @@ class StructuralFormula(VGroup):
                  name:str,
                  direction:float,
                  text:str|None=None,
-                 bond_type:list[BondType],
-                 adjacency:list[str]):
+                 bond_type:BondType,
+                 adjacency:str):
 
-        pos=self.attributes.length_global*np.array([np.cos(direction),np.sin(direction),0])+self.atomic_clusters[adjacency[0]]["pos"]
+        pos=self.attributes.length_global*np.array([np.cos(direction),np.sin(direction),0])+self.atomic_clusters[adjacency]["pos"]
 
         if text!=None:
             self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
                                         "pos":pos,
-                                        "adj":adjacency,
+                                        "adj":[adjacency],
                                         Bond:[]}
 
-            for i in range(len(adjacency)):
-                if self.atomic_clusters[adjacency[i]][Mobject]!=None:
-                    self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
-                                                                 start=self.atomic_clusters[adjacency[i]]["pos"],
-                                                                 end=self.atomic_clusters[name]["pos"],
-                                                                 start_edge=True,
-                                                                 end_edge=True,
-                                                                 attributes=self.attributes))
-                else:
-                    self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
-                                             start=self.atomic_clusters[adjacency[i]]["pos"],
-                                             end=self.atomic_clusters[name]["pos"],
-                                             start_edge=False,
-                                             end_edge=True,
-                                             attributes=self.attributes))
+            if self.atomic_clusters[adjacency][Mobject]!=None:
+                self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
+                                                                start=self.atomic_clusters[adjacency]["pos"],
+                                                                end=self.atomic_clusters[name]["pos"],
+                                                                start_edge=True,
+                                                                end_edge=True,
+                                                                attributes=self.attributes))
+            else:
+                self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
+                                            start=self.atomic_clusters[adjacency]["pos"],
+                                            end=self.atomic_clusters[name]["pos"],
+                                            start_edge=False,
+                                            end_edge=True,
+                                            attributes=self.attributes))
 
         else:
             self.atomic_clusters[name]={Mobject:None,
                                         "pos":pos,
-                                        "adj":adjacency,
+                                        "adj":[adjacency],
                                         Bond:[]}
 
-            for i in range(len(adjacency)):
-                if self.atomic_clusters[adjacency[i]][Mobject]!=None:
-                    self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
-                                                                 start=self.atomic_clusters[adjacency[i]]["pos"],
-                                                                 end=self.atomic_clusters[name]["pos"],
-                                                                 start_edge=True,
-                                                                 end_edge=False,
-                                                                 attributes=self.attributes))
-                else:
-                    self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
-                                             start=self.atomic_clusters[adjacency[i]]["pos"],
-                                             end=self.atomic_clusters[name]["pos"],
-                                             start_edge=False,
-                                             end_edge=False,
-                                             attributes=self.attributes))
+            if self.atomic_clusters[adjacency][Mobject]!=None:
+                self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
+                                                                start=self.atomic_clusters[adjacency]["pos"],
+                                                                end=self.atomic_clusters[name]["pos"],
+                                                                start_edge=True,
+                                                                end_edge=False,
+                                                                attributes=self.attributes))
+            else:
+                self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
+                                            start=self.atomic_clusters[adjacency]["pos"],
+                                            end=self.atomic_clusters[name]["pos"],
+                                            start_edge=False,
+                                            end_edge=False,
+                                            attributes=self.attributes))
 
-        for i in range(len(adjacency)):
-            self.atomic_clusters[adjacency[i]]["adj"].append(name)
-            self.atomic_clusters[adjacency[i]][Bond].append(self.atomic_clusters[name][Bond][i])
-            self.add(self.atomic_clusters[adjacency[i]][Bond])
+        self.atomic_clusters[adjacency]["adj"].append(name)
+        self.atomic_clusters[adjacency][Bond].append(self.atomic_clusters[name][Bond][0])
+        self.add(self.atomic_clusters[name][Bond][0])
 
         if text!=None:
             self.add(self.atomic_clusters[name][Mobject])
