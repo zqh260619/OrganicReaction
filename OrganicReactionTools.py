@@ -475,6 +475,23 @@ class StructuralFormula(VGroup):
             
         self.add(self.charges[text])
 
+    def add_bond(self,*,
+                 start:str,
+                 end:str,
+                 bond_type:BondType):
+
+        bond=Bond(bond_type=bond_type,
+                  start=self.atomic_clusters[start]["pos"],
+                  end=self.atomic_clusters[end]["pos"],
+                  start_edge=(self.atomic_clusters[start][Mobject]!=None),
+                  end_edge=(self.atomic_clusters[end][Mobject]!=None),
+                  attributes=self.attributes)
+
+        self.add(bond)
+
+        self.atomic_clusters[start][Bond].append(bond)
+        self.atomic_clusters[end][Bond].append(bond)
+
 #Animation classes
 class OpacityEffect(Animation):
     def __init__(self,*,mobject:Mobject,initial_opacity:float,final_opacity:float,run_time:float,func:Callable[[float],float]=linear,**kwargs):
