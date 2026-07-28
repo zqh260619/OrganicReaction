@@ -55,7 +55,7 @@ class OutBond(Polygon):
 
         super().__init__(
             *vertices,
-            color=color,
+            color=attributes.color,
             fill_opacity=1,
             stroke_width=0
         )
@@ -75,7 +75,7 @@ class InBond(VGroup):
         for i in range(1,num+1):
             start_point_temp=end_point_1*i/num+start_point*(num-i)/num
             end_point_temp=end_point_2*i/num+start_point*(num-i)/num
-            temp=Line(start=start_point_temp,end=end_point_temp,color=color,stroke_width=2)
+            temp=Line(start=start_point_temp,end=end_point_temp,color=attributes.color,stroke_width=2)
             lines.append(temp)
 
         super().__init__(*lines)
@@ -86,7 +86,7 @@ class DashedBond(DashedLine):
         start_point=start+np.array([np.cos(direction),np.sin(direction),0])*attributes.edge_global*start_edge
         end_point=start+np.array([np.cos(direction),np.sin(direction),0])*\
             (attributes.length_global*attributes.ratio_transition_state_dashedbond-attributes.edge_global*end_edge)
-        super.__init__(color=attributes.color,start=start_point,end=end_point,
+        super().__init__(color=attributes.color,start=start_point,end=end_point,
                        dash_length=attributes.dashed_length_dashedbond,
                        dashed_ratio=attributes.dashed_ratio_dashedbond)
 
@@ -95,84 +95,79 @@ class NormalBond(Line):
 
         start_point=start+np.array([np.cos(direction),np.sin(direction),0])*start_edge*attributes.edge_global
         end_point=start+np.array([np.cos(direction),np.sin(direction),0])*(attributes.length_global-end_edge*attributes.edge_global)
-        super().__init__(start=start_point,end=end_point,color=color)
+        super().__init__(start=start_point,end=end_point,color=attributes.color)
 
 class NegativeCharge(VGroup):
-    def __init__(self,*,color=WHITE,text:MathTex,radius=0.05,
-                 ratio=0.6,stroke_width=1.2,pos:Vector3D,edge:float):
+    def __init__(self,*,text:MathTex,pos:Vector3D,attributes:'AttributeHolder'):
 
-        position=text.get_corner(pos)+pos*edge
+        position=text.get_corner(pos)+pos*attributes.edge_charge
 
-        circle=Circle(radius=radius,color=color,arc_center=position,
-                      stroke_width=stroke_width)
+        circle=Circle(radius=attributes.radius_negative,color=attributes.color,arc_center=position,
+                      stroke_width=attributes.stroke_width_negative)
 
-        line_start=[position[0]-radius*ratio,position[1],position[2]]
-        line_end=[position[0]+radius*ratio,position[1],position[2]]
-        line=Line(start=line_start,end=line_end,color=color,stroke_width=stroke_width)
+        line_start=[position[0]-attributes.radius_negative*attributes.ratio_negative,position[1],position[2]]
+        line_end=[position[0]+attributes.radius_negative*attributes.ratio_negative,position[1],position[2]]
+        line=Line(start=line_start,end=line_end,color=attributes.color,stroke_width=attributes.stroke_width_negative)
 
         super().__init__(circle,line)
 
 class PositiveCharge(VGroup):
-    def __init__(self,*,color=WHITE,text:MathTex,radius=0.05,
-                 ratio=0.6,stroke_width=1.2,pos:Vector3D,edge:float):
+    def __init__(self,*,text:MathTex,pos:Vector3D,attributes:'AttributeHolder'):
 
-        position=text.get_corner(pos)+pos*edge
+        position=text.get_corner(pos)+pos*attributes.edge_charge
 
-        circle=Circle(radius=radius,color=color,arc_center=position,
-                      stroke_width=stroke_width)
+        circle=Circle(radius=attributes.radius_positive,color=attributes.color,arc_center=position,
+                      stroke_width=attributes.stroke_width_positive)
 
-        line1_start=[position[0]-radius*ratio,position[1],position[2]]
-        line1_end=[position[0]+radius*ratio,position[1],position[2]]
-        line1=Line(start=line1_start,end=line1_end,color=color,stroke_width=stroke_width)
+        line1_start=[position[0]-attributes.radius_positive*attributes.ratio_positive,position[1],position[2]]
+        line1_end=[position[0]+attributes.radius_positive*attributes.ratio_positive,position[1],position[2]]
+        line1=Line(start=line1_start,end=line1_end,color=attributes.color,stroke_width=attributes.stroke_width_positive)
 
-        line2_start=[position[0],position[1]-radius*ratio,position[2]]
-        line2_end=[position[0],position[1]+radius*ratio,position[2]]
-        line2=Line(start=line2_start,end=line2_end,color=color,stroke_width=stroke_width)
+        line2_start=[position[0],position[1]-attributes.radius_positive*attributes.ratio_positive,position[2]]
+        line2_end=[position[0],position[1]+attributes.radius_positive*attributes.ratio_positive,position[2]]
+        line2=Line(start=line2_start,end=line2_end,color=attributes.color,stroke_width=attributes.stroke_width_positive)
 
         super().__init__(circle,line1,line2)
 
 class SingleCharge(Circle):
-    def __init__(self,*,color=WHITE,text:MathTex,radius:float=0.01,
-                 pos:Vector3D,edge:float=default_charge_edge):
+    def __init__(self,*,text:MathTex,pos:Vector3D,attributes:'AttributeHolder'):
 
-        position=text.get_corner(pos)+pos*edge
+        position=text.get_corner(pos)+pos*attributes.edge_charge
 
-        super().__init__(radius=radius,color=color,arc_center=position,fill_opacity=1)
+        super().__init__(radius=attributes.radius_single,color=attributes.color,arc_center=position,fill_opacity=1)
 
 class NegativeChargeByCoordinate(VGroup):
-    def __init__(self,*,color=WHITE,radius=0.05,
-                 ratio=0.6,stroke_width=1.2,position:Vector3D):
+    def __init__(self,*,position:Vector3D,attributes:'AttributeHolder'):
 
-        circle=Circle(radius=radius,color=color,arc_center=position,
-                      stroke_width=stroke_width)
+        circle=Circle(radius=attributes.radius_negative,color=attributes.color,arc_center=position,
+                      stroke_width=attributes.stroke_width_negative)
 
-        line_start=[position[0]-radius*ratio,position[1],position[2]]
-        line_end=[position[0]+radius*ratio,position[1],position[2]]
-        line=Line(start=line_start,end=line_end,color=color,stroke_width=stroke_width)
+        line_start=[position[0]-attributes.radius_negative*attributes.ratio_negative,position[1],position[2]]
+        line_end=[position[0]+attributes.radius_negative*attributes.ratio_negative,position[1],position[2]]
+        line=Line(start=line_start,end=line_end,color=attributes.color,stroke_width=attributes.stroke_width_negative)
 
         super().__init__(circle,line)
 
 class PositiveChargeByCoordinate(VGroup):
-    def __init__(self,*,color=WHITE,radius=0.05,
-                 ratio=0.6,stroke_width=1.2,position:Vector3D):
+    def __init__(self,*,position:Vector3D,attributes:'AttributeHolder'):
 
-        circle=Circle(radius=radius,color=color,arc_center=position,
-                      stroke_width=stroke_width)
+        circle=Circle(radius=attributes.radius_positive,color=attributes.color,arc_center=position,
+                      stroke_width=attributes.stroke_width_positive)
 
-        line1_start=[position[0]-radius*ratio,position[1],position[2]]
-        line1_end=[position[0]+radius*ratio,position[1],position[2]]
-        line1=Line(start=line1_start,end=line1_end,color=color,stroke_width=stroke_width)
+        line1_start=[position[0]-attributes.radius_positive*attributes.ratio_positive,position[1],position[2]]
+        line1_end=[position[0]+attributes.radius_positive*attributes.ratio_positive,position[1],position[2]]
+        line1=Line(start=line1_start,end=line1_end,color=attributes.color,stroke_width=attributes.stroke_width_positive)
 
-        line2_start=[position[0],position[1]-radius*ratio,position[2]]
-        line2_end=[position[0],position[1]+radius*ratio,position[2]]
-        line2=Line(start=line2_start,end=line2_end,color=color,stroke_width=stroke_width)
+        line2_start=[position[0],position[1]-attributes.radius_positive*attributes.ratio_positive,position[2]]
+        line2_end=[position[0],position[1]+attributes.radius_positive*attributes.ratio_positive,position[2]]
+        line2=Line(start=line2_start,end=line2_end,color=attributes.color,stroke_width=attributes.stroke_width_positive)
 
         super().__init__(circle,line1,line2)
 
 class SingleChargeByCoordinate(Circle):
-    def __init__(self,*,color=WHITE,radius:float=0.01,position:Vector3D):
+    def __init__(self,*,position:Vector3D,attributes:'AttributeHolder'):
 
-        super().__init__(radius=radius,color=color,arc_center=position,fill_opacity=1)
+        super().__init__(radius=attributes.radius_single,color=attributes.color,arc_center=position,fill_opacity=1)
 
 class BracketBetweenPoints(VGroup):
     def __init__(self,*,start:Vector3D,end:Vector3D,ratio_edge=0.1,**kwargs):
@@ -247,6 +242,14 @@ class BondType(Enum):
     OUT_BOND=OutBond
     DASHED_BOND=DashedBond
 
+class ChargeType(Enum):
+    POSITIVE=PositiveCharge
+    NEGATIVE=NegativeCharge
+    SINGLE=SingleCharge
+    POSITIVE_COORDINATE=PositiveChargeByCoordinate
+    NEGATIVE_COORDINATE=NegativeChargeByCoordinate
+    SINGLE_COORDINATE=SingleChargeByCoordinate
+
 class AtomicCluster(MathTex):
     def __init__(self,*,
                  text:str,
@@ -267,7 +270,15 @@ class AttributeHolder:
                  length_global:float,
                  color:ManimColor,
                  edge_global:float,
-                 font_size:float):
+                 font_size:float,
+                 radius_negative:float,
+                 ratio_negative:float,
+                 stroke_width_negative:float,
+                 edge_charge:float,
+                 radius_positive:float,
+                 ratio_positive:float,
+                 stroke_width_positive:float,
+                 radius_single:float):
 
         self.base_ratio_outbond=base_ratio_outbond
         self.base_ratio_inbond=base_ratio_inbond
@@ -279,6 +290,14 @@ class AttributeHolder:
         self.color=color
         self.edge_global=edge_global
         self.font_size=font_size
+        self.radius_negative=radius_negative
+        self.ratio_negative=ratio_negative
+        self.stroke_width_negative=stroke_width_negative
+        self.edge_charge=edge_charge
+        self.radius_positive=radius_positive
+        self.ratio_positive=ratio_positive
+        self.stroke_width_positive=stroke_width_positive
+        self.radius_single=radius_single
 
 class Bond(VGroup):
     def __init__(self,*,
@@ -301,13 +320,32 @@ class Bond(VGroup):
         self.start_edge=start_edge
         self.end_edge=end_edge
         angle_vector=end-start
-        self.direction=np.atan2(angle_vector[1],angle_vector[0])
+        self.direction=np.arctan2(angle_vector[1],angle_vector[0])
 
         bond=self.bond_type.value(start=self.start,direction=self.direction,
                                   start_edge=self.start_edge,end_edge=self.end_edge,
                                   attributes=attributes)
 
         self.add(bond)
+
+class Charge(VGroup):
+    def __init__(self,*,
+                 charge_type:ChargeType,
+                 text:AtomicCluster|Vector3D,
+                 pos:Vector3D,
+                 attributes:AttributeHolder):
+
+        super().__init__(color=attributes.color)
+
+        self.charge_type=charge_type
+        self.text=text
+
+        if isinstance(text,AtomicCluster):
+            charge=self.charge_type.value(text=text,pos=pos,attributes=attributes)
+        else:
+            charge=self.charge_type.value(position=pos*attributes.edge_charge+text,attributes=attributes)
+
+        self.add(charge)
 
 class StructuralFormula(VGroup):
     def __init__(self,*,
@@ -321,6 +359,14 @@ class StructuralFormula(VGroup):
                  color=WHITE,
                  edge_global=edge,
                  font_size=txt_size,
+                 radius_negative=0.05,
+                 ratio_negative=0.6,
+                 stroke_width_negative=1.2,
+                 edge_charge=default_charge_edge,
+                 radius_positive=0.05,
+                 ratio_positive=0.6,
+                 stroke_width_positive=1.2,
+                 radius_single=0.01,
                  name:str,
                  pos:Vector3D,
                  text:str|None=None,
@@ -335,7 +381,15 @@ class StructuralFormula(VGroup):
                                         length_global=length_global,
                                         color=color,
                                         edge_global=edge_global,
-                                        font_size=font_size)
+                                        font_size=font_size,
+                                        radius_negative=radius_negative,
+                                        ratio_negative=ratio_negative,
+                                        stroke_width_negative=stroke_width_negative,
+                                        edge_charge=edge_charge,
+                                        radius_positive=radius_positive,
+                                        ratio_positive=ratio_positive,
+                                        stroke_width_positive=stroke_width_positive,
+                                        radius_single=radius_single)
 
         super().__init__(color=self.attributes.color)
 
@@ -344,18 +398,22 @@ class StructuralFormula(VGroup):
         if text!=None:
             self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
                                         "pos":pos,
-                                        "adjs":[],
+                                        "adj":[],
                                         Bond:[]}
             self.add(self.atomic_clusters[name][Mobject])
         else:
-            self.atomic_clusters[name]={Mobject:None,"pos":pos,"adjs":[],Bond:[]}
+            self.atomic_clusters[name]={Mobject:None,"pos":pos,"adj":[],Bond:[]}
+
+        self.charges={}
 
     def add_atom(self,*,
                  name:str,
-                 pos:Vector3D,
+                 direction:float,
                  text:str|None=None,
                  bond_type:list[BondType],
                  adjacency:list[str]):
+
+        pos=self.attributes.length_global*np.array([np.cos(direction),np.sin(direction),0])+self.atomic_clusters[adjacency[0]]["pos"]
 
         if text!=None:
             self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
@@ -364,17 +422,17 @@ class StructuralFormula(VGroup):
                                         Bond:[]}
 
             for i in range(len(adjacency)):
-                if self.atomic_clusters[adjacency[i]]!=None:
+                if self.atomic_clusters[adjacency[i]][Mobject]!=None:
                     self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
-                                                                 start=self.atomic_clusters[adjacency[i]][Mobject],
-                                                                 end=self.atomic_clusters[name][Mobject],
+                                                                 start=self.atomic_clusters[adjacency[i]]["pos"],
+                                                                 end=self.atomic_clusters[name]["pos"],
                                                                  start_edge=True,
                                                                  end_edge=True,
                                                                  attributes=self.attributes))
                 else:
                     self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
-                                             start=self.atomic_clusters[adjacency[i]][Mobject],
-                                             end=self.atomic_clusters[name][Mobject],
+                                             start=self.atomic_clusters[adjacency[i]]["pos"],
+                                             end=self.atomic_clusters[name]["pos"],
                                              start_edge=False,
                                              end_edge=True,
                                              attributes=self.attributes))
@@ -386,23 +444,40 @@ class StructuralFormula(VGroup):
                                         Bond:[]}
 
             for i in range(len(adjacency)):
-                if self.atomic_clusters[adjacency[i]]!=None:
+                if self.atomic_clusters[adjacency[i]][Mobject]!=None:
                     self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
-                                                                 start=self.atomic_clusters[adjacency[i]][Mobject],
-                                                                 end=self.atomic_clusters[name][Mobject],
+                                                                 start=self.atomic_clusters[adjacency[i]]["pos"],
+                                                                 end=self.atomic_clusters[name]["pos"],
                                                                  start_edge=True,
                                                                  end_edge=False,
                                                                  attributes=self.attributes))
                 else:
                     self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type[i],
-                                             start=self.atomic_clusters[adjacency[i]][Mobject],
-                                             end=self.atomic_clusters[name][Mobject],
+                                             start=self.atomic_clusters[adjacency[i]]["pos"],
+                                             end=self.atomic_clusters[name]["pos"],
                                              start_edge=False,
                                              end_edge=False,
                                              attributes=self.attributes))
 
         for i in range(len(adjacency)):
             self.atomic_clusters[adjacency[i]]["adj"].append(name)
+            self.atomic_clusters[adjacency[i]][Bond].append(self.atomic_clusters[name][Bond][i])
+            self.add(self.atomic_clusters[adjacency[i]][Bond])
+
+        if text!=None:
+            self.add(self.atomic_clusters[name][Mobject])
+
+    def add_charge(self,*,
+                   text:str,
+                   pos:Vector3D,
+                   charge_type:ChargeType):
+
+        if self.atomic_clusters[text][Mobject]!=None:
+            self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject],pos=pos,attributes=self.attributes)
+        else:
+            self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes)
+            
+        self.add(self.charges[text])
 
 #Animation classes
 class OpacityEffect(Animation):
