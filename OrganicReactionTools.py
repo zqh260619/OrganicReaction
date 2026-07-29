@@ -96,6 +96,76 @@ class NormalBond(Line):
         end_point=start+np.array([np.cos(direction),np.sin(direction),0])*(attributes.length_global-end_edge*attributes.edge_global)
         super().__init__(start=start_point,end=end_point,color=attributes.color)
 
+class DoubleBond(VGroup):
+    def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder',
+                 side:int,start_side_edge:bool,end_side_edge:bool):
+
+        """
+        手平行于屏幕平面，手掌心向屏幕内侧，食指从start指向end，大拇指的方向为较短的键的位置。
+        side=0时：双键左右对称，两侧一样长。
+        side=1时：右手确定较短的键的位置。
+        side=-1时：左手确定较短的键的位置。
+        """
+
+        super().__init__(color=attributes.color)
+
+        direction_vector=np.array([np.cos(direction),np.sin(direction),0])
+        normal_vector=np.array([-np.sin(direction),np.cos(direction),0])
+        end=start+direction_vector*attributes.length_global
+
+        if side==0:
+
+            start1=start+direction_vector*start_edge*attributes.edge_global+0.5*normal_vector*attributes.length_global*attributes.edge_ratio_double
+            start2=start+direction_vector*start_edge*attributes.edge_global-0.5*normal_vector*attributes.length_global*attributes.edge_ratio_double
+            end1=end-direction_vector*end_edge*attributes.edge_global+0.5*normal_vector*attributes.length_global*attributes.edge_ratio_double
+            end2=end-direction_vector*end_edge*attributes.edge_global-0.5*normal_vector*attributes.length_global*attributes.edge_ratio_double
+
+        elif side==1:
+
+            start1=start+direction_vector*start_edge*attributes.edge_global
+            end1=end-direction_vector*end_edge*attributes.edge_global
+            start2=start+direction_vector*(start_edge*attributes.edge_global+start_side_edge*attributes.edge_ratio_double)\
+                +normal_vector*attributes.length_global*attributes.distance_double
+            end2=end-direction_vector*(end_edge*attributes.edge_global+end_side_edge*attributes.edge_ratio_double)\
+                +normal_vector*attributes.length_global*attributes.distance_double
+
+        elif side==-1:
+
+            start1=start+direction_vector*start_edge*attributes.edge_global
+            end1=end-direction_vector*end_edge*attributes.edge_global
+            start2=start+direction_vector*(start_edge*attributes.edge_global+start_side_edge*attributes.edge_ratio_double)\
+                -normal_vector*attributes.length_global*attributes.distance_double
+            end2=end-direction_vector*(end_edge*attributes.edge_global+end_side_edge*attributes.edge_ratio_double)\
+                -normal_vector*attributes.length_global*attributes.distance_double
+
+        bond1=Line(start=start1,end=end1,color=attributes.color)
+        bond2=Line(start=start2,end=end2,color=attributes.color)
+
+        self.add(bond1,bond2)
+
+class TripleBond(VGroup):
+    def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder'):
+
+        super().__init__(color=attributes.color)
+
+        direction_vector=np.array([np.cos(direction),np.sin(direction),0])
+        normal_vector=np.array([-np.sin(direction),np.cos(direction),0])
+        end=start+direction_vector*attributes.length_global
+
+        start1=start+direction_vector*start_edge*attributes.edge_global
+        end1=end-direction_vector*end_edge*attributes.edge_global
+        bond1=Line(start=start1,end=end1,color=attributes.color)
+
+        start2=start+direction_vector*start_edge*attributes.edge_global-normal_vector*attributes.length_global*attributes.distance_triple
+        end2=end-direction_vector*end_edge*attributes.edge_global-normal_vector*attributes.length_global*attributes.distance_triple
+        bond2=Line(start=start2,end=end2,color=attributes.color)
+
+        start3=start+direction_vector*start_edge*attributes.edge_global+normal_vector*attributes.length_global*attributes.distance_triple
+        end3=end-direction_vector*end_edge*attributes.edge_global+normal_vector*attributes.length_global*attributes.distance_triple
+        bond3=Line(start=start3,end=end3,color=attributes.color)
+
+        self.add(bond1,bond2,bond3)
+
 class NegativeCharge(VGroup):
     def __init__(self,*,text:MathTex,pos:Vector3D,attributes:'AttributeHolder'):
 
@@ -240,6 +310,8 @@ class BondType(Enum):
     IN_BOND=InBond
     OUT_BOND=OutBond
     DASHED_BOND=DashedBond
+    DOUBLE_BOND=DoubleBond
+    TRIPLE_BOND=TripleBond
 
 class ChargeType(Enum):
     POSITIVE=PositiveCharge
@@ -277,7 +349,10 @@ class AttributeHolder:
                  radius_positive:float,
                  ratio_positive:float,
                  stroke_width_positive:float,
-                 radius_single:float):
+                 radius_single:float,
+                 distance_double:float,
+                 edge_ratio_double:float,
+                 distance_triple:float):
 
         self.base_ratio_outbond=base_ratio_outbond
         self.base_ratio_inbond=base_ratio_inbond
@@ -297,6 +372,9 @@ class AttributeHolder:
         self.ratio_positive=ratio_positive
         self.stroke_width_positive=stroke_width_positive
         self.radius_single=radius_single
+        self.distance_double=distance_double
+        self.edge_ratio_double=edge_ratio_double
+        self.distance_triple=distance_triple
 
 class Bond(VGroup):
     def __init__(self,*,
@@ -305,7 +383,10 @@ class Bond(VGroup):
                  end:AtomicCluster|Vector3D,
                  start_edge=False,
                  end_edge=True,
-                 attributes:AttributeHolder):
+                 attributes:AttributeHolder,
+                 side:int|None=None,
+                 start_side_edge:bool|None=None,
+                 end_side_edge:bool|None=None):
 
         super().__init__(color=attributes.color)
 
@@ -321,9 +402,15 @@ class Bond(VGroup):
         angle_vector=end-start
         self.direction=np.arctan2(angle_vector[1],angle_vector[0])
 
-        bond=self.bond_type.value(start=self.start,direction=self.direction,
-                                  start_edge=self.start_edge,end_edge=self.end_edge,
-                                  attributes=attributes)
+        if bond_type==BondType.DOUBLE_BOND:
+            bond=self.bond_type.value(start=self.start,direction=self.direction,
+                                      start_edge=self.start_edge,end_edge=self.end_edge,
+                                      attributes=attributes,
+                                      side=side,start_side_edge=start_side_edge,end_side_edge=end_side_edge)
+        else:
+            bond=self.bond_type.value(start=self.start,direction=self.direction,
+                                      start_edge=self.start_edge,end_edge=self.end_edge,
+                                      attributes=attributes)
 
         self.add(bond)
 
@@ -366,6 +453,9 @@ class StructuralFormula(VGroup):
                  ratio_positive=0.6,
                  stroke_width_positive=1.2,
                  radius_single=0.01,
+                 distance_double=0.12,
+                 edge_ratio_double=0.08,
+                 distance_triple=0.12,
                  name:str,
                  pos:Vector3D,
                  text:str|None=None,
@@ -388,7 +478,10 @@ class StructuralFormula(VGroup):
                                         radius_positive=radius_positive,
                                         ratio_positive=ratio_positive,
                                         stroke_width_positive=stroke_width_positive,
-                                        radius_single=radius_single)
+                                        radius_single=radius_single,
+                                        distance_double=distance_double,
+                                        edge_ratio_double=edge_ratio_double,
+                                        distance_triple=distance_triple)
 
         super().__init__(color=self.attributes.color)
 
@@ -410,7 +503,10 @@ class StructuralFormula(VGroup):
                  direction:float,
                  text:str|None=None,
                  bond_type:BondType,
-                 adjacency:str):
+                 adjacency:str,
+                 side:int|None=None,
+                 start_side_edge:bool|None=None,
+                 end_side_edge:bool|None=None):
 
         pos=self.attributes.length_global*np.array([np.cos(direction),np.sin(direction),0])+self.atomic_clusters[adjacency]["pos"]
 
@@ -419,42 +515,21 @@ class StructuralFormula(VGroup):
                                         "pos":pos,
                                         "adj":[adjacency],
                                         Bond:[]}
-
-            if self.atomic_clusters[adjacency][Mobject]!=None:
-                self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
-                                                                start=self.atomic_clusters[adjacency]["pos"],
-                                                                end=self.atomic_clusters[name]["pos"],
-                                                                start_edge=True,
-                                                                end_edge=True,
-                                                                attributes=self.attributes))
-            else:
-                self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
-                                            start=self.atomic_clusters[adjacency]["pos"],
-                                            end=self.atomic_clusters[name]["pos"],
-                                            start_edge=False,
-                                            end_edge=True,
-                                            attributes=self.attributes))
-
         else:
             self.atomic_clusters[name]={Mobject:None,
                                         "pos":pos,
                                         "adj":[adjacency],
                                         Bond:[]}
 
-            if self.atomic_clusters[adjacency][Mobject]!=None:
-                self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
-                                                                start=self.atomic_clusters[adjacency]["pos"],
-                                                                end=self.atomic_clusters[name]["pos"],
-                                                                start_edge=True,
-                                                                end_edge=False,
-                                                                attributes=self.attributes))
-            else:
-                self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
-                                            start=self.atomic_clusters[adjacency]["pos"],
-                                            end=self.atomic_clusters[name]["pos"],
-                                            start_edge=False,
-                                            end_edge=False,
-                                            attributes=self.attributes))
+        self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
+                                                     start=self.atomic_clusters[adjacency]["pos"],
+                                                     end=self.atomic_clusters[name]["pos"],
+                                                     start_edge=(self.atomic_clusters[adjacency][Mobject]!=None),
+                                                     end_edge=(self.atomic_clusters[name][Mobject]!=None),
+                                                     attributes=self.attributes,
+                                                     side=side,
+                                                     start_side_edge=start_side_edge,
+                                                     end_side_edge=end_side_edge))
 
         self.atomic_clusters[adjacency]["adj"].append(name)
         self.atomic_clusters[adjacency][Bond].append(self.atomic_clusters[name][Bond][0])
@@ -468,24 +543,36 @@ class StructuralFormula(VGroup):
                    pos:Vector3D,
                    charge_type:ChargeType):
 
-        if self.atomic_clusters[text][Mobject]!=None:
-            self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject],pos=pos,attributes=self.attributes)
-        else:
-            self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes)
+        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes)
             
         self.add(self.charges[text])
 
     def add_bond(self,*,
                  start:str,
                  end:str,
-                 bond_type:BondType):
+                 bond_type:BondType,
+                 side:int|None=None,
+                 start_side_edge:bool|None=None,
+                 end_side_edge:bool|None=None):
 
-        bond=Bond(bond_type=bond_type,
-                  start=self.atomic_clusters[start]["pos"],
-                  end=self.atomic_clusters[end]["pos"],
-                  start_edge=(self.atomic_clusters[start][Mobject]!=None),
-                  end_edge=(self.atomic_clusters[end][Mobject]!=None),
-                  attributes=self.attributes)
+        if bond_type==BondType.DOUBLE_BOND:
+            bond=Bond(bond_type=bond_type,
+                      start=self.atomic_clusters[start]["pos"],
+                      end=self.atomic_clusters[end]["pos"],
+                      start_edge=(self.atomic_clusters[start][Mobject]!=None),
+                      end_edge=(self.atomic_clusters[end][Mobject]!=None),
+                      attributes=self.attributes,
+                      side=side,
+                      start_side_edge=start_side_edge,
+                      end_side_edge=end_side_edge)
+
+        else:
+            bond=Bond(bond_type=bond_type,
+                      start=self.atomic_clusters[start]["pos"],
+                      end=self.atomic_clusters[end]["pos"],
+                      start_edge=(self.atomic_clusters[start][Mobject]!=None),
+                      end_edge=(self.atomic_clusters[end][Mobject]!=None),
+                      attributes=self.attributes)
 
         self.add(bond)
 
@@ -597,3 +684,26 @@ def brownian_motion(items:Union[Mobject,list],num:int,time:float=1.0):
                     run_time=node[i] - node[i-1],
                     rate_func=smooth)]
         return rslt
+
+#default settings
+DEFAULT_ATTRIBUTES=AttributeHolder(base_ratio_outbond=0.2,
+                                   base_ratio_inbond=0.2,
+                                   num_inbond=5,
+                                   dashed_length_dashedbond=0.1,
+                                   dashed_ratio_dashedbond=0.5,
+                                   ratio_transition_state_dashedbond=bond_length*ratio_transition_state,
+                                   length_global=bond_length,
+                                   color=WHITE,
+                                   edge_global=edge,
+                                   font_size=txt_size,
+                                   radius_negative=0.05,
+                                   ratio_negative=0.6,
+                                   stroke_width_negative=1.2,
+                                   edge_charge=default_charge_edge,
+                                   radius_positive=0.05,
+                                   ratio_positive=0.6,
+                                   stroke_width_positive=1.2,
+                                   radius_single=0.01,
+                                   distance_double=0.12,
+                                   edge_ratio_double=0.08,
+                                   distance_triple=0.12)
