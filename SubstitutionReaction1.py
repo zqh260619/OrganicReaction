@@ -1,6 +1,8 @@
 #manim {SubstitutionReaction1.py} [SceneName] [-p]/*预览*/ [-qk/-qh/-qm/-ql]/*分辨率(由高到低)*/
 #manim SubstitutionReaction1.py test -pqh
 
+"""当前版本的OrganicReactionTools.py已经不支持本文件，本文件需要至少2026-07-22之前的OrganicReactionTools.py版本才能正常生成视频"""
+
 from OrganicReactionTools import *
 
 class test(Scene):

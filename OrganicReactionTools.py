@@ -1,7 +1,7 @@
 from manim import *
 from manim.typing import Vector3D
 import numpy as np
-from typing import Iterable,Union,Callable
+from typing import Callable
 from enum import Enum
 
 mytemplate = TexTemplate()
@@ -247,7 +247,7 @@ class BracketBetweenPoints(VGroup):
         the lower end is the ending point
         """
 
-        direction=[x-y for x,y in zip(end,start)]
+        direction=np.array([x-y for x,y in zip(end,start)])
         direction/=np.sqrt(direction[0]**2+direction[1]**2)
         edge_direction=[-direction[1],direction[0],0]
 
@@ -264,6 +264,8 @@ class BracketBetweenPoints(VGroup):
 class BezierArrow(VGroup):
     def __init__(self,*,start_anchor:Vector3D,start_handle:Vector3D,end_anchor:Vector3D,end_handle:Vector3D,
                  color=WHITE,stroke_width=2,arrow_size=-1.0,opacity=1.0,**kwargs):
+
+        """此类中的魔法数字用于调整箭头的大小和位置，使得箭头与曲线不重叠且中心对齐，建议不要随意修改"""
 
         if arrow_size==-1:
             arrow_size=np.sqrt((start_anchor[0]-end_anchor[0])**2+(start_anchor[1]-end_anchor[1])**2)*0.15
@@ -399,7 +401,7 @@ class Bond(VGroup):
             self.end=self.end.get_center()
         self.start_edge=start_edge
         self.end_edge=end_edge
-        angle_vector=end-start
+        angle_vector=self.end-self.start
         self.direction=np.arctan2(angle_vector[1],angle_vector[0])
 
         if bond_type==BondType.DOUBLE_BOND:
@@ -578,6 +580,36 @@ class StructuralFormula(VGroup):
 
         self.atomic_clusters[start][Bond].append(bond)
         self.atomic_clusters[end][Bond].append(bond)
+        self.atomic_clusters[start]["adj"].append(end)
+        self.atomic_clusters[end]["adj"].append(start)
+
+    def delete_atom(self,*,
+                    names:str|list[str],
+                    anim:type[Animation]=FadeOut)->Animation:
+
+        if isinstance(names,str):
+            names=[names]
+
+        deletes=[]
+        
+        for name in names:
+
+            if self.atomic_clusters[name][Mobject]!=None:
+                deletes.append(self.atomic_clusters[name][Mobject])
+                self.remove(self.atomic_clusters[name][Mobject])
+            for bond in self.atomic_clusters[name][Bond]:
+                deletes.append(bond)
+                self.remove(bond)
+            if name in self.charges:
+                deletes.append(self.charges[name])
+                self.remove(self.charges[name])
+                self.charges.pop(name)
+            for adjacency in self.atomic_clusters[name]["adj"]:
+                self.atomic_clusters[adjacency][Bond]=[bond for bond in self.atomic_clusters[adjacency][Bond] if bond not in self.atomic_clusters[name][Bond]]
+                self.atomic_clusters[adjacency]["adj"].remove(name)
+            self.atomic_clusters.pop(name)
+
+        return anim(*deletes)
 
 #Animation classes
 class OpacityEffect(Animation):
@@ -636,20 +668,20 @@ def play_timeline(scene:Scene,timeline:dict[float,Animation]):
     if ending>time:
         scene.wait(ending-pretime)
 
-def merging_timeline(timeline1:dict[float,Union[Iterable[Animation],Animation]],timeline2:dict[float,Union[Iterable[Animation],Animation]]):
+def merging_timeline(timeline1:dict[float,list[Animation]|Animation],timeline2:dict[float,list[Animation]|Animation]):
     rslt=timeline1.copy()
     for time,anims in timeline2.items():
         if time in rslt:
-            if not isinstance(rslt[time],Iterable):
+            if not isinstance(rslt[time],list):
                 rslt[time]=[rslt[time]]
-            if not isinstance(anims,Iterable):
+            if not isinstance(anims,list):
                 anims=[anims]
             rslt[time].extend(anims)
         else:
             rslt[time]=anims
     return rslt
 
-def brownian_motion(items:Union[Mobject,list],num:int,time:float=1.0):
+def brownian_motion(items:Mobject|list,num:int,time:float=1.0):
     if isinstance(items,list):
         temp={}
         for item in items:
