@@ -323,6 +323,53 @@ class ChargeType(Enum):
     NEGATIVE_COORDINATE=NegativeChargeByCoordinate
     SINGLE_COORDINATE=SingleChargeByCoordinate
 
+class Locator:
+    """原子定位器，封装新原子相对于邻接原子的位置计算。
+
+    支持两种模式：
+    - 角度模式：指定相对于邻接原子的极角（弧度或度）
+    - 坐标模式：直接指定绝对坐标
+
+    提供常用方向的工厂方法：Locator.up(), Locator.down(), Locator.left(), Locator.right()
+    """
+    def __init__(self,*,radians:float|None=None,degrees:float|None=None,coord:Vector3D|None=None):
+        if coord is not None:
+            self._mode='coord'
+            self._coord=np.array(coord,dtype=float)
+        elif degrees is not None:
+            self._mode='angle'
+            self._angle=degrees*DEGREES
+        elif radians is not None:
+            self._mode='angle'
+            self._angle=radians
+        else:
+            self._mode='angle'
+            self._angle=0.0
+
+    @classmethod
+    def up(cls)->'Locator':
+        return cls(radians=PI/2)
+
+    @classmethod
+    def down(cls)->'Locator':
+        return cls(radians=-PI/2)
+
+    @classmethod
+    def left(cls)->'Locator':
+        return cls(radians=PI)
+
+    @classmethod
+    def right(cls)->'Locator':
+        return cls(radians=0)
+
+    def get_coord(self,sf:'StructuralFormula',adjacency:str)->Vector3D:
+        """根据 StructuralFormula 和邻接原子名计算新原子的坐标。"""
+        if self._mode=='coord':
+            return self._coord.copy()
+        else:
+            a=sf.attributes.length_global
+            return a*np.array([np.cos(self._angle),np.sin(self._angle),0])+sf.atomic_clusters[adjacency]["pos"]
+
 class AtomicCluster(MathTex):
     def __init__(self,*,
                  text:str,
@@ -401,6 +448,9 @@ class Bond(VGroup):
             self.end=self.end.get_center()
         self.start_edge=start_edge
         self.end_edge=end_edge
+        self.side=side
+        self.start_side_edge=start_side_edge
+        self.end_side_edge=end_side_edge
         angle_vector=self.end-self.start
         self.direction=np.arctan2(angle_vector[1],angle_vector[0])
 
@@ -529,8 +579,8 @@ class StructuralFormula(VGroup):
                                         Bond:[]}
 
         self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
-                                                     start=self.atomic_clusters[adjacency]["pos"],
-                                                     end=self.atomic_clusters[name]["pos"],
+                                                     start=self.atomic_clusters[adjacency][Mobject] or self.atomic_clusters[adjacency]["pos"],
+                                                     end=self.atomic_clusters[name][Mobject] or self.atomic_clusters[name]["pos"],
                                                      start_edge=(self.atomic_clusters[adjacency][Mobject]!=None),
                                                      end_edge=(self.atomic_clusters[name][Mobject]!=None),
                                                      attributes=self.attributes,
@@ -555,7 +605,7 @@ class StructuralFormula(VGroup):
         if text in self.charges:
             raise ValueError(f"原子 '{text}' 上已经存在电荷，不能重复添加。")
 
-        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes)
+        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes)
 
         self.add(self.charges[text])
 
@@ -578,8 +628,8 @@ class StructuralFormula(VGroup):
 
         if bond_type==BondType.DOUBLE_BOND:
             bond=Bond(bond_type=bond_type,
-                      start=self.atomic_clusters[start]["pos"],
-                      end=self.atomic_clusters[end]["pos"],
+                      start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
+                      end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
                       start_edge=(self.atomic_clusters[start][Mobject]!=None),
                       end_edge=(self.atomic_clusters[end][Mobject]!=None),
                       attributes=self.attributes,
@@ -589,8 +639,8 @@ class StructuralFormula(VGroup):
 
         else:
             bond=Bond(bond_type=bond_type,
-                      start=self.atomic_clusters[start]["pos"],
-                      end=self.atomic_clusters[end]["pos"],
+                      start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
+                      end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
                       start_edge=(self.atomic_clusters[start][Mobject]!=None),
                       end_edge=(self.atomic_clusters[end][Mobject]!=None),
                       attributes=self.attributes)
@@ -644,21 +694,89 @@ class StructuralFormula(VGroup):
         if end not in self.atomic_clusters:
             raise ValueError(f"原子 '{end}' 不存在于结构中。")
 
-        delete = None
+        target=None
         for bond in self.atomic_clusters[start][Bond]:
             if bond in self.atomic_clusters[end][Bond]:
-                delete=bond
-                self.remove(bond)
-                self.atomic_clusters[start][Bond].remove(bond)
-                self.atomic_clusters[end][Bond].remove(bond)
-                self.atomic_clusters[start]["adj"].remove(end)
-                self.atomic_clusters[end]["adj"].remove(start)
+                target=bond
                 break
 
-        if delete is None:
+        if target is None:
             raise ValueError(f"原子 '{start}' 和 '{end}' 之间不存在键。")
 
-        return anim(delete)
+        self.remove(target)
+
+        assert target in self.atomic_clusters[start][Bond],f"内部错误：键不在 '{start}' 的键列表中"
+        assert target in self.atomic_clusters[end][Bond],f"内部错误：键不在 '{end}' 的键列表中"
+        assert end in self.atomic_clusters[start]["adj"],f"内部错误：'{end}' 不在 '{start}' 的邻接列表中"
+        assert start in self.atomic_clusters[end]["adj"],f"内部错误：'{start}' 不在 '{end}' 的邻接列表中"
+
+        self.atomic_clusters[start][Bond]=[b for b in self.atomic_clusters[start][Bond] if b is not target]
+        self.atomic_clusters[end][Bond]=[b for b in self.atomic_clusters[end][Bond] if b is not target]
+        self.atomic_clusters[start]["adj"]=[a for a in self.atomic_clusters[start]["adj"] if a!=end]
+        self.atomic_clusters[end]["adj"]=[a for a in self.atomic_clusters[end]["adj"] if a!=start]
+
+        return anim(target)
+
+    def rotate_atoms(self,*,
+                     atom_names:str|list[str],
+                     center:str|Vector3D,
+                     angle:float,
+                     about_edge:bool=True,
+                     run_time:float=1.0,
+                     rate_func:Callable[[float],float]=smooth,
+                     **kwargs)->Animation:
+        """旋转一个或多个原子及其相连的化学键。
+
+        Parameters
+        ----------
+        atom_names : str | list[str]
+            要旋转的原子在字典中的键（单个字符串或字符串列表）。
+        center : str | Vector3D
+            旋转中心，可以是原子名称字符串（以其坐标为中心）或 Vector3D 坐标。
+        angle : float
+            旋转角度（弧度制），逆时针为正。
+        about_edge : bool
+            当 center 为原子名时生效。
+            True（默认）：以原子的键端点坐标（pos）为旋转中心。
+            False：以原子文本标签的视觉中心为旋转中心。
+        run_time : float
+            动画持续时间（秒）。
+        rate_func : Callable[[float],float]
+            动画速率函数。
+        **kwargs
+            传递给 Animation 的额外参数。
+
+        Returns
+        -------
+        Animation
+            可直接用于 self.play() 的 RotateAtoms 动画实例。
+        """
+        if isinstance(atom_names,str):
+            atom_names=[atom_names]
+        for name in atom_names:
+            if name not in self.atomic_clusters:
+                raise ValueError(f"原子 '{name}' 不存在于结构中。")
+        if isinstance(center,str) and center not in self.atomic_clusters:
+            raise ValueError(f"旋转中心原子 '{center}' 不存在于结构中。")
+
+        return RotateAtoms(structural_formula=self,
+                           atom_names=atom_names,
+                           center=center,
+                           angle=angle,
+                           about_edge=about_edge,
+                           run_time=run_time,
+                           rate_func=rate_func,
+                           **kwargs)
+
+def _rotate_point_2d(point:Vector3D,center:Vector3D,angle:float)->Vector3D:
+    """绕 center 在 XY 平面内旋转 point，角度 angle（弧度）"""
+    dx=point[0]-center[0]
+    dy=point[1]-center[1]
+    cos_a=np.cos(angle)
+    sin_a=np.sin(angle)
+    return np.array([center[0]+dx*cos_a-dy*sin_a,
+                     center[1]+dx*sin_a+dy*cos_a,
+                     point[2]])
 
 #Animation classes
 class OpacityEffect(Animation):
@@ -675,6 +793,166 @@ class OpacityEffect(Animation):
             self.mobject.bezier.set_stroke(opacity=opacity)
         else:
             self.mobject.set_opacity(opacity)
+
+class RotateAtoms(Animation):
+    """绕指定中心旋转一个或多个原子，相连化学键跟随伸缩。"""
+    def __init__(self,*,
+                 structural_formula:'StructuralFormula',
+                 atom_names:str|list[str],
+                 center:str|Vector3D,
+                 angle:float,
+                 about_edge:bool=True,
+                 run_time:float=1.0,
+                 rate_func:Callable[[float],float]=smooth,
+                 **kwargs):
+
+        self.sf=structural_formula
+        if isinstance(atom_names,str):
+            atom_names=[atom_names]
+        self.atom_names=atom_names
+        self.angle=angle
+
+        # 确定旋转中心点坐标
+        if isinstance(center,str):
+            if about_edge:
+                self.center_point=np.copy(structural_formula.atomic_clusters[center]["pos"])
+            else:
+                mobj=structural_formula.atomic_clusters[center][Mobject]
+                if mobj is not None:
+                    self.center_point=np.copy(mobj.get_center())
+                else:
+                    self.center_point=np.copy(structural_formula.atomic_clusters[center]["pos"])
+        else:
+            self.center_point=np.array(center,dtype=float)
+
+        # 存储旋转原子的初始位置
+        self.initial_positions={}
+        for name in atom_names:
+            self.initial_positions[name]=np.copy(structural_formula.atomic_clusters[name]["pos"])
+
+        # 建立 键→所连两原子名 的映射
+        self.bond_to_atoms={}
+        for name in atom_names:
+            for bond in structural_formula.atomic_clusters[name][Bond]:
+                if bond not in self.bond_to_atoms:
+                    atoms=[]
+                    for n,data in structural_formula.atomic_clusters.items():
+                        if bond in data[Bond]:
+                            atoms.append(n)
+                    self.bond_to_atoms[bond]=atoms
+
+        # 存储电荷相对于其原子的偏移量
+        self.charge_offsets={}
+        for name in atom_names:
+            if name in structural_formula.charges:
+                charge_center=structural_formula.charges[name].get_center()
+                atom_pos=structural_formula.atomic_clusters[name]["pos"]
+                self.charge_offsets[name]=charge_center-atom_pos
+
+        super().__init__(mobject=structural_formula,run_time=run_time,rate_func=rate_func,**kwargs)
+
+    def _rebuild_bond(self,bond:'Bond'):
+        """根据原子当前位置原地更新键的几何体（不删建，避免残留）。"""
+        a1,a2=self.bond_to_atoms[bond]
+        bond.start=self.sf.atomic_clusters[a1]["pos"]
+        bond.end=self.sf.atomic_clusters[a2]["pos"]
+        angle_vector=bond.end-bond.start
+        bond.direction=np.arctan2(angle_vector[1],angle_vector[0])
+
+        attrs=self.sf.attributes
+        d=bond.direction
+        dv=np.array([np.cos(d),np.sin(d),0])
+        nv=np.array([-np.sin(d),np.cos(d),0])
+        se=bond.start_edge
+        ee=bond.end_edge
+        start=bond.start
+        end=start+dv*attrs.length_global
+
+        bt=bond.bond_type
+        geo=bond.submobjects[0]  # 键几何体的外层 VGroup/Line/Polygon
+
+        if bt==BondType.NORMAL_BOND:
+            sp=start+dv*se*attrs.edge_global
+            ep=start+dv*(attrs.length_global-ee*attrs.edge_global)
+            geo.put_start_and_end_on(sp,ep)
+
+        elif bt==BondType.DASHED_BOND:
+            sp=start+dv*attrs.edge_global*se
+            ep=start+dv*(attrs.length_global*attrs.ratio_transition_state_dashedbond-attrs.edge_global*ee)
+            geo.put_start_and_end_on(sp,ep)
+
+        elif bt==BondType.OUT_BOND:
+            sp=start+se*attrs.edge_global*dv
+            ep=start+(attrs.length_global-ee*attrs.edge_global)*dv
+            offset=attrs.base_ratio_outbond*(attrs.length_global-(se+ee)*attrs.edge_global)/2
+            vertices=[sp,ep+offset*nv,ep-offset*nv]
+            geo.set_points_as_corners(vertices)
+
+        elif bt==BondType.IN_BOND:
+            sp=start+se*attrs.edge_global*dv
+            ep=start+(attrs.length_global-ee*attrs.edge_global)*dv
+            half=attrs.base_ratio_inbond*(attrs.length_global-(se+ee)*attrs.edge_global)/2
+            ep1=ep+half*nv
+            ep2=ep-half*nv
+            num=attrs.num_inbond
+            for i in range(num):
+                t=(i+1)/num
+                s=(num-(i+1))/num
+                geo.submobjects[i].put_start_and_end_on(ep1*t+sp*s,ep2*t+sp*s)
+
+        elif bt==BondType.TRIPLE_BOND:
+            s1=start+dv*se*attrs.edge_global
+            e1=end-dv*ee*attrs.edge_global
+            s2=s1-nv*attrs.length_global*attrs.distance_triple
+            e2=e1-nv*attrs.length_global*attrs.distance_triple
+            s3=s1+nv*attrs.length_global*attrs.distance_triple
+            e3=e1+nv*attrs.length_global*attrs.distance_triple
+            geo.submobjects[0].put_start_and_end_on(s1,e1)
+            geo.submobjects[1].put_start_and_end_on(s2,e2)
+            geo.submobjects[2].put_start_and_end_on(s3,e3)
+
+        elif bt==BondType.DOUBLE_BOND:
+            side=bond.side
+            sse=bond.start_side_edge
+            ese=bond.end_side_edge
+            if side==0:
+                s1=start+dv*se*attrs.edge_global+0.5*nv*attrs.length_global*attrs.edge_ratio_double
+                s2=start+dv*se*attrs.edge_global-0.5*nv*attrs.length_global*attrs.edge_ratio_double
+                e1=end-dv*ee*attrs.edge_global+0.5*nv*attrs.length_global*attrs.edge_ratio_double
+                e2=end-dv*ee*attrs.edge_global-0.5*nv*attrs.length_global*attrs.edge_ratio_double
+            elif side==1:
+                s1=start+dv*se*attrs.edge_global
+                e1=end-dv*ee*attrs.edge_global
+                s2=start+dv*(se*attrs.edge_global+sse*attrs.edge_ratio_double)+nv*attrs.length_global*attrs.distance_double
+                e2=end-dv*(ee*attrs.edge_global+ese*attrs.edge_ratio_double)+nv*attrs.length_global*attrs.distance_double
+            else:  # side==-1
+                s1=start+dv*se*attrs.edge_global
+                e1=end-dv*ee*attrs.edge_global
+                s2=start+dv*(se*attrs.edge_global+sse*attrs.edge_ratio_double)-nv*attrs.length_global*attrs.distance_double
+                e2=end-dv*(ee*attrs.edge_global+ese*attrs.edge_ratio_double)-nv*attrs.length_global*attrs.distance_double
+            geo.submobjects[0].put_start_and_end_on(s1,e1)
+            geo.submobjects[1].put_start_and_end_on(s2,e2)
+
+    def interpolate_mobject(self,alpha:float):
+        current_angle=self.angle*self.rate_func(alpha)
+
+        # 更新原子位置
+        for name in self.atom_names:
+            new_pos=_rotate_point_2d(self.initial_positions[name],self.center_point,current_angle)
+            self.sf.atomic_clusters[name]["pos"]=new_pos
+            mobj=self.sf.atomic_clusters[name][Mobject]
+            if mobj is not None:
+                mobj.move_to(new_pos)
+
+        # 重建受影响的键
+        for bond in self.bond_to_atoms:
+            self._rebuild_bond(bond)
+
+        # 更新电荷位置
+        for name in self.atom_names:
+            if name in self.charge_offsets:
+                new_charge_pos=self.sf.atomic_clusters[name]["pos"]+self.charge_offsets[name]
+                self.sf.charges[name].move_to(new_charge_pos)
 
 #Text classes
 class Title(MathTex):
