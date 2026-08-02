@@ -510,6 +510,11 @@ class StructuralFormula(VGroup):
                  start_side_edge:bool|None=None,
                  end_side_edge:bool|None=None):
 
+        if name in self.atomic_clusters:
+            raise ValueError(f"原子 '{name}' 已经存在于结构中，不能重复添加。")
+        if adjacency not in self.atomic_clusters:
+            raise ValueError(f"邻接原子 '{adjacency}' 不存在于结构中。")
+
         pos=self.attributes.length_global*np.array([np.cos(direction),np.sin(direction),0])+self.atomic_clusters[adjacency]["pos"]
 
         if text!=None:
@@ -545,8 +550,13 @@ class StructuralFormula(VGroup):
                    pos:Vector3D,
                    charge_type:ChargeType):
 
+        if text not in self.atomic_clusters:
+            raise ValueError(f"原子 '{text}' 不存在于结构中。")
+        if text in self.charges:
+            raise ValueError(f"原子 '{text}' 上已经存在电荷，不能重复添加。")
+
         self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes)
-            
+
         self.add(self.charges[text])
 
     def add_bond(self,*,
@@ -556,6 +566,15 @@ class StructuralFormula(VGroup):
                  side:int|None=None,
                  start_side_edge:bool|None=None,
                  end_side_edge:bool|None=None):
+
+        if start not in self.atomic_clusters:
+            raise ValueError(f"原子 '{start}' 不存在于结构中。")
+        if end not in self.atomic_clusters:
+            raise ValueError(f"原子 '{end}' 不存在于结构中。")
+        if start == end:
+            raise ValueError(f"不能在同一原子 '{start}' 之间创建键。")
+        if end in self.atomic_clusters[start]["adj"]:
+            raise ValueError(f"原子 '{start}' 和 '{end}' 之间已经存在键，不能重复创建。")
 
         if bond_type==BondType.DOUBLE_BOND:
             bond=Bond(bond_type=bond_type,
@@ -590,8 +609,12 @@ class StructuralFormula(VGroup):
         if isinstance(names,str):
             names=[names]
 
+        for name in names:
+            if name not in self.atomic_clusters:
+                raise ValueError(f"原子 '{name}' 不存在于结构中。")
+
         deletes=[]
-        
+
         for name in names:
 
             if self.atomic_clusters[name][Mobject]!=None:
@@ -610,6 +633,32 @@ class StructuralFormula(VGroup):
             self.atomic_clusters.pop(name)
 
         return anim(*deletes)
+
+    def delete_bond(self,*,
+                    start:str,
+                    end:str,
+                    anim:type[Animation]=FadeOut)->Animation:
+
+        if start not in self.atomic_clusters:
+            raise ValueError(f"原子 '{start}' 不存在于结构中。")
+        if end not in self.atomic_clusters:
+            raise ValueError(f"原子 '{end}' 不存在于结构中。")
+
+        delete = None
+        for bond in self.atomic_clusters[start][Bond]:
+            if bond in self.atomic_clusters[end][Bond]:
+                delete=bond
+                self.remove(bond)
+                self.atomic_clusters[start][Bond].remove(bond)
+                self.atomic_clusters[end][Bond].remove(bond)
+                self.atomic_clusters[start]["adj"].remove(end)
+                self.atomic_clusters[end]["adj"].remove(start)
+                break
+
+        if delete is None:
+            raise ValueError(f"原子 '{start}' 和 '{end}' 之间不存在键。")
+
+        return anim(delete)
 
 #Animation classes
 class OpacityEffect(Animation):
