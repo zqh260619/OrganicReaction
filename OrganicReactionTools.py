@@ -323,6 +323,28 @@ class ChargeType(Enum):
     NEGATIVE_COORDINATE=NegativeChargeByCoordinate
     SINGLE_COORDINATE=SingleChargeByCoordinate
 
+class ElectronMigrationStep:
+    """电子迁移步骤的描述。
+
+    Attributes
+    ----------
+    replace : list[tuple[Mobject, Mobject]]
+        要执行的 ReplacementTransform 列表，每项为 (source, target)。
+        多对一：将多个 source 用 VGroup 包装。
+        一对多：将多个 target 用 VGroup 包装，或使用 Mobject.copy()。
+    create : list[Mobject]
+        要在本步骤中 FadeIn 的新 Mobject 列表。
+    lag_ratio : float
+        步骤内部子动画之间的延迟比率（0~1），类似 AnimationGroup.lag_ratio。
+    """
+    def __init__(self,*,
+                 replace:list[tuple[Mobject,Mobject]]|None=None,
+                 create:list[Mobject]|None=None,
+                 lag_ratio:float=0.0):
+        self.replace=replace or []
+        self.create=create or []
+        self.lag_ratio=lag_ratio
+
 class Locator:
     """原子定位器，封装新原子相对于邻接原子的位置计算。
 
@@ -674,6 +696,85 @@ class StructuralFormula(VGroup):
         self.atomic_clusters[start]["adj"].append(end)
         self.atomic_clusters[end]["adj"].append(start)
 
+    def build_bond(self,*,
+                   start:str,
+                   end:str,
+                   bond_type:BondType,
+                   side:int|None=None,
+                   start_side_edge:bool|None=None,
+                   end_side_edge:bool|None=None)->Bond:
+        """创建化学键对象但不添加到结构式中。
+
+        Parameters
+        ----------
+        start : str
+            起始原子名。
+        end : str
+            终止原子名。
+        bond_type : BondType
+            键的类型。
+        side : int | None
+            双键的左右不对称参数（仅对 DOUBLE_BOND 有效）。
+        start_side_edge : bool | None
+            起始端是否使用 side 边距。
+        end_side_edge : bool | None
+            终止端是否使用 side 边距。
+
+        Returns
+        -------
+        Bond
+            创建的化学键对象（未添加到 StructuralFormula 中）。
+        """
+        if start not in self.atomic_clusters:
+            raise ValueError(f"原子 '{start}' 不存在于结构中。")
+        if end not in self.atomic_clusters:
+            raise ValueError(f"原子 '{end}' 不存在于结构中。")
+
+        if bond_type==BondType.DOUBLE_BOND:
+            return Bond(bond_type=bond_type,
+                        start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
+                        end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
+                        start_edge=(self.atomic_clusters[start][Mobject]!=None),
+                        end_edge=(self.atomic_clusters[end][Mobject]!=None),
+                        attributes=self.attributes,
+                        side=side,
+                        start_side_edge=start_side_edge,
+                        end_side_edge=end_side_edge)
+        else:
+            return Bond(bond_type=bond_type,
+                        start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
+                        end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
+                        start_edge=(self.atomic_clusters[start][Mobject]!=None),
+                        end_edge=(self.atomic_clusters[end][Mobject]!=None),
+                        attributes=self.attributes)
+
+    def build_charge(self,*,
+                     text:str,
+                     pos:Vector3D,
+                     charge_type:ChargeType)->Charge:
+        """创建电荷对象但不添加到结构式中。
+
+        Parameters
+        ----------
+        text : str
+            电荷所附着的原子名。
+        pos : Vector3D
+            电荷相对于原子文本的位置（方向向量，如 UR, DOWN 等）。
+        charge_type : ChargeType
+            电荷类型。
+
+        Returns
+        -------
+        Charge
+            创建的电荷对象（未添加到 StructuralFormula 中）。
+        """
+        if text not in self.atomic_clusters:
+            raise ValueError(f"原子 '{text}' 不存在于结构中。")
+        return Charge(charge_type=charge_type,
+                      text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],
+                      pos=pos,
+                      attributes=self.attributes)
+
     def delete_atom(self,*,
                     names:str|list[str],
                     anim:type[Animation]=FadeOut)->Animation:
@@ -789,6 +890,38 @@ class StructuralFormula(VGroup):
                            run_time=run_time,
                            rate_func=rate_func,
                            **kwargs)
+
+    def electron_migration(self,*,
+                           steps:list[ElectronMigrationStep],
+                           lag_ratio:float=0.0,
+                           run_time:float=1.0,
+                           **kwargs)->"ElectronMigration":
+        """创建电子迁移动画。
+
+        指定一系列 ElectronMigrationStep，每个步骤描述一组化学键/电荷的变换。
+        步骤之间通过 lag_ratio 控制延迟比率（0 表示所有步骤同时开始，1 表示依次执行）。
+
+        Parameters
+        ----------
+        steps : list[ElectronMigrationStep]
+            电子迁移步骤列表。
+        lag_ratio : float
+            步骤之间的延迟比率（0~1）。
+        run_time : float
+            每个步骤内子动画的运行时间（秒）。
+        **kwargs
+            传递给 ElectronMigration 的额外参数。
+
+        Returns
+        -------
+        ElectronMigration
+            可直接用于 self.play() 的动画实例。
+        """
+        return ElectronMigration(sf=self,
+                                 steps=steps,
+                                 lag_ratio=lag_ratio,
+                                 run_time=run_time,
+                                 **kwargs)
 
 def _rotate_point_2d(point:Vector3D,center:Vector3D,angle:float)->Vector3D:
     """绕 center 在 XY 平面内旋转 point，角度 angle（弧度）"""
@@ -975,6 +1108,78 @@ class RotateAtoms(Animation):
             if name in self.charge_offsets:
                 new_charge_pos=self.sf.atomic_clusters[name]["pos"]+self.charge_offsets[name]
                 self.sf.charges[name].move_to(new_charge_pos)
+
+class ElectronMigration(AnimationGroup):
+    """电子迁移动画，管理化学键与电荷之间的动态变换序列。
+
+    每个步骤内部可以有多个并行的子动画（ReplacementTransform / FadeIn），
+    步骤之间通过 lag_ratio 控制延迟比率。
+
+    Parameters
+    ----------
+    sf : StructuralFormula
+        动画所操作的结构式对象。
+    *steps : ElectronMigrationStep
+        迁移步骤序列。
+    lag_ratio : float
+        步骤之间的延迟比率（0~1），默认为 0（所有步骤同时开始）。
+    run_time : float
+        每个步骤内子动画的运行时间。
+    **kwargs
+        传递给 AnimationGroup 的额外参数。
+    """
+    def __init__(self,*,
+                 sf:'StructuralFormula',
+                 steps:list[ElectronMigrationStep],
+                 lag_ratio:float=0.0,
+                 run_time:float=1.0,
+                 **kwargs):
+
+        self.sf=sf
+        self.steps=steps
+        self._all_sources:list[Mobject]=[]
+        self._all_targets:list[Mobject]=[]
+        self._all_creates:list[Mobject]=[]
+
+        for step in steps:
+            for source,target in step.replace:
+                self._all_sources.append(source)
+                self._all_targets.append(target)
+            for obj in step.create:
+                self._all_creates.append(obj)
+
+        step_anims=[]
+        for step in steps:
+            sub_anims=[]
+            for source,target in step.replace:
+                sub_anims.append(ReplacementTransform(source,target,run_time=run_time))
+            for obj in step.create:
+                sub_anims.append(FadeIn(obj,run_time=run_time))
+            step_anims.append(AnimationGroup(*sub_anims,lag_ratio=step.lag_ratio))
+
+        super().__init__(*step_anims,lag_ratio=lag_ratio,**kwargs)
+
+    def begin(self):
+        """动画开始：从 StructuralFormula 中移除 source 对象（它们保留在 Scene 中）。"""
+        for source in self._all_sources:
+            if isinstance(source,VGroup) and not isinstance(source,(Bond,Charge)):
+                for submob in source.submobjects:
+                    self.sf.remove(submob)
+            else:
+                self.sf.remove(source)
+        super().begin()
+
+    def finish(self):
+        """动画结束：将 target 和新创建的对象加入 StructuralFormula。"""
+        super().finish()
+        for target in self._all_targets:
+            if isinstance(target,VGroup) and not isinstance(target,(Bond,Charge)):
+                for submob in target.submobjects:
+                    self.sf.add(submob)
+            else:
+                self.sf.add(target)
+        for obj in self._all_creates:
+            self.sf.add(obj)
 
 #Text classes
 class Title(MathTex):
