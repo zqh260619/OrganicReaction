@@ -1,7 +1,7 @@
 from manim import *
 from manim.typing import Vector3D
 import numpy as np
-from typing import Callable
+from typing import Callable, Optional
 from enum import Enum
 
 mytemplate = TexTemplate()
@@ -1108,6 +1108,183 @@ class RotateAtoms(Animation):
             if name in self.charge_offsets:
                 new_charge_pos=self.sf.atomic_clusters[name]["pos"]+self.charge_offsets[name]
                 self.sf.charges[name].move_to(new_charge_pos)
+
+class BondTypeTransform(Transform):
+    """化学键类型变换+旋转动画（独立动画类）。
+
+    通过 Transform 底层点插值，同时实现：
+    1. 化学键类型的形状变换（如 NormalBond → DoubleBond）
+    2. 化学键绕指定点的旋转
+
+    两者同时开始、同时结束，整个过程中键的几何体平滑过渡。
+    如果提供了 sf（StructuralFormula），关联的原子文本和电荷也会逐帧同步旋转。
+
+    Parameters
+    ----------
+    bond : Bond
+        要变换的化学键对象。
+    target_type : BondType
+        目标化学键类型。
+    angle : float
+        旋转角度（弧度）。
+    about_point : Vector3D, optional
+        旋转中心点，默认为键的起点（绕起点原子旋转另一端）。
+    sf : StructuralFormula, optional
+        所属的结构式对象。提供后，动画每帧同步旋转原子的 Mobject 和电荷。
+    **kwargs
+        传递给 Transform 的额外参数（如 run_time, rate_func 等）。
+    """
+
+    def __init__(self, *,
+                 bond: Bond,
+                 target_type: BondType,
+                 angle: float,
+                 about_point: Optional[Vector3D] = None,
+                 sf: Optional['StructuralFormula'] = None,
+                 **kwargs):
+
+        self._bond = bond
+        self._target_type = target_type
+        self._angle = angle
+        self._sf = sf
+
+        if about_point is None:
+            about_point = np.array(bond.start)
+        self._about_point = np.array(about_point, dtype=float)
+
+        # 保存初始起止位置
+        self._initial_start = np.array(bond.start, dtype=float)
+        self._initial_end = np.array(bond.end, dtype=float)
+
+        # ----- 获取 StructuralFormula 中关联的原子信息（用于逐帧同步）-----
+        self._atom1_name: Optional[str] = None
+        self._atom2_name: Optional[str] = None
+        self._atom1_mobj: Optional[Mobject] = None
+        self._atom2_mobj: Optional[Mobject] = None
+        self._atom1_init_pos: Optional[np.ndarray] = None
+        self._atom2_init_pos: Optional[np.ndarray] = None
+        self._charge_offsets: dict[str, np.ndarray] = {}
+
+        if sf is not None:
+            for name, data in sf.atomic_clusters.items():
+                if bond in data[Bond]:
+                    if self._atom1_name is None:
+                        self._atom1_name = name
+                    else:
+                        self._atom2_name = name
+                        break
+
+            if self._atom1_name is not None:
+                self._atom1_mobj = sf.atomic_clusters[self._atom1_name].get(Mobject)
+                self._atom1_init_pos = np.array(
+                    sf.atomic_clusters[self._atom1_name]["pos"], dtype=float
+                )
+                if self._atom1_name in sf.charges:
+                    c = sf.charges[self._atom1_name]
+                    self._charge_offsets[self._atom1_name] = (
+                        c.get_center() - self._atom1_init_pos
+                    )
+
+            if self._atom2_name is not None:
+                self._atom2_mobj = sf.atomic_clusters[self._atom2_name].get(Mobject)
+                self._atom2_init_pos = np.array(
+                    sf.atomic_clusters[self._atom2_name]["pos"], dtype=float
+                )
+                if self._atom2_name in sf.charges:
+                    c = sf.charges[self._atom2_name]
+                    self._charge_offsets[self._atom2_name] = (
+                        c.get_center() - self._atom2_init_pos
+                    )
+
+        # 获取属性持有者
+        attrs = sf.attributes if sf is not None else DEFAULT_ATTRIBUTES
+
+        # 构建目标键（与源键相同起止位置，但类型不同）
+        target_bond = Bond(
+            bond_type=target_type,
+            start=np.array(bond.start, dtype=float),
+            end=np.array(bond.end, dtype=float),
+            start_edge=bond.start_edge,
+            end_edge=bond.end_edge,
+            attributes=attrs,
+            side=bond.side if (target_type == BondType.DOUBLE_BOND and bond.side is not None) else (0 if target_type == BondType.DOUBLE_BOND else None),
+            start_side_edge=bond.start_side_edge if (target_type == BondType.DOUBLE_BOND and bond.start_side_edge is not None) else (False if target_type == BondType.DOUBLE_BOND else None),
+            end_side_edge=bond.end_side_edge if (target_type == BondType.DOUBLE_BOND and bond.end_side_edge is not None) else (False if target_type == BondType.DOUBLE_BOND else None),
+        )
+
+        # 旋转目标键：其内部点位直接体现终态
+        target_bond.rotate(angle, about_point=self._about_point)
+
+        super().__init__(mobject=bond, target_mobject=target_bond, **kwargs)
+
+    # ---- 逐帧旋转辅助 ----
+    @staticmethod
+    def _rotate_point(pt: np.ndarray, center: np.ndarray, rad: float) -> np.ndarray:
+        dx = pt[0] - center[0]
+        dy = pt[1] - center[1]
+        cos_a = np.cos(rad)
+        sin_a = np.sin(rad)
+        return np.array([
+            center[0] + dx * cos_a - dy * sin_a,
+            center[1] + dx * sin_a + dy * cos_a,
+            pt[2],
+        ])
+
+    def _move_atoms_to_alpha(self, alpha: float) -> None:
+        """根据 alpha 旋转原子 Mobject 和电荷到当前位置。"""
+        cur_angle = self.rate_func(alpha) * self._angle
+
+        if self._atom1_mobj is not None and self._atom1_init_pos is not None:
+            new_pos = self._rotate_point(self._atom1_init_pos, self._about_point, cur_angle)
+            self._atom1_mobj.move_to(new_pos)
+            if self._atom1_name in self._charge_offsets:
+                self._sf.charges[self._atom1_name].move_to(
+                    new_pos + self._charge_offsets[self._atom1_name]
+                )
+
+        if self._atom2_mobj is not None and self._atom2_init_pos is not None:
+            new_pos = self._rotate_point(self._atom2_init_pos, self._about_point, cur_angle)
+            self._atom2_mobj.move_to(new_pos)
+            if self._atom2_name in self._charge_offsets:
+                self._sf.charges[self._atom2_name].move_to(
+                    new_pos + self._charge_offsets[self._atom2_name]
+                )
+
+    def interpolate_mobject(self, alpha: float) -> None:
+        """每帧：先做键几何插值，再旋转原子 Mobject。"""
+        super().interpolate_mobject(alpha)
+        if self._sf is not None:
+            self._move_atoms_to_alpha(alpha)
+
+    def finish(self) -> None:
+        """动画结束：更新 Bond 的元数据及 StructuralFormula 内部状态。"""
+        super().finish()
+
+        # 更新键类型
+        self._bond.bond_type = self._target_type
+
+        # 用旋转公式从初始位置计算旋转后的起止点
+        new_start = self._rotate_point(self._initial_start, self._about_point, self._angle)
+        new_end = self._rotate_point(self._initial_end, self._about_point, self._angle)
+
+        self._bond.start = new_start
+        self._bond.end = new_end
+        angle_vec = new_end - new_start
+        self._bond.direction = np.arctan2(angle_vec[1], angle_vec[0])
+
+        # 同步 StructuralFormula 内部数据（pos 字段）
+        if self._sf is not None:
+            self._sync_structural_formula()
+
+    def _sync_structural_formula(self) -> None:
+        """更新 StructuralFormula 中原子位置数据（非 Mobject，已在 interpolate 中处理）。"""
+        sf = self._sf
+
+        if self._atom1_name is not None:
+            sf.atomic_clusters[self._atom1_name]["pos"] = self._bond.start
+        if self._atom2_name is not None:
+            sf.atomic_clusters[self._atom2_name]["pos"] = self._bond.end
+
 
 class ElectronMigration(AnimationGroup):
     """电子迁移动画，管理化学键与电荷之间的动态变换序列。
