@@ -508,8 +508,8 @@ class StructuralFormula(VGroup):
                  distance_double=0.12,
                  edge_ratio_double=0.08,
                  distance_triple=0.12,
-                 name:str,
-                 pos:Vector3D,
+                 name:str|None=None,
+                 pos:Vector3D|None=None,
                  text:str|None=None,
                  ):
 
@@ -539,29 +539,51 @@ class StructuralFormula(VGroup):
 
         self.atomic_clusters={}
 
-        if text!=None:
-            self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
-                                        "pos":pos,
-                                        "adj":[],
-                                        Bond:[]}
-            self.add(self.atomic_clusters[name][Mobject])
-        else:
-            self.atomic_clusters[name]={Mobject:None,"pos":pos,"adj":[],Bond:[]}
+        if name is not None:
+            if text!=None:
+                self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
+                                            "pos":pos,
+                                            "adj":[],
+                                            Bond:[]}
+                self.add(self.atomic_clusters[name][Mobject])
+            else:
+                self.atomic_clusters[name]={Mobject:None,"pos":pos,"adj":[],Bond:[]}
 
         self.charges={}
 
     def add_atom(self,*,
                  name:str,
-                 direction:float,
+                 direction:float|None=None,
                  text:str|None=None,
-                 bond_type:BondType,
-                 adjacency:str,
+                 bond_type:BondType|None=None,
+                 adjacency:str|None=None,
+                 pos:Vector3D|None=None,
                  side:int|None=None,
                  start_side_edge:bool|None=None,
                  end_side_edge:bool|None=None):
 
         if name in self.atomic_clusters:
             raise ValueError(f"原子 '{name}' 已经存在于结构中，不能重复添加。")
+
+        if not self.atomic_clusters:
+            if pos is None:
+                raise ValueError("向空结构式添加第一个原子时必须提供 pos 参数。")
+            if text is not None:
+                self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
+                                            "pos":pos,
+                                            "adj":[],
+                                            Bond:[]}
+                self.add(self.atomic_clusters[name][Mobject])
+            else:
+                self.atomic_clusters[name]={Mobject:None,"pos":pos,"adj":[],Bond:[]}
+            return
+
+        if adjacency is None:
+            raise ValueError("向非空结构式添加原子时必须提供 adjacency 参数。")
+        if direction is None:
+            raise ValueError("向非空结构式添加原子时必须提供 direction 参数。")
+        if bond_type is None:
+            raise ValueError("向非空结构式添加原子时必须提供 bond_type 参数。")
         if adjacency not in self.atomic_clusters:
             raise ValueError(f"邻接原子 '{adjacency}' 不存在于结构中。")
 
