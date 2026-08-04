@@ -653,6 +653,21 @@ class StructuralFormula(VGroup):
 
         self.add(self.charges[text])
 
+    def delete_charge(self,*,
+                      text:str,
+                      anim:type[Animation]=FadeOut)->Animation:
+
+        if text not in self.atomic_clusters:
+            raise ValueError(f"原子 '{text}' 不存在于结构中。")
+        if text not in self.charges:
+            raise ValueError(f"原子 '{text}' 上不存在电荷。")
+
+        charge=self.charges[text]
+        self.remove(charge)
+        self.charges.pop(text)
+
+        return anim(charge)
+
     def add_bond(self,*,
                  start:str,
                  end:str,
