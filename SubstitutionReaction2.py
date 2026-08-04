@@ -16,6 +16,13 @@ class test(Scene):
         self.play(Write(SEAr_reaction))
         self.wait(1)
 
+        #descriptions
+        text1=Description(text=r"E^+\text{为亲电试剂，通常为卤素离子或硝基正离子等}")
+        text2=Description(text=r"\text{首先，苯环的\pi电子进攻亲电试剂E^+}")
+        text3=Description(text=r"\text{对应的碳形成四面体结构，苯环失去芳香性，此中间体能量较高}")
+        text4=Description(text=r"\text{随后，H^+离去，生成产物}")
+        text5=Description(text=r"\text{此时苯环恢复芳香性，能量降低，反应存在强大的热力学驱动力}")
+
         benzene=StructuralFormula(name="C1",pos=[0,0.5*bond_length,0],text=None)
         benzene.add_atom(name="C2",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C1")
         benzene.add_atom(name="C3",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C2",
@@ -30,6 +37,8 @@ class test(Scene):
         self.play(Create(benzene))
 
         self.wait(0.5)
+
+        #苯进攻亲电试剂E+，形成Wheland中间体
 
         E1_start=np.array([2*benzene.attributes.length_global,0,0])
         E1_target=benzene.atomic_clusters["C1"]["pos"]+np.array([np.cos(60*DEGREES),np.sin(60*DEGREES),0])*benzene.attributes.length_global
@@ -80,6 +89,8 @@ class test(Scene):
         benzene.charges["C6"] = C6_positive
 
         self.wait(1.5)
+
+        #H1离去，生成产物
 
         C1_C6_double_new=benzene.build_bond(start="C6", end="C1", bond_type=BondType.DOUBLE_BOND,
                                              side=-1, start_side_edge=True, end_side_edge=True)
