@@ -334,15 +334,19 @@ class ElectronMigrationStep:
         一对多：将多个 target 用 VGroup 包装，或使用 Mobject.copy()。
     create : list[Mobject]
         要在本步骤中 FadeIn 的新 Mobject 列表。
+    fadeout : list[Mobject]
+        要在本步骤中 FadeOut 的 Mobject 列表。
     lag_ratio : float
         步骤内部子动画之间的延迟比率（0~1），类似 AnimationGroup.lag_ratio。
     """
     def __init__(self,*,
                  replace:list[tuple[Mobject,Mobject]]|None=None,
                  create:list[Mobject]|None=None,
-                 lag_ratio:float=0.0):
+                 fadeout:list[Mobject]|None=None,
+                 lag_ratio:float=0.3):
         self.replace=replace or []
         self.create=create or []
+        self.fadeout=fadeout or []
         self.lag_ratio=lag_ratio
 
 class Locator:
@@ -648,6 +652,74 @@ class StructuralFormula(VGroup):
         if text!=None:
             self.add(self.atomic_clusters[name][Mobject])
 
+    def register_atom(self,*,
+                      name:str,
+                      mobject:Mobject,
+                      adjacency:str|None=None,
+                      bond_type:BondType|None=None,
+                      side:int|None=None,
+                      start_side_edge:bool|None=None,
+                      end_side_edge:bool|None=None):
+        """将已存在的 Mobject 注册为结构式的原子。
+
+        与 add_atom 不同，此方法接受外部已创建的 Mobject 作为原子对象，
+        而不是内部创建新的 AtomicCluster。适用于将独立创建的结构部件
+        （如亲电试剂 E⁺）整合到结构式中，以便参与电子迁移动画。
+
+        Parameters
+        ----------
+        name : str
+            新原子的名称，需唯一。
+        mobject : Mobject
+            已存在的 Mobject 对象，作为原子的显示文本。
+        adjacency : str | None
+            邻接原子的名称。若为 None，则不创建键（独立原子）。
+        bond_type : BondType | None
+            与邻接原子之间的键类型。仅在提供 adjacency 时有效，
+            默认为 BondType.NORMAL_BOND。
+        side : int | None
+            双键的左右不对称参数（仅对 DOUBLE_BOND 有效）。
+        start_side_edge : bool | None
+            起始端是否使用 side 边距。
+        end_side_edge : bool | None
+            终止端是否使用 side 边距。
+        """
+        if name in self.atomic_clusters:
+            raise ValueError(f"原子 '{name}' 已经存在于结构中，不能重复添加。")
+
+        pos=np.array(mobject.get_center(),dtype=float)
+
+        self.atomic_clusters[name]={
+            Mobject:mobject,
+            "pos":pos,
+            "adj":[],
+            Bond:[]
+        }
+
+        if adjacency is not None:
+            if adjacency not in self.atomic_clusters:
+                raise ValueError(f"邻接原子 '{adjacency}' 不存在于结构中。")
+            if bond_type is None:
+                bond_type=BondType.NORMAL_BOND
+
+            bond=Bond(bond_type=bond_type,
+                      start=self.atomic_clusters[adjacency][Mobject] or self.atomic_clusters[adjacency]["pos"],
+                      end=mobject,
+                      start_edge=(self.atomic_clusters[adjacency][Mobject]!=None),
+                      end_edge=True,
+                      attributes=self.attributes,
+                      side=side,
+                      start_side_edge=start_side_edge,
+                      end_side_edge=end_side_edge)
+
+            self.atomic_clusters[name][Bond].append(bond)
+            self.atomic_clusters[name]["adj"].append(adjacency)
+            self.atomic_clusters[adjacency][Bond].append(bond)
+            self.atomic_clusters[adjacency]["adj"].append(name)
+            self.add(bond)
+
+        self.add(mobject)
+
     def add_charge(self,*,
                    text:str,
                    pos:Vector3D,
@@ -917,7 +989,7 @@ class StructuralFormula(VGroup):
 
     def electron_migration(self,*,
                            steps:list[ElectronMigrationStep],
-                           lag_ratio:float=0.0,
+                           lag_ratio:float=0.3,
                            run_time:float=1.0,
                            **kwargs)->"ElectronMigration":
         """创建电子迁移动画。
@@ -1323,7 +1395,7 @@ class ElectronMigration(AnimationGroup):
     *steps : ElectronMigrationStep
         迁移步骤序列。
     lag_ratio : float
-        步骤之间的延迟比率（0~1），默认为 0（所有步骤同时开始）。
+        步骤之间的延迟比率（0~1），默认为 0.3。
     run_time : float
         每个步骤内子动画的运行时间。
     **kwargs
@@ -1332,7 +1404,7 @@ class ElectronMigration(AnimationGroup):
     def __init__(self,*,
                  sf:'StructuralFormula',
                  steps:list[ElectronMigrationStep],
-                 lag_ratio:float=0.0,
+                 lag_ratio:float=0.3,
                  run_time:float=1.0,
                  **kwargs):
 
@@ -1341,6 +1413,7 @@ class ElectronMigration(AnimationGroup):
         self._all_sources:list[Mobject]=[]
         self._all_targets:list[Mobject]=[]
         self._all_creates:list[Mobject]=[]
+        self._all_fadeouts:list[Mobject]=[]
 
         for step in steps:
             for source,target in step.replace:
@@ -1348,6 +1421,8 @@ class ElectronMigration(AnimationGroup):
                 self._all_targets.append(target)
             for obj in step.create:
                 self._all_creates.append(obj)
+            for obj in step.fadeout:
+                self._all_fadeouts.append(obj)
 
         step_anims=[]
         for step in steps:
@@ -1356,18 +1431,26 @@ class ElectronMigration(AnimationGroup):
                 sub_anims.append(ReplacementTransform(source,target,run_time=run_time))
             for obj in step.create:
                 sub_anims.append(FadeIn(obj,run_time=run_time))
+            for obj in step.fadeout:
+                sub_anims.append(FadeOut(obj,run_time=run_time))
             step_anims.append(AnimationGroup(*sub_anims,lag_ratio=step.lag_ratio))
 
         super().__init__(*step_anims,lag_ratio=lag_ratio,**kwargs)
 
     def begin(self):
-        """动画开始：从 StructuralFormula 中移除 source 对象（它们保留在 Scene 中）。"""
+        """动画开始：从 StructuralFormula 中移除 source 和 fadeout 对象（它们保留在 Scene 中）。"""
         for source in self._all_sources:
             if isinstance(source,VGroup) and not isinstance(source,(Bond,Charge)):
                 for submob in source.submobjects:
                     self.sf.remove(submob)
             else:
                 self.sf.remove(source)
+        for obj in self._all_fadeouts:
+            if isinstance(obj,VGroup) and not isinstance(obj,(Bond,Charge)):
+                for submob in obj.submobjects:
+                    self.sf.remove(submob)
+            else:
+                self.sf.remove(obj)
         super().begin()
 
     def finish(self):
