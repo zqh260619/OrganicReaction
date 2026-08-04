@@ -5,7 +5,7 @@ from typing import Callable, Optional
 from enum import Enum
 
 mytemplate = TexTemplate()
-mytemplate.add_to_preamble(r"\usepackage{ctex}")
+mytemplate.add_to_preamble(r"\usepackage{ctex}").add_to_preamble(r"\setlength{\jot}{-5pt}")
 
 RNG=np.random.default_rng(seed=3)
 
@@ -396,10 +396,14 @@ class AtomicCluster(MathTex):
     def __init__(self,*,
                  text:str,
                  pos:Vector3D,
-                 attributes:'AttributeHolder'):
+                 attributes:'AttributeHolder',
+                 text_offset:Vector3D=np.array([0,0,0])):
 
-        super().__init__(text,color=attributes.color,font_size=attributes.font_size)
+        super().__init__(text,color=attributes.color,font_size=attributes.font_size,
+                         tex_template=mytemplate)
         self.move_to(pos)
+        if np.any(text_offset != 0):
+            self.shift(text_offset)
 
 class AttributeHolder:
     def __init__(self,*,
@@ -533,6 +537,7 @@ class StructuralFormula(VGroup):
                  name:str|None=None,
                  pos:Vector3D|None=None,
                  text:str|None=None,
+                 text_offset:Vector3D=np.array([0,0,0]),
                  ):
 
         self.attributes=AttributeHolder(base_ratio_outbond=base_ratio_outbond,
@@ -563,7 +568,8 @@ class StructuralFormula(VGroup):
 
         if name is not None:
             if text!=None:
-                self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
+                self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes,
+                                                                  text_offset=text_offset),
                                             "pos":pos,
                                             "adj":[],
                                             Bond:[]}
@@ -582,7 +588,8 @@ class StructuralFormula(VGroup):
                  pos:Vector3D|None=None,
                  side:int|None=None,
                  start_side_edge:bool|None=None,
-                 end_side_edge:bool|None=None):
+                 end_side_edge:bool|None=None,
+                 text_offset:Vector3D=np.array([0,0,0])):
 
         if name in self.atomic_clusters:
             raise ValueError(f"原子 '{name}' 已经存在于结构中，不能重复添加。")
@@ -591,7 +598,8 @@ class StructuralFormula(VGroup):
             if pos is None:
                 raise ValueError("向空结构式添加第一个原子时必须提供 pos 参数。")
             if text is not None:
-                self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
+                self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes,
+                                                                  text_offset=text_offset),
                                             "pos":pos,
                                             "adj":[],
                                             Bond:[]}
@@ -612,7 +620,8 @@ class StructuralFormula(VGroup):
         pos=self.attributes.length_global*np.array([np.cos(direction),np.sin(direction),0])+self.atomic_clusters[adjacency]["pos"]
 
         if text!=None:
-            self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes),
+            self.atomic_clusters[name]={Mobject:AtomicCluster(text=text,pos=pos,attributes=self.attributes,
+                                                              text_offset=text_offset),
                                         "pos":pos,
                                         "adj":[adjacency],
                                         Bond:[]}
