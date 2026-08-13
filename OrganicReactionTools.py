@@ -32,7 +32,7 @@ subtitle_coordinate=[0,subtitle_height,0]
 """副标题坐标"""
 subtitle_size=30
 """副标题大小"""
-description_height=-2
+description_height=-3
 """描述性文本高度"""
 description_coordinate=[0,description_height,0]
 """描述性文本坐标"""

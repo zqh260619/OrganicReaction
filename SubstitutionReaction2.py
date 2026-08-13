@@ -17,10 +17,10 @@ class test(Scene):
         self.wait(1)
 
         #descriptions
-        text1=Description(text=r"E^+\text{为亲电试剂，通常为卤素阳离子或硝基阳离子等}")
-        text2=Description(text=r"\text{首先，亲电试剂E^+进攻苯环的\pi电子}")
-        text3=Description(text=r"\text{对应的碳由sp^2杂化变为sp^3杂化，苯环失去芳香性，此中间体能量较高}")
-        text4=Description(text=r"\text{随后，H^+离去，生成产物}")
+        text1=Description(text=r"\mathrm{E^+}\text{为亲电试剂，通常为卤素阳离子或硝基阳离子等}")
+        text2=Description(text=r"\text{首先，亲电试剂}\mathrm{E^+}\text{进攻苯环的}\mathrm{\pi}\text{电子}")
+        text3=Description(text=r"\text{对应的碳由}\mathrm{sp^2}\text{杂化变为}\mathrm{sp^3}\text{杂化，苯环失去芳香性，此中间体能量较高}")
+        text4=Description(text=r"\text{随后，}\mathrm{H^+}\text{离去，生成产物}")
         text5=Description(text=r"\text{此时苯环恢复芳香性，能量降低，反应存在强大的热力学驱动力}")
 
         benzene1=StructuralFormula(name="C1",pos=[0,0.5*bond_length,0],text=None)
@@ -32,7 +32,7 @@ class test(Scene):
                          side=-1,start_side_edge=True,end_side_edge=True)
         benzene1.add_atom(name="C6",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C5")
         benzene1.add_bond(start="C6",end="C1",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
-        benzene1.add_atom(name="H1",direction=90*DEGREES,text="H",bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        benzene1.add_atom(name="H1",direction=90*DEGREES,text="\mathrm{H}",bond_type=BondType.NORMAL_BOND,adjacency="C1")
 
         self.play(Create(benzene1))
 
@@ -42,15 +42,17 @@ class test(Scene):
 
         E1_start=np.array([2*benzene1.attributes.length_global,0,0])
         E1_target=benzene1.atomic_clusters["C1"]["pos"]+np.array([np.cos(60*DEGREES),np.sin(60*DEGREES),0])*benzene1.attributes.length_global
-        E1_mob=AtomicCluster(text="E",pos=E1_start,attributes=benzene1.attributes)
+        E1_mob=AtomicCluster(text="\mathrm{E}",pos=E1_start,attributes=benzene1.attributes)
         benzene1.atomic_clusters["E1"]={Mobject:E1_mob,"pos":E1_start,"adj":[],Bond:[]}
         benzene1.add(E1_mob)
         benzene1.add_charge(text="E1",pos=UR,charge_type=ChargeType.POSITIVE)
 
         E1_positive=benzene1.charges["E1"]
 
-        self.play(FadeIn(E1_mob),FadeIn(E1_positive))
-        self.wait(0.5)
+        self.play(FadeIn(E1_mob),FadeIn(E1_positive),Write(text1))
+        self.wait(2)
+        self.play(ReplacementTransform(text1,text2))
+        self.wait(2)
         shift=E1_target-E1_start
         self.play(E1_mob.animate.shift(shift),
                   E1_positive.animate.shift(shift),
@@ -77,6 +79,7 @@ class test(Scene):
                                     about_point=benzene1.atomic_clusters["C1"]["pos"],
                                     sf=benzene1,
                                     run_time=1.2))
+        self.play(ReplacementTransform(text2,text3))
 
         benzene1.delete_bond(start="C1", end="C6")
         benzene1.atomic_clusters["C1"][Bond].extend([C1_C6_single, C1_E1_in])
@@ -88,7 +91,7 @@ class test(Scene):
         benzene1.charges.pop("E1")
         benzene1.charges["C6"] = C6_positive
 
-        self.wait(1.5)
+        self.wait(2.5)
 
         #H1离去，生成产物
 
@@ -108,6 +111,7 @@ class test(Scene):
         E1_final=np.array([c1_pos[0]+dx*ca-dy*sa, c1_pos[1]+dx*sa+dy*ca, 0])
         arc=ArcBetweenPoints(E1_target, E1_final, angle=30*DEGREES)
 
+        self.play(ReplacementTransform(text3,text4))
         self.play(benzene1.electron_migration(steps=[step_elimination], lag_ratio=0, run_time=1.5),
                   BondTypeTransform(bond=C1_E1_in,
                                     target_type=BondType.NORMAL_BOND,
@@ -134,3 +138,5 @@ class test(Scene):
         benzene1.atomic_clusters["H1"]["pos"]=H1_target
 
         self.wait(1.5)
+        self.play(ReplacementTransform(text4,text5))
+        self.wait(2)
