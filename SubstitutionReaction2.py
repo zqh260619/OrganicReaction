@@ -99,7 +99,7 @@ class test(Scene):
                                              side=-1, start_side_edge=True, end_side_edge=True)
         H1_positive=benzene1.build_charge(text="H1", pos=UR, charge_type=ChargeType.POSITIVE)
 
-        step_elimination=ElectronMigrationStep(
+        step_elimination1=ElectronMigrationStep(
             replace=[(VGroup(C1_H1_normal, C1_C6_single), C1_C6_double_new)],
             create=[H1_positive],
             fadeout=[C6_positive],
@@ -112,7 +112,7 @@ class test(Scene):
         arc=ArcBetweenPoints(E1_target, E1_final, angle=30*DEGREES)
 
         self.play(ReplacementTransform(text3,text4))
-        self.play(benzene1.electron_migration(steps=[step_elimination], lag_ratio=0, run_time=1.5),
+        self.play(benzene1.electron_migration(steps=[step_elimination1], lag_ratio=0, run_time=1.5),
                   BondTypeTransform(bond=C1_E1_in,
                                     target_type=BondType.NORMAL_BOND,
                                     angle=30*DEGREES,
@@ -140,3 +140,140 @@ class test(Scene):
         self.wait(1.5)
         self.play(ReplacementTransform(text4,text5))
         self.wait(2)
+
+        self.play(FadeOut(text5,benzene1))
+
+        benzene2=StructuralFormula(name="C7",pos=[0,0.5*bond_length,0],text=None)
+        benzene2.add_atom(name="C8",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C7")
+        benzene2.add_atom(name="C9",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C8",
+                         side=-1,start_side_edge=True,end_side_edge=True)
+        benzene2.add_atom(name="C10",direction=-150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C9")
+        benzene2.add_atom(name="C11",direction=150*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C10",
+                         side=-1,start_side_edge=True,end_side_edge=True)
+        benzene2.add_atom(name="C12",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C11")
+        benzene2.add_bond(start="C12",end="C7",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        benzene2.add_atom(name="H2",direction=90*DEGREES,text="\mathrm{H}",bond_type=BondType.NORMAL_BOND,adjacency="C7")
+
+        self.play(Create(benzene2))
+
+        self.wait(0.5)
+
+        Br2_start=np.array([2*benzene2.attributes.length_global,0,0])
+        Br2_target=benzene2.atomic_clusters["C7"]["pos"]+np.array([np.cos(60*DEGREES),np.sin(60*DEGREES),0])*benzene2.attributes.length_global
+
+        Br2_mob=AtomicCluster(text="\mathrm{Br}",pos=Br2_start,attributes=benzene2.attributes)
+        benzene2.atomic_clusters["Br2"]={Mobject:Br2_mob,"pos":Br2_start,"adj":[],Bond:[]}
+        benzene2.add(Br2_mob)
+
+        Br3_mob=AtomicCluster(text="\mathrm{Br}",pos=np.array([3*benzene2.attributes.length_global,0,0]),attributes=benzene2.attributes)
+        Br2_Br3_bond=Line(start=Br2_mob.get_right(),end=Br3_mob.get_left(),color=benzene2.attributes.color)
+
+        FeBr3_mob=AtomicCluster(text=r"\mathrm{FeBr_3}",pos=np.array([0,0,0]),attributes=benzene2.attributes)
+        FeBr3_final=np.array([4.0*benzene2.attributes.length_global+FeBr3_mob.width/2,0,0])
+        FeBr3_start=FeBr3_final+np.array([1.5,0,0])
+        FeBr3_mob.move_to(FeBr3_start)
+
+        self.play(FadeIn(Br2_mob),FadeIn(Br3_mob),FadeIn(Br2_Br3_bond))
+        self.wait(1)
+        self.play(FadeIn(FeBr3_mob))
+        self.wait(0.5)
+
+        self.play(FeBr3_mob.animate.shift(FeBr3_final-FeBr3_start),run_time=1)
+
+        Br3_FeBr3_bond=Line(start=Br3_mob.get_right(),end=FeBr3_mob.get_left(),color=benzene2.attributes.color)
+        FeBr4_negative=Charge(charge_type=ChargeType.NEGATIVE,text=FeBr3_mob,pos=UR,attributes=benzene2.attributes)
+
+        benzene2.add_charge(text="Br2",pos=UR,charge_type=ChargeType.POSITIVE)
+        Br2_positive=benzene2.charges["Br2"]
+
+        self.play(ReplacementTransform(Br2_Br3_bond,Br3_FeBr3_bond),
+                  FadeIn(Br2_positive),
+                  FadeIn(FeBr4_negative),
+                  run_time=1.5)
+        self.wait(1)
+
+        shift=Br2_target-Br2_start
+        self.play(Br2_mob.animate.shift(shift),
+                  Br2_positive.animate.shift(shift),
+                  FadeOut(FeBr3_mob),
+                  FadeOut(Br3_mob),
+                  FadeOut(Br3_FeBr3_bond),
+                  FadeOut(FeBr4_negative),
+                  run_time=1)
+        benzene2.atomic_clusters["Br2"]["pos"]=Br2_target
+
+        C7_C12_double=benzene2.atomic_clusters["C7"][Bond][1]
+        C7_H2_normal=benzene2.atomic_clusters["H2"][Bond][0]
+
+        C7_C12_single=benzene2.build_bond(start="C7",end="C12",bond_type=BondType.NORMAL_BOND)
+        C7_Br2_in=benzene2.build_bond(start="C7",end="Br2",bond_type=BondType.IN_BOND)
+        C12_positive=benzene2.build_charge(text="C12",pos=UL,charge_type=ChargeType.POSITIVE_COORDINATE)
+
+        step_wheland2=ElectronMigrationStep(
+            replace=[(C7_C12_double,VGroup(C7_C12_single,C7_Br2_in))],
+            create=[C12_positive],
+            fadeout=[Br2_positive],
+        )
+
+        self.play(benzene2.electron_migration(steps=[step_wheland2],lag_ratio=0,run_time=1.2),
+                  BondTypeTransform(bond=C7_H2_normal,
+                                    target_type=BondType.OUT_BOND,
+                                    angle=30*DEGREES,
+                                    about_point=benzene2.atomic_clusters["C7"]["pos"],
+                                    sf=benzene2,
+                                    run_time=1.2))
+
+        benzene2.delete_bond(start="C7", end="C12")
+        benzene2.atomic_clusters["C7"][Bond].extend([C7_C12_single, C7_Br2_in])
+        benzene2.atomic_clusters["C12"][Bond].append(C7_C12_single)
+        benzene2.atomic_clusters["Br2"][Bond].append(C7_Br2_in)
+        benzene2.atomic_clusters["C7"]["adj"].extend(["C12", "Br2"])
+        benzene2.atomic_clusters["C12"]["adj"].append("C7")
+        benzene2.atomic_clusters["Br2"]["adj"].append("C7")
+        benzene2.charges.pop("Br2")
+        benzene2.charges["C12"] = C12_positive
+
+        self.wait(2.5)
+
+        C7_C12_double_new=benzene2.build_bond(start="C12", end="C7", bond_type=BondType.DOUBLE_BOND,
+                                             side=-1, start_side_edge=True, end_side_edge=True)
+        H2_positive=benzene2.build_charge(text="H2", pos=UR, charge_type=ChargeType.POSITIVE)
+
+        step_elimination2=ElectronMigrationStep(
+            replace=[(VGroup(C7_H2_normal, C7_C12_single), C7_C12_double_new)],
+            create=[H2_positive],
+            fadeout=[C12_positive],
+        )
+
+        c7_pos=benzene2.atomic_clusters["C7"]["pos"]
+        ca, sa = np.cos(30*DEGREES), np.sin(30*DEGREES)
+        dx, dy = Br2_target[0]-c7_pos[0], Br2_target[1]-c7_pos[1]
+        Br2_final=np.array([c7_pos[0]+dx*ca-dy*sa, c7_pos[1]+dx*sa+dy*ca, 0])
+        arc2=ArcBetweenPoints(Br2_target, Br2_final, angle=30*DEGREES)
+
+        self.play(benzene2.electron_migration(steps=[step_elimination2], lag_ratio=0, run_time=1.5),
+                  BondTypeTransform(bond=C7_Br2_in,
+                                    target_type=BondType.NORMAL_BOND,
+                                    angle=30*DEGREES,
+                                    about_point=c7_pos,
+                                    run_time=1.2),
+                  MoveAlongPath(Br2_mob, arc2, run_time=1.2))
+
+        benzene2.delete_bond(start="C7", end="H2")
+        benzene2.delete_bond(start="C7", end="C12")
+        benzene2.atomic_clusters["C7"][Bond].append(C7_C12_double_new)
+        benzene2.atomic_clusters["C12"][Bond].append(C7_C12_double_new)
+        benzene2.atomic_clusters["C7"]["adj"].append("C12")
+        benzene2.atomic_clusters["C12"]["adj"].append("C7")
+        benzene2.charges.pop("C12")
+        benzene2.charges["H2"] = H2_positive
+        benzene2.atomic_clusters["Br2"]["pos"] = Br2_final
+
+        H2_target=np.array([-2*benzene2.attributes.length_global,0,0])
+        shift_h2=H2_target-benzene2.atomic_clusters["H2"][Mobject].get_center()
+        self.play(benzene2.atomic_clusters["H2"][Mobject].animate.shift(shift_h2),
+                  H2_positive.animate.shift(shift_h2),
+                  run_time=1)
+        benzene2.atomic_clusters["H2"]["pos"]=H2_target
+
+        self.wait(1.5)
