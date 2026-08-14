@@ -143,6 +143,16 @@ class test(Scene):
 
         self.play(FadeOut(text5,benzene1))
 
+        #----------------------Bromination of benzene-----------------------
+
+        #descriptions
+        text6=Description(text=r"\text{接下来以}\mathrm{FeBr_3}\text{催化的苯的溴化反应为例}")
+        text7=Description(text=r"\text{首先，}\mathrm{Br_2}\text{与}\mathrm{FeBr_3}\text{结合，}\mathrm{Br_2}\text{异裂}")
+        text8=Description(text=r"\text{同时生成一个}\mathrm{Br^+}\text{和一个}\mathrm{FeBr_4^-}")
+        text9=Description(text=r"\text{接下来，}\mathrm{Br^+}\text{进攻苯环的}\mathrm{\pi}\text{电子}")
+        text10=Description(text=r"\text{随后，}\mathrm{H^+}\text{离去，形成产物溴苯}")
+        text11=Description(text=r"\text{最后，}\mathrm{H^+}\text{与}\mathrm{FeBr_4^-}\text{结合，生成}\mathrm{HBr}\text{，}\mathrm{FeBr_3}\text{催化剂再生}")
+
         benzene2=StructuralFormula(name="C7",pos=[0,0.5*bond_length,0],text=None)
         benzene2.add_atom(name="C8",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C7")
         benzene2.add_atom(name="C9",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C8",
@@ -154,9 +164,10 @@ class test(Scene):
         benzene2.add_bond(start="C12",end="C7",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
         benzene2.add_atom(name="H2",direction=90*DEGREES,text="\mathrm{H}",bond_type=BondType.NORMAL_BOND,adjacency="C7")
 
+        self.play(Write(text6))
         self.play(Create(benzene2))
 
-        self.wait(0.5)
+        self.wait(1.5)
 
         Br2_start=np.array([2*benzene2.attributes.length_global,0,0])
         Br2_target=benzene2.atomic_clusters["C7"]["pos"]+np.array([np.cos(60*DEGREES),np.sin(60*DEGREES),0])*benzene2.attributes.length_global
@@ -173,7 +184,7 @@ class test(Scene):
         FeBr3_mob=AtomicCluster(text=r"\mathrm{FeBr_3}",pos=FeBr3_start,attributes=benzene2.attributes,
                                 text_offset=np.array([0.3,-0.03,0]))
 
-        self.play(FadeIn(Br2_mob),FadeIn(Br3_mob),FadeIn(Br2_Br3_bond))
+        self.play(FadeIn(Br2_mob),FadeIn(Br3_mob),FadeIn(Br2_Br3_bond),ReplacementTransform(text6,text7))
         self.wait(1)
         self.play(FadeIn(FeBr3_mob))
         self.wait(0.5)
@@ -190,7 +201,9 @@ class test(Scene):
                   FadeIn(Br2_positive),
                   FadeIn(FeBr4_negative),
                   run_time=1.5)
-        self.wait(1)
+        self.play(ReplacementTransform(text7,text8))
+        self.wait(2)
+        self.play(ReplacementTransform(text8,text9))
 
         shift=Br2_target-Br2_start
         self.play(Br2_mob.animate.shift(shift),
@@ -257,7 +270,8 @@ class test(Scene):
                                     angle=30*DEGREES,
                                     about_point=c7_pos,
                                     run_time=1.2),
-                  MoveAlongPath(Br2_mob, arc2, run_time=1.2))
+                  MoveAlongPath(Br2_mob, arc2, run_time=1.2),
+                  ReplacementTransform(text9,text10))
 
         benzene2.delete_bond(start="C7", end="H2")
         benzene2.delete_bond(start="C7", end="C12")
@@ -275,5 +289,52 @@ class test(Scene):
                   H2_positive.animate.shift(shift_h2),
                   run_time=1)
         benzene2.atomic_clusters["H2"]["pos"]=H2_target
+
+        self.wait(1.5)
+
+        self.play(ReplacementTransform(text10,text11))
+
+        FeBr4_sf=StructuralFormula(name="Br3Fe",pos=np.array([-5*benzene2.attributes.length_global,0,0]),
+                                   text=r"\mathrm{Br_3Fe}",text_offset=np.array([-0.3,-0.03,0]))
+        Br4_mob=AtomicCluster(text="\mathrm{Br}",pos=np.array([-4*benzene2.attributes.length_global,0,0]),attributes=FeBr4_sf.attributes)
+        FeBr4_sf.atomic_clusters["Br4"]={Mobject:Br4_mob,"pos":np.array([-4*benzene2.attributes.length_global,0,0]),"adj":["Br3Fe"],Bond:[]}
+        FeBr4_sf.add(Br4_mob)
+
+        Br3Fe_Br4_bond=Bond(bond_type=BondType.NORMAL_BOND,
+                            start=np.array([-5*benzene2.attributes.length_global,0,0]),
+                            end=np.array([-4*benzene2.attributes.length_global,0,0]),
+                            start_edge=True,end_edge=True,
+                            attributes=FeBr4_sf.attributes)
+        FeBr4_sf.atomic_clusters["Br3Fe"][Bond].append(Br3Fe_Br4_bond)
+        FeBr4_sf.atomic_clusters["Br4"][Bond].append(Br3Fe_Br4_bond)
+        FeBr4_sf.atomic_clusters["Br3Fe"]["adj"].append("Br4")
+        FeBr4_sf.add(Br3Fe_Br4_bond)
+
+        FeBr4_sf.add_charge(text="Br3Fe",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        self.play(Create(FeBr4_sf))
+        self.wait(1)
+
+        H2_final=np.array([-3*benzene2.attributes.length_global,0,0])
+        shift_h3=H2_final-benzene2.atomic_clusters["H2"]["pos"]
+        self.play(benzene2.atomic_clusters["H2"][Mobject].animate.shift(shift_h3),
+                  H2_positive.animate.shift(shift_h3),
+                  run_time=1)
+        benzene2.atomic_clusters["H2"]["pos"]=H2_final
+
+        H_Br4_bond=Bond(bond_type=BondType.NORMAL_BOND,
+                        start=H2_final,
+                        end=FeBr4_sf.atomic_clusters["Br3Fe"]["pos"],
+                        start_edge=True,end_edge=True,
+                        attributes=benzene2.attributes)
+
+        self.play(ReplacementTransform(Br3Fe_Br4_bond,H_Br4_bond),
+                  FadeOut(H2_positive),
+                  FadeOut(FeBr4_sf.charges["Br3Fe"]),
+                  run_time=1.5)
+
+        FeBr4_sf.delete_bond(start="Br3Fe",end="Br4")
+        benzene2.charges.pop("H2")
+        FeBr4_sf.charges.pop("Br3Fe")
 
         self.wait(1.5)
