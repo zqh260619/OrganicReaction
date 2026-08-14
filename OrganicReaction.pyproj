@@ -22,13 +22,24 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="OrganicReactionTools.py" />
+    <Compile Include="OrganicReactionTools\__init__.py" />
+    <Compile Include="OrganicReactionTools\parameters.py" />
+    <Compile Include="OrganicReactionTools\attributes.py" />
+    <Compile Include="OrganicReactionTools\atoms.py" />
+    <Compile Include="OrganicReactionTools\bonds.py" />
+    <Compile Include="OrganicReactionTools\charges.py" />
+    <Compile Include="OrganicReactionTools\decorations.py" />
+    <Compile Include="OrganicReactionTools\animations.py" />
+    <Compile Include="OrganicReactionTools\structures.py" />
+    <Compile Include="OrganicReactionTools\texts.py" />
+    <Compile Include="OrganicReactionTools\functions.py" />
     <Compile Include="SubstitutionReaction1.py" />
     <Compile Include="SubstitutionReaction2.py" />
     <Compile Include="test.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include=".github\" />
+    <Folder Include="OrganicReactionTools\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
