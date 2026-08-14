@@ -166,22 +166,22 @@ class test(Scene):
         benzene2.add(Br2_mob)
 
         Br3_mob=AtomicCluster(text="\mathrm{Br}",pos=np.array([3*benzene2.attributes.length_global,0,0]),attributes=benzene2.attributes)
-        Br2_Br3_bond=Line(start=Br2_mob.get_right(),end=Br3_mob.get_left(),color=benzene2.attributes.color)
+        Br2_Br3_bond=NormalBond(start=Br2_mob.get_center(),direction=0,start_edge=True,end_edge=True,attributes=benzene2.attributes)
 
-        FeBr3_mob=AtomicCluster(text=r"\mathrm{FeBr_3}",pos=np.array([0,0,0]),attributes=benzene2.attributes)
-        FeBr3_final=np.array([4.0*benzene2.attributes.length_global+FeBr3_mob.width/2,0,0])
-        FeBr3_start=FeBr3_final+np.array([1.5,0,0])
-        FeBr3_mob.move_to(FeBr3_start)
+        FeBr3_anchor=np.array([4.0*benzene2.attributes.length_global,0,0])
+        FeBr3_start=FeBr3_anchor+np.array([1.5,0,0])
+        FeBr3_mob=AtomicCluster(text=r"\mathrm{FeBr_3}",pos=FeBr3_start,attributes=benzene2.attributes,
+                                text_offset=np.array([0.3,-0.03,0]))
 
         self.play(FadeIn(Br2_mob),FadeIn(Br3_mob),FadeIn(Br2_Br3_bond))
         self.wait(1)
         self.play(FadeIn(FeBr3_mob))
         self.wait(0.5)
 
-        self.play(FeBr3_mob.animate.shift(FeBr3_final-FeBr3_start),run_time=1)
+        self.play(FeBr3_mob.animate.shift(FeBr3_anchor-FeBr3_start),run_time=1)
 
-        Br3_FeBr3_bond=Line(start=Br3_mob.get_right(),end=FeBr3_mob.get_left(),color=benzene2.attributes.color)
-        FeBr4_negative=Charge(charge_type=ChargeType.NEGATIVE,text=FeBr3_mob,pos=UR,attributes=benzene2.attributes)
+        Br3_FeBr3_bond=NormalBond(start=Br3_mob.get_center(),direction=0,start_edge=True,end_edge=True,attributes=benzene2.attributes)
+        FeBr4_negative=Charge(charge_type=ChargeType.NEGATIVE,text=FeBr3_mob,pos=UL,attributes=benzene2.attributes)
 
         benzene2.add_charge(text="Br2",pos=UR,charge_type=ChargeType.POSITIVE)
         Br2_positive=benzene2.charges["Br2"]
