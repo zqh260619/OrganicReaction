@@ -205,6 +205,37 @@ class SingleCharge(Circle):
 
         super().__init__(radius=attributes.radius_single,color=attributes.color,arc_center=position,fill_opacity=1)
 
+class PairCharge(VGroup):
+    def __init__(self,*,text:MathTex,pos:Vector3D,attributes:'AttributeHolder'):
+
+        """孤对电子电荷：两个与 SingleCharge 形状相同的圆点。
+
+        两个圆点中心位于电荷锚点（文本角点向外偏移 edge_charge 处）两侧，
+        且两个圆点中心的连线始终垂直于文本中心到两个圆点中点的连线。
+        """
+
+        position=text.get_corner(pos)+pos*attributes.edge_charge
+
+        direction=position-text.get_center()
+        norm=np.linalg.norm(direction)
+        if norm==0:
+            direction=np.array(pos,dtype=float)
+            norm=np.linalg.norm(direction)
+        if norm==0:
+            direction=np.array([1.,0.,0.])
+        else:
+            direction=direction/norm
+
+        normal=np.array([-direction[1],direction[0],0])
+        half=attributes.distance_pair/2
+
+        circle1=Circle(radius=attributes.radius_single,color=attributes.color,
+                       arc_center=position+normal*half,fill_opacity=1)
+        circle2=Circle(radius=attributes.radius_single,color=attributes.color,
+                       arc_center=position-normal*half,fill_opacity=1)
+
+        super().__init__(circle1,circle2)
+
 class NegativeChargeByCoordinate(VGroup):
     def __init__(self,*,position:Vector3D,attributes:'AttributeHolder'):
 
@@ -237,6 +268,33 @@ class SingleChargeByCoordinate(Circle):
     def __init__(self,*,position:Vector3D,attributes:'AttributeHolder'):
 
         super().__init__(radius=attributes.radius_single,color=attributes.color,arc_center=position,fill_opacity=1)
+
+class PairChargeByCoordinate(VGroup):
+    def __init__(self,*,position:Vector3D,direction:Vector3D,attributes:'AttributeHolder'):
+
+        """PairCharge 的坐标版本。
+
+        position：两个圆点的中点（电荷锚点）。
+        direction：文本中心指向两个圆点中点的方向向量，
+        两个圆点中心的连线始终垂直于该方向。
+        """
+
+        direction=np.array(direction,dtype=float)
+        norm=np.linalg.norm(direction)
+        if norm==0:
+            direction=np.array([1.,0.,0.])
+        else:
+            direction=direction/norm
+
+        normal=np.array([-direction[1],direction[0],0])
+        half=attributes.distance_pair/2
+
+        circle1=Circle(radius=attributes.radius_single,color=attributes.color,
+                       arc_center=position+normal*half,fill_opacity=1)
+        circle2=Circle(radius=attributes.radius_single,color=attributes.color,
+                       arc_center=position-normal*half,fill_opacity=1)
+
+        super().__init__(circle1,circle2)
 
 class BracketBetweenPoints(VGroup):
     def __init__(self,*,start:Vector3D,end:Vector3D,ratio_edge=0.1,**kwargs):
@@ -319,9 +377,11 @@ class ChargeType(Enum):
     POSITIVE=PositiveCharge
     NEGATIVE=NegativeCharge
     SINGLE=SingleCharge
+    PAIR=PairCharge
     POSITIVE_COORDINATE=PositiveChargeByCoordinate
     NEGATIVE_COORDINATE=NegativeChargeByCoordinate
     SINGLE_COORDINATE=SingleChargeByCoordinate
+    PAIR_COORDINATE=PairChargeByCoordinate
 
 class ElectronMigrationStep:
     """电子迁移步骤的描述。
@@ -429,6 +489,7 @@ class AttributeHolder:
                  ratio_positive:float,
                  stroke_width_positive:float,
                  radius_single:float,
+                 distance_pair:float,
                  distance_double:float,
                  edge_ratio_double:float,
                  distance_triple:float):
@@ -451,6 +512,7 @@ class AttributeHolder:
         self.ratio_positive=ratio_positive
         self.stroke_width_positive=stroke_width_positive
         self.radius_single=radius_single
+        self.distance_pair=distance_pair
         self.distance_double=distance_double
         self.edge_ratio_double=edge_ratio_double
         self.distance_triple=distance_triple
@@ -511,7 +573,10 @@ class Charge(VGroup):
         if isinstance(text,AtomicCluster):
             charge=self.charge_type.value(text=text,pos=pos,attributes=attributes)
         else:
-            charge=self.charge_type.value(position=pos*attributes.edge_charge+text,attributes=attributes)
+            if charge_type==ChargeType.PAIR_COORDINATE:
+                charge=self.charge_type.value(position=pos*attributes.edge_charge+text,direction=pos,attributes=attributes)
+            else:
+                charge=self.charge_type.value(position=pos*attributes.edge_charge+text,attributes=attributes)
 
         self.add(charge)
 
@@ -535,6 +600,7 @@ class StructuralFormula(VGroup):
                  ratio_positive=0.6,
                  stroke_width_positive=1.2,
                  radius_single=0.01,
+                 distance_pair=0.1,
                  distance_double=0.12,
                  edge_ratio_double=0.08,
                  distance_triple=0.12,
@@ -562,6 +628,7 @@ class StructuralFormula(VGroup):
                                         ratio_positive=ratio_positive,
                                         stroke_width_positive=stroke_width_positive,
                                         radius_single=radius_single,
+                                        distance_pair=distance_pair,
                                         distance_double=distance_double,
                                         edge_ratio_double=edge_ratio_double,
                                         distance_triple=distance_triple)
@@ -1574,6 +1641,7 @@ DEFAULT_ATTRIBUTES=AttributeHolder(base_ratio_outbond=0.2,
                                    ratio_positive=0.6,
                                    stroke_width_positive=1.2,
                                    radius_single=0.01,
+                                   distance_pair=0.1,
                                    distance_double=0.12,
                                    edge_ratio_double=0.08,
                                    distance_triple=0.12)
