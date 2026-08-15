@@ -1,12 +1,23 @@
-"""全局参数与常量。"""
+"""全局参数、常量与默认文本基类。"""
 
-from manim import TexTemplate
+from manim import TexTemplate, MathTex as _ManimMathTex
 import numpy as np
 
 mytemplate = TexTemplate()
 mytemplate.add_to_preamble(r"\usepackage{ctex}").add_to_preamble(r"\setlength{\jot}{-5pt}")
 
 RNG=np.random.default_rng(seed=3)
+
+class MathTex(_ManimMathTex):
+    """本包默认的 MathTex：多行文本居中对齐。
+
+    与 manim 自带的 MathTex 完全兼容，仅将默认 TeX 环境由
+    ``align*``（各行右对齐）改为 ``gather*``（各行居中）。
+    需要其他对齐方式时可显式传入 ``tex_environment`` 覆盖，
+    例如 ``tex_environment="align*"`` 恢复 manim 默认行为。
+    """
+    def __init__(self,*tex_strings,tex_environment="gather*",**kwargs):
+        super().__init__(*tex_strings,tex_environment=tex_environment,**kwargs)
 
 #PARAMETERS
 #structures

@@ -1,8 +1,10 @@
 """装饰图形：括号与箭头。"""
 
-from manim import VGroup, Line, CubicBezier, ArrowTriangleFilledTip, Arrow, MathTex, WHITE, PI, UP, UL, YELLOW
+from manim import VGroup, Line, CubicBezier, ArrowTriangleFilledTip, Arrow, WHITE, PI, UP, UL, YELLOW
 from manim.typing import Vector3D
 import numpy as np
+
+from .parameters import MathTex
 
 class BracketBetweenPoints(VGroup):
     def __init__(self,*,start:Vector3D,end:Vector3D,ratio_edge=0.1,**kwargs):

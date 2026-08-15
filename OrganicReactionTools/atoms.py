@@ -1,10 +1,10 @@
 """原子文本 AtomicCluster 与原子定位器 Locator。"""
 
-from manim import MathTex, PI, DEGREES
+from manim import PI, DEGREES
 from manim.typing import Vector3D
 import numpy as np
 
-from .parameters import mytemplate
+from .parameters import mytemplate, MathTex
 
 class Locator:
     """原子定位器，封装新原子相对于邻接原子的位置计算。

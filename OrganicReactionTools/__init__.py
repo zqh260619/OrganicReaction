@@ -6,7 +6,7 @@
 与原有的调用代码完全无需修改。
 
 子模块划分：
-    parameters   全局参数与常量
+    parameters   全局参数、常量与默认文本基类（MathTex 多行默认居中）
     attributes   样式属性持有者 AttributeHolder 与 DEFAULT_ATTRIBUTES
     atoms        原子文本 AtomicCluster 与原子定位器 Locator
     bonds        化学键类、Bond 包装器与 BondType 枚举

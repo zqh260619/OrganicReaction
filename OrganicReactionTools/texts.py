@@ -1,9 +1,9 @@
 """标题文本类。"""
 
-from manim import MathTex, WHITE
+from manim import WHITE
 from manim.typing import Vector3D
 
-from .parameters import (mytemplate, title_coordinate, title_size,
+from .parameters import (MathTex, mytemplate, title_coordinate, title_size,
                          subtitle_coordinate, subtitle_size,
                          description_coordinate, txt_size)
 

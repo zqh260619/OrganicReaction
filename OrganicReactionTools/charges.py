@@ -1,10 +1,11 @@
 """电荷类、Charge 包装器与 ChargeType 枚举。"""
 
-from manim import VGroup, Circle, Line, MathTex
+from manim import VGroup, Circle, Line
 from manim.typing import Vector3D
 import numpy as np
 from enum import Enum
 
+from .parameters import MathTex
 from .attributes import AttributeHolder
 from .atoms import AtomicCluster
 

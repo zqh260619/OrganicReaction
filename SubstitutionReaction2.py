@@ -345,6 +345,13 @@ class test(Scene):
 
         #----------------------Nitration of benzene-----------------------
 
+        #descriptions
+        text12=Description(text=r"\text{另一经典反应是苯的硝化反应，反应需要浓}\mathrm{HNO_3}\text{和浓}\mathrm{H_2SO_4}\text{，}\\\text{其中浓}\mathrm{H_2SO_4}\text{作催化剂}")
+        text13=Description(text=r"\mathrm{HNO_3}\text{分子的羟基}\mathrm{O}\text{先被浓}\mathrm{H_2SO_4}\text{质子化}")
+        text14=Description(text=r"\text{然后快速脱去一个水分子，形成}\mathrm{NO_2^+}")
+        text15=Description(text=r"\text{接着}\mathrm{NO_2^+}\text{进攻苯环，形成中间体}")
+        text16=Description(text=r"\text{最后中间体的}\mathrm{H^+}\text{被体系中的}\mathrm{HSO_4^-}\text{拔除，催化剂再生}")
+
         benzene3=StructuralFormula(name="C13",pos=[0,0.5*bond_length,0],text=None)
         benzene3.add_atom(name="C14",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C13")
         benzene3.add_atom(name="C15",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C14",
@@ -356,6 +363,7 @@ class test(Scene):
         benzene3.add_bond(start="C18",end="C13",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
         benzene3.add_atom(name="H3",direction=90*DEGREES,text="\mathrm{H}",bond_type=BondType.NORMAL_BOND,adjacency="C13")
 
+        self.play(Write(text12))
         self.play(Create(benzene3))
 
         self.wait(0.5)
@@ -396,7 +404,7 @@ class test(Scene):
         benzene3.add(O3_mob)
         benzene3.add(H4_mob)
         benzene3.add(lone_pair)
-        benzene3.add_charge(text="N",pos=UR,charge_type=ChargeType.POSITIVE)
+        benzene3.add_charge(text="N",pos=LEFT,charge_type=ChargeType.POSITIVE)
         benzene3.add_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
         N_positive=benzene3.charges["N"]
         O1_negative=benzene3.charges["O1"]
@@ -404,7 +412,6 @@ class test(Scene):
         self.play(FadeIn(N_mob),FadeIn(O1_mob),FadeIn(O2_mob),FadeIn(O3_mob),FadeIn(H4_mob),
                   FadeIn(lone_pair),FadeIn(N_O1_single_gen),FadeIn(N_O2_bond),FadeIn(N_O3_bond),
                   FadeIn(O3_H_bond),FadeIn(N_positive),FadeIn(O1_negative))
-        self.wait(1)
 
         H5_pos=O3_pos+np.array([0,-1*benzene3.attributes.length_global,0])
         H5_mob=AtomicCluster(text="\mathrm{H}",pos=H5_pos,attributes=benzene3.attributes)
@@ -438,6 +445,7 @@ class test(Scene):
         benzene3.add(SO3H_mob)
 
         self.play(FadeIn(H5_mob),FadeIn(O4_mob),FadeIn(SO3H_mob),FadeIn(H_O_bond),FadeIn(O4_SO3H_bond))
+        self.play(ReplacementTransform(text12,text13))
         self.wait(0.5)
 
         O3_H2_bond=benzene3.build_bond(start="O3",end="H5",bond_type=BondType.NORMAL_BOND)
@@ -467,6 +475,8 @@ class test(Scene):
         self.play(FadeOut(O4_mob),FadeOut(SO3H_mob),FadeOut(O4_negative),FadeOut(O4_SO3H_bond))
         benzene3.remove(O4_mob,SO3H_mob,O4_negative,O4_SO3H_bond)
 
+        self.play(ReplacementTransform(text13,text14))
+
         N_O1_bond=benzene3.build_bond(start="N",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
         pair_dir=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])
         O3_lone_pair2=Charge(charge_type=ChargeType.PAIR_COORDINATE,
@@ -493,8 +503,6 @@ class test(Scene):
         benzene3.charges.pop("O1")
         benzene3.charges.pop("O3")
 
-        self.wait(1)
-
         self.play(benzene3.rotate_atoms(atom_names="O1",center="N",angle=30*DEGREES,run_time=1.2),
                   benzene3.rotate_atoms(atom_names="O2",center="N",angle=-30*DEGREES,run_time=1.2),
                   FadeOut(O3_mob),FadeOut(H4_mob),FadeOut(H5_mob),
@@ -502,7 +510,8 @@ class test(Scene):
                   run_time=1.2)
         benzene3.remove(O3_mob,H4_mob,H5_mob,O3_H_bond,O3_H2_bond,O3_lone_pair2)
 
-        self.wait(1)
+        self.wait(0.5)
+        self.play(ReplacementTransform(text14,text15))
 
         shift3=N_target-N_start
         self.play(N_mob.animate.shift(shift3),
@@ -546,6 +555,7 @@ class test(Scene):
                                     sf=benzene3,
                                     run_time=1.2),
                   benzene3.rotate_atoms(atom_names="O2",center="N",angle=60*DEGREES,run_time=1.2))
+        self.play(ReplacementTransform(text15,text16))
 
         benzene3.delete_bond(start="C13", end="C18")
         benzene3.atomic_clusters["C13"][Bond].extend([C13_C18_single, C13_N_in])
@@ -561,21 +571,47 @@ class test(Scene):
         benzene3.charges["C18"] = C18_positive
         benzene3.charges["O1"] = O1_negative
 
-        self.wait(2.5)
+        H3_pos=benzene3.atomic_clusters["H3"]["pos"]
+        O5_pos=H3_pos+np.array([-1*benzene3.attributes.length_global,0,0])
+        O5_mob=AtomicCluster(text="\mathrm{O}",pos=O5_pos,attributes=benzene3.attributes)
+        HO3S_pos=O5_pos+np.array([-1*benzene3.attributes.length_global,0,0])
+        HO3S_mob=AtomicCluster(text=r"\mathrm{HO_3S}",pos=HO3S_pos,attributes=benzene3.attributes,
+                               text_offset=np.array([-0.35,0,0]))
 
+        benzene3.atomic_clusters["O5"]={Mobject:O5_mob,"pos":O5_pos,"adj":[],Bond:[]}
+        benzene3.atomic_clusters["HO3S"]={Mobject:HO3S_mob,"pos":HO3S_pos,"adj":[],Bond:[]}
+
+        HO3S_O5_bond=Bond(bond_type=BondType.NORMAL_BOND,
+                          start=HO3S_pos,
+                          end=O5_pos,
+                          start_edge=True,end_edge=True,
+                          attributes=benzene3.attributes)
+        benzene3.atomic_clusters["HO3S"][Bond].append(HO3S_O5_bond)
+        benzene3.atomic_clusters["O5"][Bond].append(HO3S_O5_bond)
+        benzene3.atomic_clusters["HO3S"]["adj"].append("O5")
+        benzene3.atomic_clusters["O5"]["adj"].append("HO3S")
+        benzene3.add(HO3S_O5_bond)
+        benzene3.add(O5_mob)
+        benzene3.add(HO3S_mob)
+        O5_negative=Charge(charge_type=ChargeType.NEGATIVE,text=O5_mob,pos=UR,attributes=benzene3.attributes)
+        benzene3.add(O5_negative)
+
+        self.play(FadeIn(O5_mob),FadeIn(HO3S_mob),FadeIn(HO3S_O5_bond),FadeIn(O5_negative))
+        self.wait(1)
+
+        O5_H_bond=benzene3.build_bond(start="O5",end="H3",bond_type=BondType.NORMAL_BOND)
         C13_C18_double_new=benzene3.build_bond(start="C18", end="C13", bond_type=BondType.DOUBLE_BOND,
                                               side=-1, start_side_edge=True, end_side_edge=True)
-        H3_positive=benzene3.build_charge(text="H3", pos=UR, charge_type=ChargeType.POSITIVE)
 
         elim_source=VGroup(C13_H3_normal, C13_C18_single)
         step_elimination3=ElectronMigrationStep(
-            replace=[(elim_source, C13_C18_double_new)],
-            create=[H3_positive],
+            replace=[(O5_negative,O5_H_bond),
+                     (elim_source, C13_C18_double_new)],
             fadeout=[C18_positive],
         )
 
         em_anim=benzene3.electron_migration(steps=[step_elimination3], lag_ratio=0, run_time=1.5)
-        benzene3.remove(C13_H3_normal, C13_C18_single, C18_positive)
+        benzene3.remove(O5_negative, C13_H3_normal, C13_C18_single, C18_positive)
         self.add(em_anim.mobject)
 
         c13_pos=benzene3.atomic_clusters["C13"]["pos"]
@@ -592,6 +628,11 @@ class test(Scene):
                   c13_n_btt,
                   nitro_rot)
 
+        benzene3.atomic_clusters["O5"][Bond].append(O5_H_bond)
+        benzene3.atomic_clusters["O5"]["adj"].append("H3")
+        benzene3.atomic_clusters["H3"][Bond].append(O5_H_bond)
+        benzene3.atomic_clusters["H3"]["adj"].append("O5")
+
         benzene3.delete_bond(start="C13", end="H3")
         benzene3.delete_bond(start="C13", end="C18")
         benzene3.atomic_clusters["C13"][Bond].append(C13_C18_double_new)
@@ -599,13 +640,21 @@ class test(Scene):
         benzene3.atomic_clusters["C13"]["adj"].append("C18")
         benzene3.atomic_clusters["C18"]["adj"].append("C13")
         benzene3.charges.pop("C18")
-        benzene3.charges["H3"] = H3_positive
 
         H3_target=np.array([-2*benzene3.attributes.length_global,0,0])
         shift_h4=H3_target-benzene3.atomic_clusters["H3"][Mobject].get_center()
         self.play(benzene3.atomic_clusters["H3"][Mobject].animate.shift(shift_h4),
-                  H3_positive.animate.shift(shift_h4),
+                  O5_mob.animate.shift(shift_h4),
+                  HO3S_mob.animate.shift(shift_h4),
+                  O5_H_bond.animate.shift(shift_h4),
+                  HO3S_O5_bond.animate.shift(shift_h4),
                   run_time=1)
         benzene3.atomic_clusters["H3"]["pos"]=H3_target
+        benzene3.atomic_clusters["O5"]["pos"]=benzene3.atomic_clusters["O5"]["pos"]+shift_h4
+        benzene3.atomic_clusters["HO3S"]["pos"]=benzene3.atomic_clusters["HO3S"]["pos"]+shift_h4
+        O5_H_bond.start=benzene3.atomic_clusters["O5"]["pos"]
+        O5_H_bond.end=H3_target
+        HO3S_O5_bond.start=benzene3.atomic_clusters["HO3S"]["pos"]
+        HO3S_O5_bond.end=benzene3.atomic_clusters["O5"]["pos"]
 
         self.wait(1.5)
