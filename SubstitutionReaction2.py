@@ -468,7 +468,11 @@ class test(Scene):
         benzene3.remove(O4_mob,SO3H_mob,O4_negative,O4_SO3H_bond)
 
         N_O1_bond=benzene3.build_bond(start="N",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
-        O3_lone_pair2=Charge(charge_type=ChargeType.PAIR,text=O3_mob,pos=UR,attributes=benzene3.attributes)
+        pair_dir=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])
+        O3_lone_pair2=Charge(charge_type=ChargeType.PAIR_COORDINATE,
+                             text=O3_mob.get_center()+pair_dir*0.21,
+                             pos=pair_dir,
+                             attributes=benzene3.attributes)
 
         step_dehydration=ElectronMigrationStep(
             replace=[(VGroup(N_O1_single_gen,O1_negative),N_O1_bond),
