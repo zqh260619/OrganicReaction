@@ -18,7 +18,7 @@ class ElectronMigrationStep:
     Attributes
     ----------
     replace : list[tuple[Mobject, Mobject]]
-        要执行的 ReplacementTransform 列表，每项为 (source, target)。
+        要执行的 ReplacementTransform 列表，每项为 (source, target)，按顺序播放每一项变换动画。
         多对一：将多个 source 用 VGroup 包装。
         一对多：将多个 target 用 VGroup 包装，或使用 Mobject.copy()。
     create : list[Mobject]
