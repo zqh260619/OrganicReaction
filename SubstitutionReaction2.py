@@ -335,6 +335,162 @@ class test(Scene):
 
         FeBr4_sf.delete_bond(start="Br3Fe",end="Br4")
         benzene2.charges.pop("H2")
-        FeBr4_sf.charges.pop("Br3Fe")
+        FeBr4_negative2=FeBr4_sf.charges.pop("Br3Fe")
+        benzene2.remove(H2_positive)
+        FeBr4_sf.remove(FeBr4_negative2)
+
+        self.wait(1.5)
+
+        self.play(FadeOut(benzene2,FeBr4_sf,H_Br4_bond,text11))
+
+        #----------------------Nitration of benzene-----------------------
+
+        benzene3=StructuralFormula(name="C13",pos=[0,0.5*bond_length,0],text=None)
+        benzene3.add_atom(name="C14",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C13")
+        benzene3.add_atom(name="C15",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C14",
+                         side=-1,start_side_edge=True,end_side_edge=True)
+        benzene3.add_atom(name="C16",direction=-150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C15")
+        benzene3.add_atom(name="C17",direction=150*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C16",
+                         side=-1,start_side_edge=True,end_side_edge=True)
+        benzene3.add_atom(name="C18",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C17")
+        benzene3.add_bond(start="C18",end="C13",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        benzene3.add_atom(name="H3",direction=90*DEGREES,text="\mathrm{H}",bond_type=BondType.NORMAL_BOND,adjacency="C13")
+
+        self.play(Create(benzene3))
+
+        self.wait(0.5)
+
+        N_start=np.array([2*benzene3.attributes.length_global,0,0])
+        N_target=benzene3.atomic_clusters["C13"]["pos"]+np.array([np.cos(60*DEGREES),np.sin(60*DEGREES),0])*benzene3.attributes.length_global
+
+        N_mob=AtomicCluster(text="\mathrm{N}",pos=N_start,attributes=benzene3.attributes)
+        O1_pos=N_start+np.array([np.cos(120*DEGREES),np.sin(120*DEGREES),0])*benzene3.attributes.length_global
+        O2_pos=N_start+np.array([np.cos(-60*DEGREES),np.sin(-60*DEGREES),0])*benzene3.attributes.length_global
+        O1_mob=AtomicCluster(text="\mathrm{O}",pos=O1_pos,attributes=benzene3.attributes)
+        O2_mob=AtomicCluster(text="\mathrm{O}",pos=O2_pos,attributes=benzene3.attributes)
+
+        benzene3.atomic_clusters["N"]={Mobject:N_mob,"pos":N_start,"adj":["O1","O2"],Bond:[]}
+        benzene3.atomic_clusters["O1"]={Mobject:O1_mob,"pos":O1_pos,"adj":["N"],Bond:[]}
+        benzene3.atomic_clusters["O2"]={Mobject:O2_mob,"pos":O2_pos,"adj":["N"],Bond:[]}
+
+        N_O1_bond=Bond(bond_type=BondType.DOUBLE_BOND,start=N_start,end=O1_pos,
+                       start_edge=True,end_edge=True,attributes=benzene3.attributes,side=0)
+        N_O2_bond=Bond(bond_type=BondType.DOUBLE_BOND,start=N_start,end=O2_pos,
+                       start_edge=True,end_edge=True,attributes=benzene3.attributes,side=0)
+        benzene3.atomic_clusters["N"][Bond].extend([N_O1_bond,N_O2_bond])
+        benzene3.atomic_clusters["O1"][Bond].append(N_O1_bond)
+        benzene3.atomic_clusters["O2"][Bond].append(N_O2_bond)
+
+        benzene3.add(N_mob)
+        benzene3.add(O1_mob)
+        benzene3.add(O2_mob)
+        benzene3.add(N_O1_bond)
+        benzene3.add(N_O2_bond)
+        benzene3.add_charge(text="N",pos=UR,charge_type=ChargeType.POSITIVE)
+        N_positive=benzene3.charges["N"]
+
+        self.play(FadeIn(N_mob),FadeIn(O1_mob),FadeIn(O2_mob),FadeIn(N_O1_bond),FadeIn(N_O2_bond),FadeIn(N_positive))
+        self.wait(1)
+
+        shift3=N_target-N_start
+        self.play(N_mob.animate.shift(shift3),
+                  O1_mob.animate.shift(shift3),
+                  O2_mob.animate.shift(shift3),
+                  N_positive.animate.shift(shift3),
+                  N_O1_bond.animate.shift(shift3),
+                  N_O2_bond.animate.shift(shift3),
+                  run_time=1)
+        benzene3.atomic_clusters["N"]["pos"]=N_target
+        benzene3.atomic_clusters["O1"]["pos"]=O1_pos+shift3
+        benzene3.atomic_clusters["O2"]["pos"]=O2_pos+shift3
+        N_O1_bond.start=N_target
+        N_O1_bond.end=O1_pos+shift3
+        N_O2_bond.start=N_target
+        N_O2_bond.end=O2_pos+shift3
+
+        C13_C18_double=benzene3.atomic_clusters["C13"][Bond][1]
+        C13_H3_normal=benzene3.atomic_clusters["H3"][Bond][0]
+
+        C13_C18_single=benzene3.build_bond(start="C13",end="C18",bond_type=BondType.NORMAL_BOND)
+        C13_N_in=benzene3.build_bond(start="C13",end="N",bond_type=BondType.IN_BOND)
+        N_O1_single=benzene3.build_bond(start="N",end="O1",bond_type=BondType.NORMAL_BOND)
+        C18_positive=benzene3.build_charge(text="C18",pos=UL,charge_type=ChargeType.POSITIVE_COORDINATE)
+        O1_negative=benzene3.build_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        step_wheland3=ElectronMigrationStep(
+            replace=[(C13_C18_double,VGroup(C13_C18_single,C13_N_in)),
+                     (N_O1_bond,VGroup(N_O1_single,O1_negative))],
+            create=[C18_positive],
+        )
+
+        self.play(benzene3.electron_migration(steps=[step_wheland3],run_time=1.2),
+                  BondTypeTransform(bond=C13_H3_normal,
+                                    target_type=BondType.OUT_BOND,
+                                    angle=30*DEGREES,
+                                    about_point=benzene3.atomic_clusters["C13"]["pos"],
+                                    sf=benzene3,
+                                    run_time=1.2),
+                  benzene3.rotate_atoms(atom_names="O2",center="N",angle=60*DEGREES,run_time=1.2))
+
+        benzene3.delete_bond(start="C13", end="C18")
+        benzene3.atomic_clusters["C13"][Bond].extend([C13_C18_single, C13_N_in])
+        benzene3.atomic_clusters["C18"][Bond].append(C13_C18_single)
+        benzene3.atomic_clusters["N"][Bond].remove(N_O1_bond)
+        benzene3.atomic_clusters["N"][Bond].append(N_O1_single)
+        benzene3.atomic_clusters["O1"][Bond].remove(N_O1_bond)
+        benzene3.atomic_clusters["O1"][Bond].append(N_O1_single)
+        benzene3.atomic_clusters["N"][Bond].append(C13_N_in)
+        benzene3.atomic_clusters["C13"]["adj"].extend(["C18", "N"])
+        benzene3.atomic_clusters["C18"]["adj"].append("C13")
+        benzene3.atomic_clusters["N"]["adj"].append("C13")
+        benzene3.charges["C18"] = C18_positive
+        benzene3.charges["O1"] = O1_negative
+
+        self.wait(2.5)
+
+        C13_C18_double_new=benzene3.build_bond(start="C18", end="C13", bond_type=BondType.DOUBLE_BOND,
+                                              side=-1, start_side_edge=True, end_side_edge=True)
+        H3_positive=benzene3.build_charge(text="H3", pos=UR, charge_type=ChargeType.POSITIVE)
+
+        elim_source=VGroup(C13_H3_normal, C13_C18_single)
+        step_elimination3=ElectronMigrationStep(
+            replace=[(elim_source, C13_C18_double_new)],
+            create=[H3_positive],
+            fadeout=[C18_positive],
+        )
+
+        em_anim=benzene3.electron_migration(steps=[step_elimination3], lag_ratio=0, run_time=1.5)
+        benzene3.remove(C13_H3_normal, C13_C18_single, C18_positive)
+        self.add(em_anim.mobject)
+
+        c13_pos=benzene3.atomic_clusters["C13"]["pos"]
+        c13_n_btt=BondTypeTransform(bond=C13_N_in,
+                                    target_type=BondType.NORMAL_BOND,
+                                    angle=30*DEGREES,
+                                    about_point=c13_pos,
+                                    run_time=1.2)
+        benzene3.atomic_clusters["N"][Bond].remove(C13_N_in)
+        nitro_rot=benzene3.rotate_atoms(atom_names=["N","O1","O2"],center="C13",angle=30*DEGREES,run_time=1.2)
+        benzene3.atomic_clusters["N"][Bond].append(C13_N_in)
+
+        self.play(em_anim,
+                  c13_n_btt,
+                  nitro_rot)
+
+        benzene3.delete_bond(start="C13", end="H3")
+        benzene3.delete_bond(start="C13", end="C18")
+        benzene3.atomic_clusters["C13"][Bond].append(C13_C18_double_new)
+        benzene3.atomic_clusters["C18"][Bond].append(C13_C18_double_new)
+        benzene3.atomic_clusters["C13"]["adj"].append("C18")
+        benzene3.atomic_clusters["C18"]["adj"].append("C13")
+        benzene3.charges.pop("C18")
+        benzene3.charges["H3"] = H3_positive
+
+        H3_target=np.array([-2*benzene3.attributes.length_global,0,0])
+        shift_h4=H3_target-benzene3.atomic_clusters["H3"][Mobject].get_center()
+        self.play(benzene3.atomic_clusters["H3"][Mobject].animate.shift(shift_h4),
+                  H3_positive.animate.shift(shift_h4),
+                  run_time=1)
+        benzene3.atomic_clusters["H3"]["pos"]=H3_target
 
         self.wait(1.5)
