@@ -658,3 +658,6 @@ class test(Scene):
         HO3S_O5_bond.end=benzene3.atomic_clusters["O5"]["pos"]
 
         self.wait(1.5)
+
+        self.play(FadeOut(benzene3,text16,SEAr_reaction,O5_H_bond,C13_C18_double_new),run_time=1)
+        self.wait(1)
