@@ -6,9 +6,10 @@ class test(Scene):
     def construct(self):
 
         title=Title(text=r"\text{一些常见的取代反应机理}\quad\text{续}",pos=ORIGIN)
-        self.play(Write(title))
+        subtitle=Subtitle(text=r"\text{芳香族取代反应}",pos=[0,-0.7,0])
+        self.play(Write(title),Write(subtitle))
         self.wait(1.5)
-        self.play(FadeOut(title))
+        self.play(FadeOut(title,subtitle))
 
         #-----------------------SEAr reaction-----------------------
 
@@ -661,3 +662,22 @@ class test(Scene):
 
         self.play(FadeOut(benzene3,text16,SEAr_reaction,O5_H_bond,C13_C18_double_new),run_time=1)
         self.wait(1)
+
+        #----------------------SNAr Reaction-----------------------
+
+        SNAr_reaction=Title(text=r"\mathrm{S_NAr}\text{（芳香亲核取代）}")
+        self.play(Write(SNAr_reaction))
+        a_d_mechanism=Subtitle(text=r"\text{加成-消除机理}")
+        self.play(Write(a_d_mechanism))
+        self.wait(1)
+
+        #descriptions
+        text17=Description(text=r"\text{在加成-消除机理中，苯环上必须有一个强吸电子基团（}\mathrm{EWG}\text{）在邻对位}")
+        text18=Description(text=r"\mathrm{EWG}\text{分为两类，一类是共轭类}\mathrm{EWG}\text{，另一种是诱导类}\mathrm{EWG}")
+        text19=Description(text=r"\text{前者包括硝基、氰基，或者羰基等，后者包括三氟甲基等}")
+        text20=Description(text=r"\text{此处以酮羰基为例演示此机理}")
+        text21=Description(text=r"\mathrm{Nu^-}\text{为亲核试剂，通常为醇负离子、氨、者一/二级胺或者硫醇盐}")
+        text22=Description(text=r"\mathrm{X}\text{为一个好的离去基团，通常是卤素原子}")
+        text23=Description(text=r"\text{首先，}\mathrm{Nu^-}\text{进攻离去基团所在的碳，}\mathrm{sp^2}\text{碳变为}\mathrm{sp^3}\text{碳，芳香性被破坏}")
+        text24=Description(text=r"\text{负电荷可以离域，从而被酮羰基稳定}")
+        text25=Description(text=r"\text{随后，}\mathrm{X^-}\text{离去，芳香性恢复，生成取代产物}")
