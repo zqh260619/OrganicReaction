@@ -676,8 +676,153 @@ class test(Scene):
         text18=Description(text=r"\mathrm{EWG}\text{分为两类，一类是共轭类}\mathrm{EWG}\text{，另一种是诱导类}\mathrm{EWG}")
         text19=Description(text=r"\text{前者包括硝基、氰基，或者羰基等，后者包括三氟甲基等}")
         text20=Description(text=r"\text{此处以酮羰基为例演示此机理}")
-        text21=Description(text=r"\mathrm{Nu^-}\text{为亲核试剂，通常为醇负离子、氨、者一/二级胺或者硫醇盐}")
+        text21=Description(text=r"\mathrm{Nu^-}\text{为亲核试剂，通常为醇负离子、氨、一/二级胺或者硫醇盐}")
         text22=Description(text=r"\mathrm{X}\text{为一个好的离去基团，通常是卤素原子}")
         text23=Description(text=r"\text{首先，}\mathrm{Nu^-}\text{进攻离去基团所在的碳，}\mathrm{sp^2}\text{碳变为}\mathrm{sp^3}\text{碳，芳香性被破坏}")
         text24=Description(text=r"\text{负电荷可以离域，从而被酮羰基稳定}")
         text25=Description(text=r"\text{随后，}\mathrm{X^-}\text{离去，芳香性恢复，生成取代产物}")
+
+        #------------------EWG分类演示------------------
+
+        #苯环连接EWG
+        benzene_ewg=StructuralFormula(name="C19",pos=[0,-0.7,0],text=None)
+        benzene_ewg.add_atom(name="C20",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C19")
+        benzene_ewg.add_atom(name="C21",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C20",
+                             side=-1,start_side_edge=True,end_side_edge=True)
+        benzene_ewg.add_atom(name="C22",direction=-150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C21")
+        benzene_ewg.add_atom(name="C23",direction=150*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C22",
+                             side=-1,start_side_edge=True,end_side_edge=True)
+        benzene_ewg.add_atom(name="C24",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C23")
+        benzene_ewg.add_bond(start="C24",end="C19",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        benzene_ewg.add_atom(name="EWG",direction=90*DEGREES,text=r"\mathrm{EWG}",bond_type=BondType.NORMAL_BOND,adjacency="C19")
+
+        self.play(Create(benzene_ewg))
+        self.wait(1)
+
+        #分裂为两个相同的分子
+        ewg_left_shift=np.array([-1.5,0,0],dtype=float)
+        ewg_right_shift=np.array([5,0,0],dtype=float)
+        right_mol=benzene_ewg.copy()
+        right_mol.shift(ewg_right_shift)
+
+        self.play(benzene_ewg.animate.shift(ewg_left_shift),
+                  ReplacementTransform(benzene_ewg.copy(),right_mol),
+                  run_time=1.5)
+
+        for data in benzene_ewg.atomic_clusters.values():
+            data["pos"]=np.array(data["pos"],dtype=float)+ewg_left_shift
+        for data in right_mol.atomic_clusters.values():
+            data["pos"]=np.array(data["pos"],dtype=float)+ewg_right_shift
+
+        self.wait(0.5)
+
+        gong_e=Description(text=r"\text{共轭类}",pos=[-1.5,1.5,0])
+        you_dao=Description(text=r"\text{诱导类}",pos=[5,1.5,0])
+        self.play(Write(gong_e),Write(you_dao))
+        self.wait(1)
+
+        #共轭类：硝基苯、氰基苯、乙酰基苯
+        nitro_sf=StructuralFormula(name="C25",pos=[-4.5,-0.7,0],text=None)
+        nitro_sf.add_atom(name="C26",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C25")
+        nitro_sf.add_atom(name="C27",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C26",
+                          side=-1,start_side_edge=True,end_side_edge=True)
+        nitro_sf.add_atom(name="C28",direction=-150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C27")
+        nitro_sf.add_atom(name="C29",direction=150*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C28",
+                          side=-1,start_side_edge=True,end_side_edge=True)
+        nitro_sf.add_atom(name="C30",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C29")
+        nitro_sf.add_bond(start="C30",end="C25",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        nitro_sf.add_atom(name="N",direction=90*DEGREES,text=r"\mathrm{N}",bond_type=BondType.NORMAL_BOND,adjacency="C25")
+        nitro_sf.add_atom(name="O1",direction=150*DEGREES,text=r"\mathrm{O}",bond_type=BondType.NORMAL_BOND,adjacency="N")
+        nitro_sf.add_atom(name="O2",direction=30*DEGREES,text=r"\mathrm{O}",bond_type=BondType.DOUBLE_BOND,adjacency="N",side=0)
+        nitro_sf.add_charge(text="N",pos=LEFT,charge_type=ChargeType.POSITIVE)
+        nitro_sf.add_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        cyano_sf=StructuralFormula(name="C31",pos=[-1.5,-0.7,0],text=None)
+        cyano_sf.add_atom(name="C32",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C31")
+        cyano_sf.add_atom(name="C33",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C32",
+                          side=-1,start_side_edge=True,end_side_edge=True)
+        cyano_sf.add_atom(name="C34",direction=-150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C33")
+        cyano_sf.add_atom(name="C35",direction=150*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C34",
+                          side=-1,start_side_edge=True,end_side_edge=True)
+        cyano_sf.add_atom(name="C36",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C35")
+        cyano_sf.add_bond(start="C36",end="C31",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+
+        CN_bond_end=cyano_sf.atomic_clusters["C31"]["pos"]+np.array([0,1,0],dtype=float)
+        #分成两个字符串构建，使C成为独立的子对象，便于把C精确对齐到键的正上方
+        CN_mob=MathTex(r"\mathrm{C}",r"\mathrm{N}",color=cyano_sf.attributes.color,
+                       font_size=cyano_sf.attributes.font_size,tex_template=mytemplate)
+        CN_mob.move_to(CN_bond_end)
+        CN_mob.shift(CN_bond_end-CN_mob.submobjects[0].get_center())
+
+        cyano_sf.atomic_clusters["CN"]={Mobject:CN_mob,"pos":CN_bond_end,"adj":["C31"],Bond:[]}
+        C31_CN_bond=Bond(bond_type=BondType.NORMAL_BOND,
+                         start=cyano_sf.atomic_clusters["C31"]["pos"],
+                         end=CN_bond_end,
+                         start_edge=False,end_edge=True,
+                         attributes=cyano_sf.attributes)
+        cyano_sf.atomic_clusters["C31"][Bond].append(C31_CN_bond)
+        cyano_sf.atomic_clusters["CN"][Bond].append(C31_CN_bond)
+        cyano_sf.atomic_clusters["C31"]["adj"].append("CN")
+        cyano_sf.add(C31_CN_bond)
+        cyano_sf.add(CN_mob)
+
+        acetyl_sf=StructuralFormula(name="C37",pos=[1.5,-0.7,0],text=None)
+        acetyl_sf.add_atom(name="C38",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C37")
+        acetyl_sf.add_atom(name="C39",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C38",
+                           side=-1,start_side_edge=True,end_side_edge=True)
+        acetyl_sf.add_atom(name="C40",direction=-150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C39")
+        acetyl_sf.add_atom(name="C41",direction=150*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C40",
+                           side=-1,start_side_edge=True,end_side_edge=True)
+        acetyl_sf.add_atom(name="C42",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C41")
+        acetyl_sf.add_bond(start="C42",end="C37",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        acetyl_sf.add_atom(name="C43",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C37")
+        acetyl_sf.add_atom(name="O",direction=30*DEGREES,text=r"\mathrm{O}",bond_type=BondType.DOUBLE_BOND,adjacency="C43",side=0)
+        acetyl_sf.add_atom(name="C44",direction=150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C43")
+
+        #诱导类：三氟甲基苯
+        cf3_sf=StructuralFormula(name="C45",pos=[5,-0.7,0],text=None)
+        cf3_sf.add_atom(name="C46",direction=-30*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C45")
+        cf3_sf.add_atom(name="C47",direction=-90*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C46",
+                        side=-1,start_side_edge=True,end_side_edge=True)
+        cf3_sf.add_atom(name="C48",direction=-150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C47")
+        cf3_sf.add_atom(name="C49",direction=150*DEGREES,text=None,bond_type=BondType.DOUBLE_BOND,adjacency="C48",
+                        side=-1,start_side_edge=True,end_side_edge=True)
+        cf3_sf.add_atom(name="C50",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C49")
+        cf3_sf.add_bond(start="C50",end="C45",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        cf3_sf.add_atom(name="C51",direction=90*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C45")
+        cf3_sf.add_atom(name="F1",direction=150*DEGREES,text=r"\mathrm{F}",bond_type=BondType.OUT_BOND,adjacency="C51")
+        cf3_sf.add_atom(name="F2",direction=120*DEGREES,text=r"\mathrm{F}",bond_type=BondType.IN_BOND,adjacency="C51")
+        cf3_sf.add_atom(name="F3",direction=30*DEGREES,text=r"\mathrm{F}",bond_type=BondType.NORMAL_BOND,adjacency="C51")
+
+        #左边的分子变为三个分子
+        #只对苯环之外的对象做变形：源分子的竖直键与EWG文本（及其副本）
+        #变换为目标分子苯环之外的全部对象（多出的化学键、文本标签、电荷全部由EWG变换而来）；
+        #硝基苯与乙酰基苯的苯环从中间苯环的位置平移而来（形状完全相同，ReplacementTransform表现为纯平移）
+        nitro_ring=VGroup(*nitro_sf.submobjects[:6])
+        acetyl_ring=VGroup(*acetyl_sf.submobjects[:6])
+        nitro_out=VGroup(*nitro_sf.submobjects[6:])
+        acetyl_out=VGroup(*acetyl_sf.submobjects[6:])
+        cyano_out=VGroup(*cyano_sf.submobjects[6:])
+
+        self.play(ReplacementTransform(VGroup(*benzene_ewg.submobjects[6:]),cyano_out),
+                  ReplacementTransform(VGroup(*[o.copy() for o in benzene_ewg.submobjects[6:]]),nitro_out),
+                  ReplacementTransform(VGroup(*[b.copy() for b in benzene_ewg.submobjects[:6]]),nitro_ring),
+                  ReplacementTransform(VGroup(*[o.copy() for o in benzene_ewg.submobjects[6:]]),acetyl_out),
+                  ReplacementTransform(VGroup(*[b.copy() for b in benzene_ewg.submobjects[:6]]),acetyl_ring),
+                  run_time=1.5)
+
+        self.remove(benzene_ewg)
+        self.add(cyano_sf)
+        self.add(nitro_sf)
+        self.add(acetyl_sf)
+        self.wait(1)
+
+        #右边的分子变为三氟甲基苯
+        #同样苯环保持不动：竖直键与EWG文本及其副本变换为苯环之外的C-F键与F文本
+        cf3_out=VGroup(*cf3_sf.submobjects[6:])
+
+        self.play(ReplacementTransform(VGroup(*right_mol.submobjects[6:]),cf3_out),run_time=1.5)
+
+        self.remove(right_mol)
+        self.add(cf3_sf)
+        self.wait(2)
