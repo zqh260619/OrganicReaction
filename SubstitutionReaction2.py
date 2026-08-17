@@ -676,8 +676,8 @@ class test(Scene):
         text18=Description(text=r"\mathrm{EWG}\text{分为两类，一类是共轭类}\mathrm{EWG}\text{，另一种是诱导类}\mathrm{EWG}")
         text19=Description(text=r"\text{前者包括硝基、氰基，或者羰基等，后者包括三氟甲基等}")
         text20=Description(text=r"\text{此处以酮羰基为例演示此机理}")
-        text21=Description(text=r"\mathrm{Nu^-}\text{为亲核试剂，通常为醇负离子、氨、一/二级胺或者硫醇盐}")
-        text22=Description(text=r"\mathrm{X}\text{为一个好的离去基团，通常是卤素原子}")
+        text21=Description(text=r"\mathrm{X}\text{为一个好的离去基团，通常是卤素原子}")
+        text22=Description(text=r"\mathrm{Nu^-}\text{为亲核试剂，通常为醇负离子、氨、一/二级胺或者硫醇盐}")
         text23=Description(text=r"\text{首先，}\mathrm{Nu^-}\text{进攻离去基团所在的碳，}\mathrm{sp^2}\text{碳变为}\mathrm{sp^3}\text{碳，芳香性被破坏}")
         text24=Description(text=r"\text{负电荷可以离域，从而被酮羰基稳定}")
         text25=Description(text=r"\text{随后，}\mathrm{X^-}\text{离去，芳香性恢复，生成取代产物}")
@@ -814,6 +814,8 @@ class test(Scene):
                   run_time=1.5)
 
         self.remove(benzene_ewg)
+        #scene.remove不解散分组，需显式移除被重组后遗留在场景中的六根苯环键
+        self.remove(*benzene_ewg.submobjects[:6])
         self.add(cyano_sf)
         self.add(nitro_sf)
         self.add(acetyl_sf)
@@ -826,5 +828,81 @@ class test(Scene):
         self.play(ReplacementTransform(VGroup(*right_mol.submobjects[6:]),cf3_out),run_time=1.5)
 
         self.remove(right_mol)
+        #scene.remove不解散分组，需显式移除被重组后遗留在场景中的六根苯环键
+        self.remove(*right_mol.submobjects[:6])
         self.add(cf3_sf)
         self.wait(2)
+
+        #其他分子与描述性文本消失（标题、副标题不变），乙酰基苯移动到中间
+        #目标位置：横坐标0，纵坐标比第一部分第二部分的苯环位置（顶碳y=0.5）低0.2
+        acetyl_target=np.array([0,0.3,0],dtype=float)
+        acetyl_shift=acetyl_target-acetyl_sf.atomic_clusters["C37"]["pos"]
+
+        self.play(FadeOut(nitro_sf,cyano_sf,cf3_sf,gong_e,you_dao),
+                  acetyl_sf.animate.shift(acetyl_shift),
+                  run_time=1.5)
+
+        acetyl_bonds=set()
+        for data in acetyl_sf.atomic_clusters.values():
+            data["pos"]=np.array(data["pos"],dtype=float)+acetyl_shift
+            for bond in data[Bond]:
+                acetyl_bonds.add(bond)
+        for bond in acetyl_bonds:
+            bond.start=np.array(bond.start,dtype=float)+acetyl_shift
+            bond.end=np.array(bond.end,dtype=float)+acetyl_shift
+
+        self.wait(0.5)
+
+        #底部的"前者包括……"文本变换为text20
+        self.play(ReplacementTransform(text19,text20))
+        self.wait(1)
+
+        #在乙酰基苯右上角的碳（C38，乙酰基的邻位）上添加离去基团X，使用NormalBond连接
+        acetyl_sf.add_atom(name="X",direction=30*DEGREES,text=r"\mathrm{X}",bond_type=BondType.NORMAL_BOND,adjacency="C38")
+        X_mob=acetyl_sf.atomic_clusters["X"][Mobject]
+        C38_X_bond=acetyl_sf.atomic_clusters["X"][Bond][0]
+
+        #右侧出现Nu^-（负电荷用API的Charge类表示）
+        Nu_pos=np.array([3.5,-0.2,0],dtype=float)
+        Nu_mob=AtomicCluster(text=r"\mathrm{Nu}",pos=Nu_pos,attributes=acetyl_sf.attributes)
+        Nu_charge=Charge(charge_type=ChargeType.NEGATIVE,text=Nu_mob,pos=UR,attributes=acetyl_sf.attributes)
+        acetyl_sf.atomic_clusters["Nu"]={Mobject:Nu_mob,"pos":Nu_pos,"adj":[],Bond:[]}
+        acetyl_sf.add(Nu_mob)
+
+        self.play(FadeIn(X_mob),FadeIn(C38_X_bond),FadeIn(Nu_mob),FadeIn(Nu_charge))
+        self.play(ReplacementTransform(text20,text21))
+        self.wait(2)
+        self.play(ReplacementTransform(text21,text22))
+        self.wait(1)
+
+        #Nu^-依次变换为RO^-、NH3、NH2R、NHR2、RS^-，最后回到Nu^-
+        RO_mob=AtomicCluster(text=r"\mathrm{RO}",pos=Nu_pos,attributes=acetyl_sf.attributes)
+        RO_charge=Charge(charge_type=ChargeType.NEGATIVE,text=RO_mob,pos=UR,attributes=acetyl_sf.attributes)
+        NH3_mob=AtomicCluster(text=r"\mathrm{NH_3}",pos=Nu_pos,attributes=acetyl_sf.attributes)
+        NH2R_mob=AtomicCluster(text=r"\mathrm{NH_2R}",pos=Nu_pos,attributes=acetyl_sf.attributes)
+        NHR2_mob=AtomicCluster(text=r"\mathrm{NHR_2}",pos=Nu_pos,attributes=acetyl_sf.attributes)
+        RS_mob=AtomicCluster(text=r"\mathrm{RS}",pos=Nu_pos,attributes=acetyl_sf.attributes)
+        RS_charge=Charge(charge_type=ChargeType.NEGATIVE,text=RS_mob,pos=UR,attributes=acetyl_sf.attributes)
+        Nu_final=AtomicCluster(text=r"\mathrm{Nu}",pos=Nu_pos,attributes=acetyl_sf.attributes)
+        Nu_final_charge=Charge(charge_type=ChargeType.NEGATIVE,text=Nu_final,pos=UR,attributes=acetyl_sf.attributes)
+
+        self.play(ReplacementTransform(Nu_mob,RO_mob),
+                  ReplacementTransform(Nu_charge,RO_charge))
+        self.wait(0.5)
+        self.play(ReplacementTransform(RO_mob,NH3_mob),
+                  FadeOut(RO_charge))
+        self.wait(0.5)
+        self.play(ReplacementTransform(NH3_mob,NH2R_mob))
+        self.wait(0.5)
+        self.play(ReplacementTransform(NH2R_mob,NHR2_mob))
+        self.wait(0.5)
+        self.play(ReplacementTransform(NHR2_mob,RS_mob),
+                  FadeIn(RS_charge))
+        self.wait(0.5)
+        self.play(ReplacementTransform(RS_mob,Nu_final),
+                  ReplacementTransform(RS_charge,Nu_final_charge))
+        acetyl_sf.atomic_clusters["Nu"][Mobject]=Nu_final
+        acetyl_sf.charges["Nu"]=Nu_final_charge
+        acetyl_sf.add(Nu_final_charge)
+        self.add(acetyl_sf)
+        self.wait(1)
