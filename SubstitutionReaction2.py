@@ -667,6 +667,8 @@ class test(Scene):
 
         SNAr_reaction=Title(text=r"\mathrm{S_NAr}\text{（芳香亲核取代）}")
         self.play(Write(SNAr_reaction))
+
+        #消除-加成机理
         a_d_mechanism=Subtitle(text=r"\text{加成-消除机理}")
         self.play(Write(a_d_mechanism))
         self.wait(1)
@@ -1118,3 +1120,21 @@ class test(Scene):
         acetyl_sf.charges.pop("X")
         self.add(acetyl_sf)
         self.wait(1)
+
+        #苯炔机理之前：淡出除标题和副标题外的所有对象
+        #Scene.replace的BFS会把已加入结构式的键从结构式中剥离，这里重新加回，确保FadeOut覆盖全部
+        acetyl_sf.add(C38_Nu_out,C39_C40_double,C41_C42_double,C43_O_double_new,C37_C38_double)
+        self.play(FadeOut(text25,acetyl_sf),run_time=1)
+        self.wait(1)
+
+        #苯炔机理
+        benzyne_mechanism=Subtitle(text=r"\text{苯炔机理}")
+        self.play(ReplacementTransform(a_d_mechanism,benzyne_mechanism))
+
+        #descriptions
+        text26=Description(text=r"\text{如果苯环上没有合适的EWG，那么就可以进行苯炔机理，但是需要强碱和非质子溶剂}")
+        text27=Description(text=r"\text{强碱通常使用}\mathrm{NaNH_2}\text{、}\mathrm{n-BuLi}\text{或}\mathrm{LDA}\text{等，此处以}\mathrm{NaNH_2}\text{为例，溶剂一般为液氨}")
+        text28=Description(text=r"\text{底物卤代苯中卤素的邻位必须有一个氢}")
+        text29=Description(text=r"\text{首先，}\mathrm{NH_2^-}\text{进攻卤素邻位的氢，同时卤素离子离去}")
+        text30=Description(text=r"\text{此时生成极不稳定的中间体苯炔，三键被强行塞入环内，张力极大，能量高}")
+        text31=Description(text=r"\text{苯炔生成后立刻被}\mathrm{NH_2^-}\text{进攻，生成的碳负离子立即夺取}\mathrm{NH_3}\text{的氢，生成取代产物}")
