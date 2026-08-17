@@ -682,7 +682,7 @@ class test(Scene):
         text24=Description(text=r"\text{负电荷可以离域，从而被酮羰基稳定}")
         text25=Description(text=r"\text{随后，}\mathrm{X^-}\text{离去，芳香性恢复，生成取代产物}")
 
-        #------------------EWG分类演示------------------
+        self.play(Write(text17))
 
         #苯环连接EWG
         benzene_ewg=StructuralFormula(name="C19",pos=[0,-0.7,0],text=None)
@@ -705,6 +705,7 @@ class test(Scene):
         right_mol=benzene_ewg.copy()
         right_mol.shift(ewg_right_shift)
 
+        self.play(ReplacementTransform(text17,text18))
         self.play(benzene_ewg.animate.shift(ewg_left_shift),
                   ReplacementTransform(benzene_ewg.copy(),right_mol),
                   run_time=1.5)
@@ -804,6 +805,7 @@ class test(Scene):
         acetyl_out=VGroup(*acetyl_sf.submobjects[6:])
         cyano_out=VGroup(*cyano_sf.submobjects[6:])
 
+        self.play(ReplacementTransform(text18,text19))
         self.play(ReplacementTransform(VGroup(*benzene_ewg.submobjects[6:]),cyano_out),
                   ReplacementTransform(VGroup(*[o.copy() for o in benzene_ewg.submobjects[6:]]),nitro_out),
                   ReplacementTransform(VGroup(*[b.copy() for b in benzene_ewg.submobjects[:6]]),nitro_ring),
