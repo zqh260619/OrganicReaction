@@ -906,3 +906,166 @@ class test(Scene):
         acetyl_sf.add(Nu_final_charge)
         self.add(acetyl_sf)
         self.wait(1)
+        self.play(ReplacementTransform(text22,text23))
+
+        #Nu^-进攻X所在的碳C38：移动到C38右侧一个单位处
+        Nu_target=acetyl_sf.atomic_clusters["C38"]["pos"]+np.array([1,0,0],dtype=float)
+        Nu_shift=Nu_target-Nu_pos
+        self.play(Nu_final.animate.shift(Nu_shift),
+                  Nu_final_charge.animate.shift(Nu_shift),
+                  run_time=1)
+        acetyl_sf.atomic_clusters["Nu"]["pos"]=Nu_target
+
+        #负电荷变换为C-Nu的OutBond；
+        #然后C38与其下方C39的双键变换为原位的单键和C39右下角的负电荷；
+        #同时C-X键逆时针旋转30°并变换为InBond
+        C38_C39_double=acetyl_sf.atomic_clusters["C38"][Bond][1]
+        C38_Nu_out=acetyl_sf.build_bond(start="C38",end="Nu",bond_type=BondType.OUT_BOND)
+        C38_C39_single=acetyl_sf.build_bond(start="C38",end="C39",bond_type=BondType.NORMAL_BOND)
+        C39_negative=Charge(charge_type=ChargeType.NEGATIVE_COORDINATE,
+                            text=acetyl_sf.atomic_clusters["C39"]["pos"],
+                            pos=DR,attributes=acetyl_sf.attributes)
+
+        step_attack=ElectronMigrationStep(
+            replace=[(Nu_final_charge,C38_Nu_out),
+                     (C38_C39_double,VGroup(C38_C39_single,C39_negative))],
+            lag_ratio=0.5,
+        )
+
+        em_anim=acetyl_sf.electron_migration(steps=[step_attack],lag_ratio=0,run_time=1.2)
+        acetyl_sf.remove(Nu_final_charge,C38_C39_double)
+        self.add(em_anim.mobject)
+        self.play(em_anim,
+                  BondTypeTransform(bond=C38_X_bond,
+                                    target_type=BondType.IN_BOND,
+                                    angle=30*DEGREES,
+                                    about_point=acetyl_sf.atomic_clusters["C38"]["pos"],
+                                    sf=acetyl_sf,
+                                    run_time=1.8))
+
+        acetyl_sf.atomic_clusters["C38"][Bond].remove(C38_C39_double)
+        acetyl_sf.atomic_clusters["C39"][Bond].remove(C38_C39_double)
+        acetyl_sf.atomic_clusters["C38"][Bond].extend([C38_C39_single,C38_Nu_out])
+        acetyl_sf.atomic_clusters["C39"][Bond].append(C38_C39_single)
+        acetyl_sf.atomic_clusters["Nu"][Bond].append(C38_Nu_out)
+        acetyl_sf.atomic_clusters["C38"]["adj"].append("Nu")
+        acetyl_sf.atomic_clusters["Nu"]["adj"].append("C38")
+        acetyl_sf.charges.pop("Nu")
+        acetyl_sf.charges["C39"]=C39_negative
+        self.add(acetyl_sf)
+        self.wait(1)
+
+        #负电荷在苯环上迁移：右下C39→左下C41→上方C37→O→回到上方C37
+        #第一步：C39的负电荷与C39-C40单键变为C39-C40双键；C40-C41双键变为C40-C41单键和C41左下的负电荷
+        C39_C40_single=next(b for b in acetyl_sf.atomic_clusters["C39"][Bond] if b in acetyl_sf.atomic_clusters["C40"][Bond])
+        C40_C41_double=next(b for b in acetyl_sf.atomic_clusters["C40"][Bond] if b in acetyl_sf.atomic_clusters["C41"][Bond])
+        C39_C40_double=acetyl_sf.build_bond(start="C39",end="C40",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        C40_C41_single=acetyl_sf.build_bond(start="C40",end="C41",bond_type=BondType.NORMAL_BOND)
+        C41_negative=Charge(charge_type=ChargeType.NEGATIVE_COORDINATE,
+                            text=acetyl_sf.atomic_clusters["C41"]["pos"],pos=DL,attributes=acetyl_sf.attributes)
+        step_mig1=ElectronMigrationStep(
+            replace=[(VGroup(C39_negative,C39_C40_single),C39_C40_double),
+                     (C40_C41_double,VGroup(C40_C41_single,C41_negative))],
+            lag_ratio=0)
+        em_mig1=acetyl_sf.electron_migration(steps=[step_mig1],lag_ratio=0,run_time=1.2)
+        acetyl_sf.remove(C39_negative,C39_C40_single,C40_C41_double)
+        self.add(em_mig1.mobject)
+        self.play(em_mig1)
+
+        acetyl_sf.atomic_clusters["C39"][Bond].remove(C39_C40_single)
+        acetyl_sf.atomic_clusters["C40"][Bond].remove(C39_C40_single)
+        acetyl_sf.atomic_clusters["C39"][Bond].append(C39_C40_double)
+        acetyl_sf.atomic_clusters["C40"][Bond].append(C39_C40_double)
+        acetyl_sf.atomic_clusters["C40"][Bond].remove(C40_C41_double)
+        acetyl_sf.atomic_clusters["C41"][Bond].remove(C40_C41_double)
+        acetyl_sf.atomic_clusters["C40"][Bond].append(C40_C41_single)
+        acetyl_sf.atomic_clusters["C41"][Bond].append(C40_C41_single)
+        acetyl_sf.charges.pop("C39")
+        acetyl_sf.charges["C41"]=C41_negative
+        self.add(acetyl_sf)
+        self.wait(0.5)
+
+        #第二步：C41的负电荷与C41-C42单键变为C41-C42双键；C42-C37双键变为C42-C37单键和C37右上方的负电荷
+        C41_C42_single=next(b for b in acetyl_sf.atomic_clusters["C41"][Bond] if b in acetyl_sf.atomic_clusters["C42"][Bond])
+        C42_C37_double=next(b for b in acetyl_sf.atomic_clusters["C42"][Bond] if b in acetyl_sf.atomic_clusters["C37"][Bond])
+        C41_C42_double=acetyl_sf.build_bond(start="C41",end="C42",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        C42_C37_single=acetyl_sf.build_bond(start="C42",end="C37",bond_type=BondType.NORMAL_BOND)
+        C37_negative=Charge(charge_type=ChargeType.NEGATIVE_COORDINATE,
+                            text=acetyl_sf.atomic_clusters["C37"]["pos"],pos=UR,attributes=acetyl_sf.attributes)
+        step_mig2=ElectronMigrationStep(
+            replace=[(VGroup(C41_negative,C41_C42_single),C41_C42_double),
+                     (C42_C37_double,VGroup(C42_C37_single,C37_negative))],
+            lag_ratio=0)
+        em_mig2=acetyl_sf.electron_migration(steps=[step_mig2],lag_ratio=0,run_time=1.2)
+        acetyl_sf.remove(C41_negative,C41_C42_single,C42_C37_double)
+        self.add(em_mig2.mobject)
+        self.play(em_mig2)
+
+        acetyl_sf.atomic_clusters["C41"][Bond].remove(C41_C42_single)
+        acetyl_sf.atomic_clusters["C42"][Bond].remove(C41_C42_single)
+        acetyl_sf.atomic_clusters["C41"][Bond].append(C41_C42_double)
+        acetyl_sf.atomic_clusters["C42"][Bond].append(C41_C42_double)
+        acetyl_sf.atomic_clusters["C42"][Bond].remove(C42_C37_double)
+        acetyl_sf.atomic_clusters["C37"][Bond].remove(C42_C37_double)
+        acetyl_sf.atomic_clusters["C42"][Bond].append(C42_C37_single)
+        acetyl_sf.atomic_clusters["C37"][Bond].append(C42_C37_single)
+        acetyl_sf.charges.pop("C41")
+        acetyl_sf.charges["C37"]=C37_negative
+        self.add(acetyl_sf)
+        self.wait(0.5)
+
+        #第三步：C37的负电荷与C37-C43单键变为C37-C43双键；C43-O双键变为C43-O单键和O右上方的负电荷
+        C37_C43_single=next(b for b in acetyl_sf.atomic_clusters["C37"][Bond] if b in acetyl_sf.atomic_clusters["C43"][Bond])
+        C43_O_double=next(b for b in acetyl_sf.atomic_clusters["C43"][Bond] if b in acetyl_sf.atomic_clusters["O"][Bond])
+        C37_C43_double=acetyl_sf.build_bond(start="C37",end="C43",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        C43_O_single=acetyl_sf.build_bond(start="C43",end="O",bond_type=BondType.NORMAL_BOND)
+        O_negative=Charge(charge_type=ChargeType.NEGATIVE,text=acetyl_sf.atomic_clusters["O"][Mobject],
+                          pos=UR,attributes=acetyl_sf.attributes)
+        step_mig3=ElectronMigrationStep(
+            replace=[(VGroup(C37_negative,C37_C43_single),C37_C43_double),
+                     (C43_O_double,VGroup(C43_O_single,O_negative))],
+            lag_ratio=0)
+        em_mig3=acetyl_sf.electron_migration(steps=[step_mig3],lag_ratio=0,run_time=1.2)
+        acetyl_sf.remove(C37_negative,C37_C43_single,C43_O_double)
+        self.add(em_mig3.mobject)
+        self.play(em_mig3)
+
+        acetyl_sf.atomic_clusters["C37"][Bond].remove(C37_C43_single)
+        acetyl_sf.atomic_clusters["C43"][Bond].remove(C37_C43_single)
+        acetyl_sf.atomic_clusters["C37"][Bond].append(C37_C43_double)
+        acetyl_sf.atomic_clusters["C43"][Bond].append(C37_C43_double)
+        acetyl_sf.atomic_clusters["C43"][Bond].remove(C43_O_double)
+        acetyl_sf.atomic_clusters["O"][Bond].remove(C43_O_double)
+        acetyl_sf.atomic_clusters["C43"][Bond].append(C43_O_single)
+        acetyl_sf.atomic_clusters["O"][Bond].append(C43_O_single)
+        acetyl_sf.charges.pop("C37")
+        acetyl_sf.charges["O"]=O_negative
+        self.add(acetyl_sf)
+        self.wait(0.5)
+
+        #第四步：O的负电荷与C43-O单键变为C43-O双键；C37-C43双键变为C37-C43单键和C37右上方的负电荷，回到上方C37
+        C43_O_double_new=acetyl_sf.build_bond(start="C43",end="O",bond_type=BondType.DOUBLE_BOND,side=0)
+        C37_C43_single_new=acetyl_sf.build_bond(start="C37",end="C43",bond_type=BondType.NORMAL_BOND)
+        C37_negative_final=Charge(charge_type=ChargeType.NEGATIVE_COORDINATE,
+                                  text=acetyl_sf.atomic_clusters["C37"]["pos"],pos=UR,attributes=acetyl_sf.attributes)
+        step_mig4=ElectronMigrationStep(
+            replace=[(VGroup(O_negative,C43_O_single),C43_O_double_new),
+                     (C37_C43_double,VGroup(C37_C43_single_new,C37_negative_final))],
+            lag_ratio=0)
+        em_mig4=acetyl_sf.electron_migration(steps=[step_mig4],lag_ratio=0,run_time=1.2)
+        acetyl_sf.remove(O_negative,C43_O_single,C37_C43_double)
+        self.add(em_mig4.mobject)
+        self.play(em_mig4)
+
+        acetyl_sf.atomic_clusters["C43"][Bond].remove(C43_O_single)
+        acetyl_sf.atomic_clusters["O"][Bond].remove(C43_O_single)
+        acetyl_sf.atomic_clusters["C43"][Bond].append(C43_O_double_new)
+        acetyl_sf.atomic_clusters["O"][Bond].append(C43_O_double_new)
+        acetyl_sf.atomic_clusters["C37"][Bond].remove(C37_C43_double)
+        acetyl_sf.atomic_clusters["C43"][Bond].remove(C37_C43_double)
+        acetyl_sf.atomic_clusters["C37"][Bond].append(C37_C43_single_new)
+        acetyl_sf.atomic_clusters["C43"][Bond].append(C37_C43_single_new)
+        acetyl_sf.charges.pop("O")
+        acetyl_sf.charges["C37"]=C37_negative_final
+        self.add(acetyl_sf)
+        self.wait(1)
