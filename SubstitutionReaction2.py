@@ -955,6 +955,8 @@ class test(Scene):
         self.add(acetyl_sf)
         self.wait(1)
 
+        self.play(ReplacementTransform(text23,text24))
+
         #负电荷在苯环上迁移：右下C39→左下C41→上方C37→O→回到上方C37
         #第一步：C39的负电荷与C39-C40单键变为C39-C40双键；C40-C41双键变为C40-C41单键和C41左下的负电荷
         C39_C40_single=next(b for b in acetyl_sf.atomic_clusters["C39"][Bond] if b in acetyl_sf.atomic_clusters["C40"][Bond])
@@ -1067,5 +1069,52 @@ class test(Scene):
         acetyl_sf.atomic_clusters["C43"][Bond].append(C37_C43_single_new)
         acetyl_sf.charges.pop("O")
         acetyl_sf.charges["C37"]=C37_negative_final
+        self.add(acetyl_sf)
+        self.wait(1)
+
+        self.play(ReplacementTransform(text24,text25))
+
+        #X离去：上方C37的负电荷与C37-C38单键变为右上方的C37=C38双键；
+        #C-X键变为X右上方的负电荷；
+        #同时C-Nu键逆时针旋转30°并变换为NormalBond
+        C37_C38_single=next(b for b in acetyl_sf.atomic_clusters["C37"][Bond] if b in acetyl_sf.atomic_clusters["C38"][Bond])
+        C37_C38_double=acetyl_sf.build_bond(start="C37",end="C38",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
+        X_negative=Charge(charge_type=ChargeType.NEGATIVE,text=acetyl_sf.atomic_clusters["X"][Mobject],
+                          pos=UR,attributes=acetyl_sf.attributes)
+
+        step_elim=ElectronMigrationStep(
+            replace=[(VGroup(C37_negative_final,C37_C38_single),C37_C38_double),
+                     (C38_X_bond,X_negative)],
+            lag_ratio=0)
+
+        em_elim=acetyl_sf.electron_migration(steps=[step_elim],lag_ratio=0,run_time=1.5)
+        acetyl_sf.remove(C37_negative_final,C37_C38_single,C38_X_bond)
+        self.add(em_elim.mobject)
+        self.play(em_elim,
+                  BondTypeTransform(bond=C38_Nu_out,
+                                    target_type=BondType.NORMAL_BOND,
+                                    angle=30*DEGREES,
+                                    about_point=acetyl_sf.atomic_clusters["C38"]["pos"],
+                                    sf=acetyl_sf,
+                                    run_time=1.5))
+
+        acetyl_sf.atomic_clusters["C37"][Bond].remove(C37_C38_single)
+        acetyl_sf.atomic_clusters["C38"][Bond].remove(C37_C38_single)
+        acetyl_sf.atomic_clusters["C37"][Bond].append(C37_C38_double)
+        acetyl_sf.atomic_clusters["C38"][Bond].append(C37_C38_double)
+        acetyl_sf.atomic_clusters["C38"][Bond].remove(C38_X_bond)
+        acetyl_sf.atomic_clusters["X"][Bond].remove(C38_X_bond)
+        acetyl_sf.atomic_clusters["C38"]["adj"].remove("X")
+        acetyl_sf.atomic_clusters["X"]["adj"].remove("C38")
+        acetyl_sf.charges.pop("C37")
+        acetyl_sf.charges["X"]=X_negative
+        self.add(acetyl_sf)
+        self.wait(1)
+
+        #接着X^-消失
+        self.play(FadeOut(X_mob,X_negative))
+        acetyl_sf.remove(X_mob,X_negative)
+        acetyl_sf.atomic_clusters.pop("X")
+        acetyl_sf.charges.pop("X")
         self.add(acetyl_sf)
         self.wait(1)
