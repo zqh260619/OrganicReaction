@@ -1121,19 +1121,17 @@ class test(Scene):
         self.add(acetyl_sf)
         self.wait(1)
 
-        #苯炔机理之前：淡出除标题和副标题外的所有对象
-        #Scene.replace的BFS会把已加入结构式的键从结构式中剥离，这里重新加回，确保FadeOut覆盖全部
         acetyl_sf.add(C38_Nu_out,C39_C40_double,C41_C42_double,C43_O_double_new,C37_C38_double)
         self.play(FadeOut(text25,acetyl_sf),run_time=1)
         self.wait(1)
 
-        #苯炔机理
+        #-----------------------苯炔机理-----------------------
         benzyne_mechanism=Subtitle(text=r"\text{苯炔机理}")
         self.play(ReplacementTransform(a_d_mechanism,benzyne_mechanism))
 
         #descriptions
-        text26=Description(text=r"\text{如果苯环上没有合适的EWG，那么就可以进行苯炔机理，但是需要强碱和非质子溶剂}")
-        text27=Description(text=r"\text{强碱通常使用}\mathrm{NaNH_2}\text{、}\mathrm{n-BuLi}\text{或}\mathrm{LDA}\text{等，此处以}\mathrm{NaNH_2}\text{为例，溶剂一般为液氨}")
+        text26=Description(text=r"\text{如果苯环上没有合适的EWG，那么就需要进行苯炔机理，}\\\text{但是需要有强碱和非质子溶剂}")
+        text27=Description(text=r"\text{强碱通常使用}\mathrm{NaNH_2}\text{、}\mathrm{n-BuLi}\text{或}\mathrm{LDA}\text{等，}\\\text{此处以}\mathrm{NaNH_2}\text{为例，溶剂一般为液氨}")
         text28=Description(text=r"\text{底物卤代苯中卤素的邻位必须有一个氢}")
         text29=Description(text=r"\text{首先，}\mathrm{NH_2^-}\text{进攻卤素邻位的氢，同时卤素离子离去}")
         text30=Description(text=r"\text{此时生成极不稳定的中间体苯炔，三键被强行塞入环内，张力极大，能量高}")
@@ -1152,6 +1150,7 @@ class test(Scene):
         benzene_bz.add_atom(name="EWG",direction=90*DEGREES,text=r"\mathrm{EWG}",bond_type=BondType.NORMAL_BOND,adjacency="C52")
         benzene_bz.add_atom(name="X",direction=30*DEGREES,text=r"\mathrm{X}",bond_type=BondType.NORMAL_BOND,adjacency="C53")
 
+        self.play(Write(text26))
         self.play(Create(benzene_bz),run_time=2)
         self.wait(1)
 
@@ -1182,6 +1181,8 @@ class test(Scene):
         LDA_sf.add_atom(name="Li",direction=0*DEGREES,text=r"\mathrm{Li}",bond_type=BondType.NORMAL_BOND,adjacency="N")
         LDA=Description(text=r"\mathrm{LDA}",pos=[-5.0,-2.0,0])
 
+        self.play(ReplacementTransform(text26,text27))
+        self.wait(1)
         self.play(Create(LDA_sf),Write(LDA))
         self.wait(1.5)
         self.play(FadeOut(LDA_sf,LDA),run_time=1)
@@ -1256,4 +1257,112 @@ class test(Scene):
         #Scene.replace的BFS会把直接加入结构式的键/电荷剥离，重新加回
         benzene_bz.add(NH2_H_bond,C53_C54_triple,X_negative)
         self.add(benzene_bz)
+        self.wait(1)
+
+        #X-与NH2-H消失
+        X_bz_mob=benzene_bz.atomic_clusters["X"][Mobject]
+        self.play(FadeOut(X_bz_mob,X_negative,NH2_mob,H_mob,NH2_H_bond),run_time=1)
+        benzene_bz.remove(X_bz_mob,X_negative,NH2_mob,H_mob,NH2_H_bond)
+        benzene_bz.atomic_clusters.pop("X")
+        benzene_bz.atomic_clusters.pop("NH2")
+        benzene_bz.atomic_clusters.pop("H")
+        benzene_bz.charges.pop("X")
+        self.add(benzene_bz)
+        self.wait(0.5)
+
+        #苯炔分裂为两个相同的苯炔，中心横坐标分别在-2.5和2.5
+        bz_left_shift=np.array([-2.5,0,0],dtype=float)
+        bz_right_shift=np.array([2.5,0,0],dtype=float)
+        benzene_bz_right=benzene_bz.copy()
+        benzene_bz_right.shift(bz_right_shift)
+        self.play(benzene_bz.animate.shift(bz_left_shift),
+                  ReplacementTransform(benzene_bz.copy(),benzene_bz_right),
+                  run_time=1.5)
+        for data in benzene_bz.atomic_clusters.values():
+            data["pos"]=np.array(data["pos"],dtype=float)+bz_left_shift
+        for data in benzene_bz_right.atomic_clusters.values():
+            data["pos"]=np.array(data["pos"],dtype=float)+bz_right_shift
+        self.wait(0.5)
+
+        #左侧苯炔右上出现NH2^-，右侧苯炔右下出现NH2^-
+        C53L_pos=benzene_bz.atomic_clusters["C53"]["pos"]
+        C54R_pos=benzene_bz_right.atomic_clusters["C54"]["pos"]
+        NH2L_start=C53L_pos+np.array([1.5,0.5,0],dtype=float)
+        NH2R_start=C54R_pos+np.array([1.5,-0.5,0],dtype=float)
+        NH2L_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2L_start,text_offset=np.array([0.3,0,0]),
+                               attributes=benzene_bz.attributes)
+        NH2R_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2R_start,text_offset=np.array([0.3,0,0]),
+                               attributes=benzene_bz_right.attributes)
+        NH2L_charge=Charge(charge_type=ChargeType.NEGATIVE,text=NH2L_mob,pos=UL,attributes=benzene_bz.attributes)
+        NH2R_charge=Charge(charge_type=ChargeType.NEGATIVE,text=NH2R_mob,pos=UL,attributes=benzene_bz_right.attributes)
+        benzene_bz.atomic_clusters["NH2L"]={Mobject:NH2L_mob,"pos":NH2L_start,"adj":[],Bond:[]}
+        benzene_bz_right.atomic_clusters["NH2R"]={Mobject:NH2R_mob,"pos":NH2R_start,"adj":[],Bond:[]}
+        benzene_bz.add(NH2L_mob)
+        benzene_bz_right.add(NH2R_mob)
+
+        self.play(FadeIn(NH2L_mob),FadeIn(NH2L_charge),FadeIn(NH2R_mob),FadeIn(NH2R_charge))
+        self.wait(1)
+
+        #左NH2^-进攻苯炔右上的C（C53），右NH2^-进攻苯炔右下的C（C54），N-C键与苯环键成120°角
+        NH2L_target=C53L_pos+np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0],dtype=float)
+        NH2R_target=C54R_pos+np.array([np.cos(-30*DEGREES),np.sin(-30*DEGREES),0],dtype=float)
+        self.play(NH2L_mob.animate.shift(NH2L_target-NH2L_start),
+                  NH2L_charge.animate.shift(NH2L_target-NH2L_start),
+                  NH2R_mob.animate.shift(NH2R_target-NH2R_start),
+                  NH2R_charge.animate.shift(NH2R_target-NH2R_start),
+                  run_time=1)
+        benzene_bz.atomic_clusters["NH2L"]["pos"]=NH2L_target
+        benzene_bz_right.atomic_clusters["NH2R"]["pos"]=NH2R_target
+
+        #进攻后均在另一个C上生成碳负离子：负电荷变为N-C单键，三键变为双键和另一个C上的负电荷
+        C53L_C54L_triple=next(b for b in benzene_bz.atomic_clusters["C53"][Bond] if b in benzene_bz.atomic_clusters["C54"][Bond])
+        C54R_C53R_triple=next(b for b in benzene_bz_right.atomic_clusters["C54"][Bond] if b in benzene_bz_right.atomic_clusters["C53"][Bond])
+        C53L_NH2L_bond=Bond(bond_type=BondType.NORMAL_BOND,start=NH2L_target,end=C53L_pos,
+                            start_edge=True,end_edge=False,attributes=benzene_bz.attributes)
+        C54R_NH2R_bond=Bond(bond_type=BondType.NORMAL_BOND,start=NH2R_target,end=C54R_pos,
+                            start_edge=True,end_edge=False,attributes=benzene_bz_right.attributes)
+        C53L_C54L_double=benzene_bz.build_bond(start="C53",end="C54",bond_type=BondType.DOUBLE_BOND,
+                                               side=-1,start_side_edge=True,end_side_edge=True)
+        C54R_C53R_double=benzene_bz_right.build_bond(start="C54",end="C53",bond_type=BondType.DOUBLE_BOND,
+                                                     side=1,start_side_edge=True,end_side_edge=True)
+        C54L_negative=Charge(charge_type=ChargeType.NEGATIVE_COORDINATE,
+                             text=benzene_bz.atomic_clusters["C54"]["pos"],pos=DR,attributes=benzene_bz.attributes)
+        C53R_negative=Charge(charge_type=ChargeType.NEGATIVE_COORDINATE,
+                             text=benzene_bz_right.atomic_clusters["C53"]["pos"],pos=UR,attributes=benzene_bz_right.attributes)
+
+        step_L=ElectronMigrationStep(replace=[(NH2L_charge,C53L_NH2L_bond),
+                                              (C53L_C54L_triple,VGroup(C53L_C54L_double,C54L_negative))],
+                                     lag_ratio=0)
+        step_R=ElectronMigrationStep(replace=[(NH2R_charge,C54R_NH2R_bond),
+                                              (C54R_C53R_triple,VGroup(C54R_C53R_double,C53R_negative))],
+                                     lag_ratio=0)
+        em_L=benzene_bz.electron_migration(steps=[step_L],lag_ratio=0,run_time=1.5)
+        em_R=benzene_bz_right.electron_migration(steps=[step_R],lag_ratio=0,run_time=1.5)
+        benzene_bz.remove(NH2L_charge,C53L_C54L_triple)
+        benzene_bz_right.remove(NH2R_charge,C54R_C53R_triple)
+        self.add(em_L.mobject)
+        self.add(em_R.mobject)
+        self.play(em_L,em_R)
+
+        benzene_bz.atomic_clusters["C53"][Bond].remove(C53L_C54L_triple)
+        benzene_bz.atomic_clusters["C54"][Bond].remove(C53L_C54L_triple)
+        benzene_bz.atomic_clusters["C53"][Bond].extend([C53L_C54L_double,C53L_NH2L_bond])
+        benzene_bz.atomic_clusters["C54"][Bond].append(C53L_C54L_double)
+        benzene_bz.atomic_clusters["NH2L"][Bond].append(C53L_NH2L_bond)
+        benzene_bz.atomic_clusters["C53"]["adj"].append("NH2L")
+        benzene_bz.atomic_clusters["NH2L"]["adj"].append("C53")
+        benzene_bz.charges["C54"]=C54L_negative
+        benzene_bz.add(C53L_NH2L_bond,C53L_C54L_double,C54L_negative)
+        self.add(benzene_bz)
+
+        benzene_bz_right.atomic_clusters["C54"][Bond].remove(C54R_C53R_triple)
+        benzene_bz_right.atomic_clusters["C53"][Bond].remove(C54R_C53R_triple)
+        benzene_bz_right.atomic_clusters["C54"][Bond].extend([C54R_C53R_double,C54R_NH2R_bond])
+        benzene_bz_right.atomic_clusters["C53"][Bond].append(C54R_C53R_double)
+        benzene_bz_right.atomic_clusters["NH2R"][Bond].append(C54R_NH2R_bond)
+        benzene_bz_right.atomic_clusters["C54"]["adj"].append("NH2R")
+        benzene_bz_right.atomic_clusters["NH2R"]["adj"].append("C54")
+        benzene_bz_right.charges["C53"]=C53R_negative
+        benzene_bz_right.add(C54R_NH2R_bond,C54R_C53R_double,C53R_negative)
+        self.add(benzene_bz_right)
         self.wait(1)
