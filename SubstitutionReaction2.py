@@ -1130,6 +1130,7 @@ class test(Scene):
         text29=Description(text=r"\text{首先，}\mathrm{NH_2^-}\text{进攻卤素邻位的氢，同时卤素离子离去}")
         text30=Description(text=r"\text{此时生成极不稳定的中间体苯炔，三键被强行塞入环内，张力极大，能量高}")
         text31=Description(text=r"\text{苯炔生成后立刻被}\mathrm{NH_2^-}\text{进攻，生成的碳负离子立即夺取}\mathrm{NH_3}\text{的氢，生成取代产物}")
+        text32=Description(text=r"\text{苯炔三键的两侧都可以被进攻，最终产物是两种取代产物的混合物}")
 
         #苯炔机理演示：中心显示苯环（纵坐标与第一、二部分的苯环相同），上方C连接EWG，右上C连接X
         benzene_bz=StructuralFormula(name="C52",pos=[0,0.5,0],text=None)
@@ -1182,6 +1183,7 @@ class test(Scene):
         self.play(Create(LDA_sf),Write(LDA))
         self.wait(1.5)
         self.play(FadeOut(LDA_sf,LDA),run_time=1)
+        self.play(ReplacementTransform(text27,text28))
         self.wait(0.5)
 
         #右侧显示NH2^-（文本像前面的长文本一样用text_offset位移），负电荷在左上角
@@ -1192,15 +1194,13 @@ class test(Scene):
         benzene_bz.atomic_clusters["NH2"]={Mobject:NH2_mob,"pos":NH2_start,"adj":[],Bond:[]}
         benzene_bz.add(NH2_mob)
 
-        self.play(FadeIn(NH2_mob),FadeIn(NH2_charge))
-        self.wait(0.5)
-
         #右下的C（C54）上显示一个H（在FadeIn之前才加入结构式，避免提前闪现）
         benzene_bz.add_atom(name="H",direction=-30*DEGREES,text=r"\mathrm{H}",bond_type=BondType.NORMAL_BOND,adjacency="C54")
         H_mob=benzene_bz.atomic_clusters["H"][Mobject]
         C54_H_bond=benzene_bz.atomic_clusters["H"][Bond][0]
-        self.play(FadeIn(H_mob),FadeIn(C54_H_bond))
-        self.wait(0.5)
+        self.play(FadeIn(NH2_mob),FadeIn(NH2_charge),FadeIn(H_mob),FadeIn(C54_H_bond))
+        self.wait(1)
+        self.play(ReplacementTransform(text28,text29))
 
         #NH2^-进攻H：pos移动到H右侧一个单位处（pos而非文本标签中心）
         H_pos=benzene_bz.atomic_clusters["H"]["pos"]
@@ -1257,14 +1257,14 @@ class test(Scene):
 
         #X-与NH2-H消失
         X_bz_mob=benzene_bz.atomic_clusters["X"][Mobject]
-        self.play(FadeOut(X_bz_mob,X_negative,NH2_mob,H_mob,NH2_H_bond),run_time=1)
+        self.play(FadeOut(X_bz_mob,X_negative,NH2_mob,H_mob,NH2_H_bond),ReplacementTransform(text29,text30),run_time=1)
         benzene_bz.remove(X_bz_mob,X_negative,NH2_mob,H_mob,NH2_H_bond)
         benzene_bz.atomic_clusters.pop("X")
         benzene_bz.atomic_clusters.pop("NH2")
         benzene_bz.atomic_clusters.pop("H")
         benzene_bz.charges.pop("X")
         self.add(benzene_bz)
-        self.wait(0.5)
+        self.wait(2)
 
         #苯炔分裂为两个相同的苯炔，中心横坐标分别在-2.5和2.5
         bz_left_shift=np.array([-2.5,0,0],dtype=float)
@@ -1285,9 +1285,9 @@ class test(Scene):
         C54R_pos=benzene_bz_right.atomic_clusters["C54"]["pos"]
         NH2L_start=C53L_pos+np.array([1.5,0.5,0],dtype=float)
         NH2R_start=C54R_pos+np.array([1.5,-0.5,0],dtype=float)
-        NH2L_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2L_start,text_offset=np.array([0.3,0,0]),
+        NH2L_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2L_start,text_offset=np.array([0.2,-0.03,0]),
                                attributes=benzene_bz.attributes)
-        NH2R_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2R_start,text_offset=np.array([0.3,0,0]),
+        NH2R_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2R_start,text_offset=np.array([0.2,-0.03,0]),
                                attributes=benzene_bz_right.attributes)
         NH2L_charge=Charge(charge_type=ChargeType.NEGATIVE,text=NH2L_mob,pos=UL,attributes=benzene_bz.attributes)
         NH2R_charge=Charge(charge_type=ChargeType.NEGATIVE,text=NH2R_mob,pos=UL,attributes=benzene_bz_right.attributes)
@@ -1297,6 +1297,7 @@ class test(Scene):
         benzene_bz_right.add(NH2R_mob)
 
         self.play(FadeIn(NH2L_mob),FadeIn(NH2L_charge),FadeIn(NH2R_mob),FadeIn(NH2R_charge))
+        self.play(ReplacementTransform(text30,text31))
         self.wait(1)
 
         #左NH2^-进攻苯炔右上的C（C53），右NH2^-进攻苯炔右下的C（C54），N-C键与苯环键成120°角
@@ -1359,7 +1360,6 @@ class test(Scene):
         benzene_bz_right.charges["C53"]=C53R_negative
         benzene_bz_right.add(C54R_NH2R_bond,C54R_C53R_double,C53R_negative)
         self.add(benzene_bz_right)
-        self.wait(1)
 
         #两个苯炔的负电荷右侧出现H-NH2（H的位置使C-H键与苯环键成120°角）
         HL_pos=benzene_bz.atomic_clusters["C54"]["pos"]+np.array([np.cos(330*DEGREES),np.sin(330*DEGREES),0],dtype=float)
@@ -1368,9 +1368,9 @@ class test(Scene):
         NH2P_R_pos=HR_pos+np.array([1,0,0],dtype=float)
         HL_mob=AtomicCluster(text=r"\mathrm{H}",pos=HL_pos,attributes=benzene_bz.attributes)
         HR_mob=AtomicCluster(text=r"\mathrm{H}",pos=HR_pos,attributes=benzene_bz_right.attributes)
-        NH2P_L_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2P_L_pos,text_offset=np.array([0.3,0,0]),
+        NH2P_L_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2P_L_pos,text_offset=np.array([0.2,-0.03,0]),
                                  attributes=benzene_bz.attributes)
-        NH2P_R_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2P_R_pos,text_offset=np.array([0.3,0,0]),
+        NH2P_R_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2P_R_pos,text_offset=np.array([0.2,-0.03,0]),
                                  attributes=benzene_bz_right.attributes)
         H_NH2_L_bond=Bond(bond_type=BondType.NORMAL_BOND,start=HL_pos,end=NH2P_L_pos,
                           start_edge=True,end_edge=True,attributes=benzene_bz.attributes)
@@ -1385,7 +1385,6 @@ class test(Scene):
 
         self.play(FadeIn(HL_mob),FadeIn(NH2P_L_mob),FadeIn(H_NH2_L_bond),
                   FadeIn(HR_mob),FadeIn(NH2P_R_mob),FadeIn(H_NH2_R_bond))
-        self.wait(1)
 
         #负电荷进攻H：碳负离子变为C-H单键，H-NH2键变为NH2上的负电荷
         C54L_H_bond=Bond(bond_type=BondType.NORMAL_BOND,
@@ -1437,7 +1436,7 @@ class test(Scene):
         self.wait(0.5)
 
         #两个NH2^-均消失
-        self.play(FadeOut(NH2P_L_mob,NH2neg_L,NH2P_R_mob,NH2neg_R),run_time=1)
+        self.play(FadeOut(NH2P_L_mob,NH2neg_L,NH2P_R_mob,NH2neg_R),ReplacementTransform(text31,text32),run_time=1)
         benzene_bz.remove(NH2P_L_mob,NH2neg_L)
         benzene_bz_right.remove(NH2P_R_mob,NH2neg_R)
         benzene_bz.atomic_clusters.pop("NH2PL")
@@ -1446,4 +1445,8 @@ class test(Scene):
         benzene_bz_right.charges.pop("NH2PR")
         self.add(benzene_bz)
         self.add(benzene_bz_right)
-        self.wait(1)
+        self.wait(2)
+
+        #最后淡出屏幕上所有对象
+        self.play(FadeOut(*self.mobjects),run_time=1)
+        self.wait(2)
