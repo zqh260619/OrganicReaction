@@ -73,7 +73,7 @@ class test(Scene):
             fadeout=[E1_positive],
         )
 
-        self.play(benzene1.electron_migration(steps=[step_wheland],lag_ratio=0,run_time=1.2),
+        self.play(benzene1.electron_migration(steps=[step_wheland],run_time=1.2),
                   BondTypeTransform(bond=C1_H1_normal,
                                     target_type=BondType.OUT_BOND,
                                     angle=30*DEGREES,
@@ -113,7 +113,7 @@ class test(Scene):
         arc=ArcBetweenPoints(E1_target, E1_final, angle=30*DEGREES)
 
         self.play(ReplacementTransform(text3,text4))
-        self.play(benzene1.electron_migration(steps=[step_elimination1], lag_ratio=0, run_time=1.5),
+        self.play(benzene1.electron_migration(steps=[step_elimination1], run_time=1.5),
                   BondTypeTransform(bond=C1_E1_in,
                                     target_type=BondType.NORMAL_BOND,
                                     angle=30*DEGREES,
@@ -229,7 +229,7 @@ class test(Scene):
             fadeout=[Br2_positive],
         )
 
-        self.play(benzene2.electron_migration(steps=[step_wheland2],lag_ratio=0,run_time=1.2),
+        self.play(benzene2.electron_migration(steps=[step_wheland2],run_time=1.2),
                   BondTypeTransform(bond=C7_H2_normal,
                                     target_type=BondType.OUT_BOND,
                                     angle=30*DEGREES,
@@ -265,7 +265,7 @@ class test(Scene):
         Br2_final=np.array([c7_pos[0]+dx*ca-dy*sa, c7_pos[1]+dx*sa+dy*ca, 0])
         arc2=ArcBetweenPoints(Br2_target, Br2_final, angle=30*DEGREES)
 
-        self.play(benzene2.electron_migration(steps=[step_elimination2], lag_ratio=0, run_time=1.5),
+        self.play(benzene2.electron_migration(steps=[step_elimination2], run_time=1.5),
                   BondTypeTransform(bond=C7_Br2_in,
                                     target_type=BondType.NORMAL_BOND,
                                     angle=30*DEGREES,
@@ -459,7 +459,7 @@ class test(Scene):
             create=[O3_positive],
         )
 
-        self.play(benzene3.electron_migration(steps=[step_protonation],lag_ratio=0,run_time=1.5))
+        self.play(benzene3.electron_migration(steps=[step_protonation],run_time=1.5))
 
         benzene3.atomic_clusters["O3"][Bond].append(O3_H2_bond)
         benzene3.atomic_clusters["H5"][Bond].remove(H_O_bond)
@@ -491,7 +491,7 @@ class test(Scene):
             fadeout=[O3_positive],
         )
 
-        self.play(benzene3.electron_migration(steps=[step_dehydration],lag_ratio=0,run_time=1.5))
+        self.play(benzene3.electron_migration(steps=[step_dehydration],run_time=1.5))
 
         benzene3.atomic_clusters["N"][Bond].remove(N_O1_single_gen)
         benzene3.atomic_clusters["N"][Bond].append(N_O1_bond)
@@ -611,7 +611,7 @@ class test(Scene):
             fadeout=[C18_positive],
         )
 
-        em_anim=benzene3.electron_migration(steps=[step_elimination3], lag_ratio=0, run_time=1.5)
+        em_anim=benzene3.electron_migration(steps=[step_elimination3], run_time=1.5)
         benzene3.remove(O5_negative, C13_H3_normal, C13_C18_single, C18_positive)
         self.add(em_anim.mobject)
 
@@ -931,10 +931,9 @@ class test(Scene):
         step_attack=ElectronMigrationStep(
             replace=[(Nu_final_charge,C38_Nu_out),
                      (C38_C39_double,VGroup(C38_C39_single,C39_negative))],
-            lag_ratio=0.5,
         )
 
-        em_anim=acetyl_sf.electron_migration(steps=[step_attack],lag_ratio=0,run_time=1.2)
+        em_anim=acetyl_sf.electron_migration(steps=[step_attack],run_time=1.2)
         acetyl_sf.remove(Nu_final_charge,C38_C39_double)
         self.add(em_anim.mobject)
         self.play(em_anim,
@@ -969,9 +968,8 @@ class test(Scene):
                             text=acetyl_sf.atomic_clusters["C41"]["pos"],pos=DL,attributes=acetyl_sf.attributes)
         step_mig1=ElectronMigrationStep(
             replace=[(VGroup(C39_negative,C39_C40_single),C39_C40_double),
-                     (C40_C41_double,VGroup(C40_C41_single,C41_negative))],
-            lag_ratio=0)
-        em_mig1=acetyl_sf.electron_migration(steps=[step_mig1],lag_ratio=0,run_time=1.2)
+                     (C40_C41_double,VGroup(C40_C41_single,C41_negative))])
+        em_mig1=acetyl_sf.electron_migration(steps=[step_mig1],run_time=1.2)
         acetyl_sf.remove(C39_negative,C39_C40_single,C40_C41_double)
         self.add(em_mig1.mobject)
         self.play(em_mig1)
@@ -998,9 +996,8 @@ class test(Scene):
                             text=acetyl_sf.atomic_clusters["C37"]["pos"],pos=UR,attributes=acetyl_sf.attributes)
         step_mig2=ElectronMigrationStep(
             replace=[(VGroup(C41_negative,C41_C42_single),C41_C42_double),
-                     (C42_C37_double,VGroup(C42_C37_single,C37_negative))],
-            lag_ratio=0)
-        em_mig2=acetyl_sf.electron_migration(steps=[step_mig2],lag_ratio=0,run_time=1.2)
+                     (C42_C37_double,VGroup(C42_C37_single,C37_negative))])
+        em_mig2=acetyl_sf.electron_migration(steps=[step_mig2],run_time=1.2)
         acetyl_sf.remove(C41_negative,C41_C42_single,C42_C37_double)
         self.add(em_mig2.mobject)
         self.play(em_mig2)
@@ -1027,9 +1024,8 @@ class test(Scene):
                           pos=UR,attributes=acetyl_sf.attributes)
         step_mig3=ElectronMigrationStep(
             replace=[(VGroup(C37_negative,C37_C43_single),C37_C43_double),
-                     (C43_O_double,VGroup(C43_O_single,O_negative))],
-            lag_ratio=0)
-        em_mig3=acetyl_sf.electron_migration(steps=[step_mig3],lag_ratio=0,run_time=1.2)
+                     (C43_O_double,VGroup(C43_O_single,O_negative))])
+        em_mig3=acetyl_sf.electron_migration(steps=[step_mig3],run_time=1.2)
         acetyl_sf.remove(C37_negative,C37_C43_single,C43_O_double)
         self.add(em_mig3.mobject)
         self.play(em_mig3)
@@ -1054,9 +1050,8 @@ class test(Scene):
                                   text=acetyl_sf.atomic_clusters["C37"]["pos"],pos=UR,attributes=acetyl_sf.attributes)
         step_mig4=ElectronMigrationStep(
             replace=[(VGroup(O_negative,C43_O_single),C43_O_double_new),
-                     (C37_C43_double,VGroup(C37_C43_single_new,C37_negative_final))],
-            lag_ratio=0)
-        em_mig4=acetyl_sf.electron_migration(steps=[step_mig4],lag_ratio=0,run_time=1.2)
+                     (C37_C43_double,VGroup(C37_C43_single_new,C37_negative_final))])
+        em_mig4=acetyl_sf.electron_migration(steps=[step_mig4],run_time=1.2)
         acetyl_sf.remove(O_negative,C43_O_single,C37_C43_double)
         self.add(em_mig4.mobject)
         self.play(em_mig4)
@@ -1086,10 +1081,9 @@ class test(Scene):
 
         step_elim=ElectronMigrationStep(
             replace=[(VGroup(C37_negative_final,C37_C38_single),C37_C38_double),
-                     (C38_X_bond,X_negative)],
-            lag_ratio=0)
+                     (C38_X_bond,X_negative)])
 
-        em_elim=acetyl_sf.electron_migration(steps=[step_elim],lag_ratio=0,run_time=1.5)
+        em_elim=acetyl_sf.electron_migration(steps=[step_elim],run_time=1.5)
         acetyl_sf.remove(C37_negative_final,C37_C38_single,C38_X_bond)
         self.add(em_elim.mobject)
         self.play(em_elim,
@@ -1149,6 +1143,8 @@ class test(Scene):
         benzene_bz.add_bond(start="C57",end="C52",bond_type=BondType.DOUBLE_BOND,side=-1,start_side_edge=True,end_side_edge=True)
         benzene_bz.add_atom(name="EWG",direction=90*DEGREES,text=r"\mathrm{EWG}",bond_type=BondType.NORMAL_BOND,adjacency="C52")
         benzene_bz.add_atom(name="X",direction=30*DEGREES,text=r"\mathrm{X}",bond_type=BondType.NORMAL_BOND,adjacency="C53")
+        #左上的C（C57）上加一个甲基（键线式，无文本标签），后续分裂出的苯环副本自动继承
+        benzene_bz.add_atom(name="CH3",direction=150*DEGREES,text=None,bond_type=BondType.NORMAL_BOND,adjacency="C57")
 
         self.play(Write(text26))
         self.play(Create(benzene_bz),run_time=2)
@@ -1232,7 +1228,7 @@ class test(Scene):
                      (C53_X_bond,X_negative)]
             )
 
-        em_bz=benzene_bz.electron_migration(steps=[step_bz],lag_ratio=0,run_time=1.5)
+        em_bz=benzene_bz.electron_migration(steps=[step_bz],run_time=1.5)
         benzene_bz.remove(NH2_charge,C54_H_bond,C53_C54_double,C53_X_bond)
         self.add(em_bz.mobject)
         self.play(em_bz)
@@ -1323,21 +1319,19 @@ class test(Scene):
                             start_edge=True,end_edge=False,attributes=benzene_bz_right.attributes)
         C53L_C54L_double=benzene_bz.build_bond(start="C53",end="C54",bond_type=BondType.DOUBLE_BOND,
                                                side=-1,start_side_edge=True,end_side_edge=True)
-        C54R_C53R_double=benzene_bz_right.build_bond(start="C54",end="C53",bond_type=BondType.DOUBLE_BOND,
-                                                     side=1,start_side_edge=True,end_side_edge=True)
+        C54R_C53R_double=benzene_bz_right.build_bond(start="C53",end="C54",bond_type=BondType.DOUBLE_BOND,
+                                                     side=-1,start_side_edge=True,end_side_edge=True)
         C54L_negative=Charge(charge_type=ChargeType.NEGATIVE_COORDINATE,
                              text=benzene_bz.atomic_clusters["C54"]["pos"],pos=DR,attributes=benzene_bz.attributes)
         C53R_negative=Charge(charge_type=ChargeType.NEGATIVE_COORDINATE,
                              text=benzene_bz_right.atomic_clusters["C53"]["pos"],pos=UR,attributes=benzene_bz_right.attributes)
 
         step_L=ElectronMigrationStep(replace=[(NH2L_charge,C53L_NH2L_bond),
-                                              (C53L_C54L_triple,VGroup(C53L_C54L_double,C54L_negative))],
-                                     lag_ratio=0)
+                                              (C53L_C54L_triple,VGroup(C53L_C54L_double,C54L_negative))])
         step_R=ElectronMigrationStep(replace=[(NH2R_charge,C54R_NH2R_bond),
-                                              (C54R_C53R_triple,VGroup(C54R_C53R_double,C53R_negative))],
-                                     lag_ratio=0)
-        em_L=benzene_bz.electron_migration(steps=[step_L],lag_ratio=0,run_time=1.5)
-        em_R=benzene_bz_right.electron_migration(steps=[step_R],lag_ratio=0,run_time=1.5)
+                                              (C54R_C53R_triple,VGroup(C54R_C53R_double,C53R_negative))])
+        em_L=benzene_bz.electron_migration(steps=[step_L],run_time=1.5)
+        em_R=benzene_bz_right.electron_migration(steps=[step_R],run_time=1.5)
         benzene_bz.remove(NH2L_charge,C53L_C54L_triple)
         benzene_bz_right.remove(NH2R_charge,C54R_C53R_triple)
         self.add(em_L.mobject)
@@ -1364,5 +1358,92 @@ class test(Scene):
         benzene_bz_right.atomic_clusters["NH2R"]["adj"].append("C54")
         benzene_bz_right.charges["C53"]=C53R_negative
         benzene_bz_right.add(C54R_NH2R_bond,C54R_C53R_double,C53R_negative)
+        self.add(benzene_bz_right)
+        self.wait(1)
+
+        #两个苯炔的负电荷右侧出现H-NH2（H的位置使C-H键与苯环键成120°角）
+        HL_pos=benzene_bz.atomic_clusters["C54"]["pos"]+np.array([np.cos(330*DEGREES),np.sin(330*DEGREES),0],dtype=float)
+        NH2P_L_pos=HL_pos+np.array([1,0,0],dtype=float)
+        HR_pos=benzene_bz_right.atomic_clusters["C53"]["pos"]+np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0],dtype=float)
+        NH2P_R_pos=HR_pos+np.array([1,0,0],dtype=float)
+        HL_mob=AtomicCluster(text=r"\mathrm{H}",pos=HL_pos,attributes=benzene_bz.attributes)
+        HR_mob=AtomicCluster(text=r"\mathrm{H}",pos=HR_pos,attributes=benzene_bz_right.attributes)
+        NH2P_L_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2P_L_pos,text_offset=np.array([0.3,0,0]),
+                                 attributes=benzene_bz.attributes)
+        NH2P_R_mob=AtomicCluster(text=r"\mathrm{NH_2}",pos=NH2P_R_pos,text_offset=np.array([0.3,0,0]),
+                                 attributes=benzene_bz_right.attributes)
+        H_NH2_L_bond=Bond(bond_type=BondType.NORMAL_BOND,start=HL_pos,end=NH2P_L_pos,
+                          start_edge=True,end_edge=True,attributes=benzene_bz.attributes)
+        H_NH2_R_bond=Bond(bond_type=BondType.NORMAL_BOND,start=HR_pos,end=NH2P_R_pos,
+                          start_edge=True,end_edge=True,attributes=benzene_bz_right.attributes)
+        benzene_bz.atomic_clusters["HL"]={Mobject:HL_mob,"pos":HL_pos,"adj":["NH2PL"],Bond:[H_NH2_L_bond]}
+        benzene_bz.atomic_clusters["NH2PL"]={Mobject:NH2P_L_mob,"pos":NH2P_L_pos,"adj":["HL"],Bond:[H_NH2_L_bond]}
+        benzene_bz_right.atomic_clusters["HR"]={Mobject:HR_mob,"pos":HR_pos,"adj":["NH2PR"],Bond:[H_NH2_R_bond]}
+        benzene_bz_right.atomic_clusters["NH2PR"]={Mobject:NH2P_R_mob,"pos":NH2P_R_pos,"adj":["HR"],Bond:[H_NH2_R_bond]}
+        benzene_bz.add(HL_mob,NH2P_L_mob,H_NH2_L_bond)
+        benzene_bz_right.add(HR_mob,NH2P_R_mob,H_NH2_R_bond)
+
+        self.play(FadeIn(HL_mob),FadeIn(NH2P_L_mob),FadeIn(H_NH2_L_bond),
+                  FadeIn(HR_mob),FadeIn(NH2P_R_mob),FadeIn(H_NH2_R_bond))
+        self.wait(1)
+
+        #负电荷进攻H：碳负离子变为C-H单键，H-NH2键变为NH2上的负电荷
+        C54L_H_bond=Bond(bond_type=BondType.NORMAL_BOND,
+                         start=benzene_bz.atomic_clusters["C54"]["pos"],end=HL_pos,
+                         start_edge=False,end_edge=True,attributes=benzene_bz.attributes)
+        C53R_H_bond=Bond(bond_type=BondType.NORMAL_BOND,
+                         start=benzene_bz_right.atomic_clusters["C53"]["pos"],end=HR_pos,
+                         start_edge=False,end_edge=True,attributes=benzene_bz_right.attributes)
+        NH2neg_L=Charge(charge_type=ChargeType.NEGATIVE,text=NH2P_L_mob,pos=UL,attributes=benzene_bz.attributes)
+        NH2neg_R=Charge(charge_type=ChargeType.NEGATIVE,text=NH2P_R_mob,pos=UL,attributes=benzene_bz_right.attributes)
+
+        step_pL=ElectronMigrationStep(replace=[(C54L_negative,C54L_H_bond),
+                                               (H_NH2_L_bond,NH2neg_L)])
+        step_pR=ElectronMigrationStep(replace=[(C53R_negative,C53R_H_bond),
+                                               (H_NH2_R_bond,NH2neg_R)])
+        em_pL=benzene_bz.electron_migration(steps=[step_pL],run_time=1.5)
+        em_pR=benzene_bz_right.electron_migration(steps=[step_pR],run_time=1.5)
+        benzene_bz.remove(C54L_negative,H_NH2_L_bond)
+        benzene_bz_right.remove(C53R_negative,H_NH2_R_bond)
+        self.add(em_pL.mobject)
+        self.add(em_pR.mobject)
+        self.play(em_pL,em_pR)
+
+        benzene_bz.atomic_clusters["C54"][Bond].append(C54L_H_bond)
+        benzene_bz.atomic_clusters["HL"][Bond].remove(H_NH2_L_bond)
+        benzene_bz.atomic_clusters["HL"][Bond].append(C54L_H_bond)
+        benzene_bz.atomic_clusters["NH2PL"][Bond].remove(H_NH2_L_bond)
+        benzene_bz.atomic_clusters["HL"]["adj"].remove("NH2PL")
+        benzene_bz.atomic_clusters["NH2PL"]["adj"].remove("HL")
+        benzene_bz.atomic_clusters["C54"]["adj"].append("HL")
+        benzene_bz.atomic_clusters["HL"]["adj"].append("C54")
+        benzene_bz.charges.pop("C54")
+        benzene_bz.charges["NH2PL"]=NH2neg_L
+        benzene_bz.add(C54L_H_bond,NH2neg_L)
+        self.add(benzene_bz)
+
+        benzene_bz_right.atomic_clusters["C53"][Bond].append(C53R_H_bond)
+        benzene_bz_right.atomic_clusters["HR"][Bond].remove(H_NH2_R_bond)
+        benzene_bz_right.atomic_clusters["HR"][Bond].append(C53R_H_bond)
+        benzene_bz_right.atomic_clusters["NH2PR"][Bond].remove(H_NH2_R_bond)
+        benzene_bz_right.atomic_clusters["HR"]["adj"].remove("NH2PR")
+        benzene_bz_right.atomic_clusters["NH2PR"]["adj"].remove("HR")
+        benzene_bz_right.atomic_clusters["C53"]["adj"].append("HR")
+        benzene_bz_right.atomic_clusters["HR"]["adj"].append("C53")
+        benzene_bz_right.charges.pop("C53")
+        benzene_bz_right.charges["NH2PR"]=NH2neg_R
+        benzene_bz_right.add(C53R_H_bond,NH2neg_R)
+        self.add(benzene_bz_right)
+        self.wait(0.5)
+
+        #两个NH2^-均消失
+        self.play(FadeOut(NH2P_L_mob,NH2neg_L,NH2P_R_mob,NH2neg_R),run_time=1)
+        benzene_bz.remove(NH2P_L_mob,NH2neg_L)
+        benzene_bz_right.remove(NH2P_R_mob,NH2neg_R)
+        benzene_bz.atomic_clusters.pop("NH2PL")
+        benzene_bz.charges.pop("NH2PL")
+        benzene_bz_right.atomic_clusters.pop("NH2PR")
+        benzene_bz_right.charges.pop("NH2PR")
+        self.add(benzene_bz)
         self.add(benzene_bz_right)
         self.wait(1)
