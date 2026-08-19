@@ -1,4 +1,4 @@
-"""化学键类、Bond 包装器与 BondType 枚举。"""
+"""化学键类、Bond 包装器、BondType 枚举与键查找器 BondLookup。"""
 
 from manim import Polygon, VGroup, Line, DashedLine
 from manim.typing import Vector3D
@@ -183,3 +183,102 @@ class Bond(VGroup):
                                       attributes=attributes)
 
         self.add(bond)
+
+
+class BondLookup:
+    """键查找器：查询 StructuralFormula 中原子之间的化学键。
+
+    绑定到一个 StructuralFormula，所有查询都以其中的
+    ``atomic_clusters[name][Bond]`` 键列表为唯一事实来源，
+    键对象按身份比较。通常无需直接构造，可通过
+    ``StructuralFormula.bond_lookup`` 属性访问。
+
+    Parameters
+    ----------
+    sf : StructuralFormula
+        被查询的结构式对象。
+    """
+
+    def __init__(self, sf: 'StructuralFormula'):
+        self.sf = sf
+
+    def _bonds_of(self, name: str) -> list[Bond]:
+        if name not in self.sf.atomic_clusters:
+            raise ValueError(f"原子 '{name}' 不存在于结构中。")
+        return self.sf.atomic_clusters[name][Bond]
+
+    def between(self, start: str, end: str) -> Bond:
+        """返回两原子之间的键；若不存在则抛出 ValueError。"""
+        bond = self.between_or_none(start, end)
+        if bond is None:
+            raise ValueError(f"原子 '{start}' 与 '{end}' 之间不存在键。")
+        return bond
+
+    def between_or_none(self, start: str, end: str) -> Bond | None:
+        """返回两原子之间的键；若不存在则返回 None。"""
+        if start == end:
+            return None
+        start_bonds = self._bonds_of(start)
+        end_bonds = self._bonds_of(end)
+        for bond in start_bonds:
+            if bond in end_bonds:
+                return bond
+        return None
+
+    def is_bonded(self, start: str, end: str) -> bool:
+        """判断两原子之间是否存在键。"""
+        return self.between_or_none(start, end) is not None
+
+    def type_between(self, start: str, end: str) -> BondType:
+        """返回两原子之间的键类型；若不存在则抛出 ValueError。"""
+        return self.between(start, end).bond_type
+
+    def bonds(self, name: str) -> list[Bond]:
+        """返回某原子的全部键（副本列表）。"""
+        return list(self._bonds_of(name))
+
+    def of_type(self, name: str, bond_type: BondType) -> list[Bond]:
+        """返回某原子指定类型的全部键。"""
+        return [bond for bond in self._bonds_of(name) if bond.bond_type == bond_type]
+
+    def find(self,
+             start: str | None = None,
+             end: str | None = None,
+             bond_type: BondType | None = None) -> Bond | None:
+        """按条件查找第一个匹配的键；找不到返回 None。
+
+        start 与 end 至少提供其一（提供后分别要求键与该原子相连），
+        bond_type 为可选的键类型过滤。
+        """
+        if start is None and end is None:
+            raise ValueError("find 至少需要提供 start 或 end。")
+        if start is not None:
+            start_bonds = self._bonds_of(start)
+        else:
+            start_bonds = None
+        if end is not None:
+            end_bonds = self._bonds_of(end)
+        else:
+            end_bonds = None
+
+        candidates = start_bonds if start_bonds is not None else end_bonds
+        for bond in candidates:
+            if start_bonds is not None and bond not in start_bonds:
+                continue
+            if end_bonds is not None and bond not in end_bonds:
+                continue
+            if bond_type is not None and bond.bond_type != bond_type:
+                continue
+            return bond
+        return None
+
+    def all_bonds(self) -> list[Bond]:
+        """返回整个结构中去重后的全部键（按首次出现的顺序）。"""
+        seen = set()
+        result = []
+        for data in self.sf.atomic_clusters.values():
+            for bond in data[Bond]:
+                if id(bond) not in seen:
+                    seen.add(id(bond))
+                    result.append(bond)
+        return result

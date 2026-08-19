@@ -8,7 +8,7 @@ from typing import Callable
 from .parameters import bond_length, ratio_transition_state, edge, txt_size, default_charge_edge
 from .attributes import AttributeHolder
 from .atoms import AtomicCluster
-from .bonds import Bond, BondType
+from .bonds import Bond, BondType, BondLookup
 from .charges import Charge, ChargeType
 from .animations import RotateAtoms, ElectronMigration, ElectronMigrationStep
 
@@ -81,6 +81,11 @@ class StructuralFormula(VGroup):
                 self.atomic_clusters[name]={Mobject:None,"pos":pos,"adj":[],Bond:[]}
 
         self.charges={}
+
+    @property
+    def bond_lookup(self) -> BondLookup:
+        """键查找器：查询两原子之间的化学键、按类型过滤等。"""
+        return BondLookup(self)
 
     def add_atom(self,*,
                  name:str,

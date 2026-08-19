@@ -9,7 +9,7 @@
     parameters   全局参数、常量与默认文本基类（MathTex 多行默认居中）
     attributes   样式属性持有者 AttributeHolder 与 DEFAULT_ATTRIBUTES
     atoms        原子文本 AtomicCluster 与原子定位器 Locator
-    bonds        化学键类、Bond 包装器与 BondType 枚举
+    bonds        化学键类、Bond 包装器、BondType 枚举与键查找器 BondLookup
     charges      电荷类、Charge 包装器与 ChargeType 枚举
     decorations  括号、箭头等装饰图形
     animations   动画类与电子迁移步骤描述
