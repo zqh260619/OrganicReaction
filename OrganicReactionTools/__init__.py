@@ -13,7 +13,7 @@
     charges      电荷类、Charge 包装器与 ChargeType 枚举
     decorations  括号、箭头等装饰图形
     animations   动画类与电子迁移步骤描述
-    structures   结构式 StructuralFormula
+    structures   结构式 StructuralFormula 与苯环 Benzene
     texts        标题文本类
     functions    工具函数
 """

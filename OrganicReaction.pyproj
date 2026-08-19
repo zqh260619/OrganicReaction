@@ -35,6 +35,7 @@
     <Compile Include="OrganicReactionTools\functions.py" />
     <Compile Include="SubstitutionReaction1.py" />
     <Compile Include="SubstitutionReaction2.py" />
+    <Compile Include="SubstitutionReaction3.py" />
     <Compile Include="test.py" />
   </ItemGroup>
   <ItemGroup>

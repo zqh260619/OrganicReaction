@@ -1,6 +1,6 @@
-"""结构式 StructuralFormula。"""
+"""结构式 StructuralFormula 与苯环 Benzene。"""
 
-from manim import VGroup, Mobject, Animation, FadeOut, WHITE, smooth
+from manim import VGroup, Mobject, Animation, FadeOut, WHITE, smooth, DEGREES
 from manim.typing import Vector3D
 import numpy as np
 from typing import Callable
@@ -517,3 +517,66 @@ class StructuralFormula(VGroup):
                                  lag_ratio=lag_ratio,
                                  run_time=run_time,
                                  **kwargs)
+
+
+class Benzene(StructuralFormula):
+    """苯环结构式：六个无文本碳原子的规则六边形，单双键交替。
+
+    除 StructuralFormula 的全部参数（属性样式参数等，通过 **kwargs
+    透传）外，额外参数：
+
+    Parameters
+    ----------
+    center : Vector3D
+        苯环中心的坐标。
+    first_c_angle : float
+        第一个碳原子（c_names[0]）相对环中心的角度（弧度，
+        与 add_atom 的 direction 一致），默认 90°（C1 在正上方）。
+    c_names : list[str] | None
+        六个碳原子的名称，默认 ["C1", "C2", "C3", "C4", "C5", "C6"]。
+
+    Notes
+    -----
+    碳原子按顺时针方向排列，C1-C2 之间为双键，其余单双键交替；
+    所有双键的 side=-1。取代基不在初始化时添加，可在创建后通过
+    add_atom / add_charge 等方法挂接（与直接操作 StructuralFormula 相同）。
+    """
+
+    def __init__(self, *,
+                 center: Vector3D,
+                 first_c_angle: float = 90 * DEGREES,
+                 c_names: list[str] | None = None,
+                 **kwargs):
+
+        for banned in ("name", "pos", "text", "text_offset"):
+            if banned in kwargs:
+                raise ValueError(f"Benzene 不接受 '{banned}' 参数：位置由 center 与 first_c_angle 自动计算。")
+
+        if c_names is None:
+            c_names = ["C1", "C2", "C3", "C4", "C5", "C6"]
+        if len(c_names) != 6 or len(set(c_names)) != 6:
+            raise ValueError("c_names 必须提供 6 个互不相同的原子名称。")
+
+        center = np.array(center, dtype=float)
+        radius = kwargs.get("length_global", bond_length)
+
+        c1_pos = center + radius * np.array([np.cos(first_c_angle), np.sin(first_c_angle), 0])
+
+        super().__init__(name=c_names[0], pos=c1_pos, text=None, **kwargs)
+
+        # 顺时针依次添加 C2..C6：相邻键的方向每次减少 60°
+        bond_types = [BondType.DOUBLE_BOND, BondType.NORMAL_BOND,
+                      BondType.DOUBLE_BOND, BondType.NORMAL_BOND,
+                      BondType.DOUBLE_BOND]
+        for k in range(1, 6):
+            direction = first_c_angle - (k + 1) * 60 * DEGREES
+            if bond_types[k - 1] == BondType.DOUBLE_BOND:
+                self.add_atom(name=c_names[k], direction=direction, text=None,
+                              bond_type=bond_types[k - 1], adjacency=c_names[k - 1],
+                              side=-1, start_side_edge=True, end_side_edge=True)
+            else:
+                self.add_atom(name=c_names[k], direction=direction, text=None,
+                              bond_type=bond_types[k - 1], adjacency=c_names[k - 1])
+
+        # 闭合 C6-C1（单键）
+        self.add_bond(start=c_names[5], end=c_names[0], bond_type=BondType.NORMAL_BOND)
