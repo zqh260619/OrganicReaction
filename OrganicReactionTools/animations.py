@@ -417,6 +417,10 @@ class ElectronMigration(AnimationGroup):
         步骤之间的延迟比率（0~1），默认为 0.3。
     run_time : float
         每个步骤内子动画的运行时间。
+    sync : bool
+        动画结束后是否自动同步元数据（默认 True）：
+        源/淡出的键与电荷自动注销，带标签的目标/新建键与电荷自动登记，
+        无法自动同步的对象打印警告并收集到 ``unsynced``。
     **kwargs
         传递给 AnimationGroup 的额外参数。
     """
@@ -425,10 +429,13 @@ class ElectronMigration(AnimationGroup):
                  steps:list[ElectronMigrationStep],
                  lag_ratio:float=0.3,
                  run_time:float=1.0,
+                 sync:bool=True,
                  **kwargs):
 
         self.sf=sf
         self.steps=steps
+        self.sync=sync
+        self.unsynced:list[Mobject]=[]
         self._all_sources:list[Mobject]=[]
         self._all_targets:list[Mobject]=[]
         self._all_creates:list[Mobject]=[]
@@ -473,7 +480,8 @@ class ElectronMigration(AnimationGroup):
         super().begin()
 
     def finish(self):
-        """动画结束：将 target 和新创建的对象加入 StructuralFormula。"""
+        """动画结束：将 target 和新创建的对象加入 StructuralFormula，
+        并在 sync=True 时自动同步元数据字典。"""
         super().finish()
         for target in self._all_targets:
             if isinstance(target,VGroup) and not isinstance(target,(Bond,Charge)):
@@ -483,3 +491,5 @@ class ElectronMigration(AnimationGroup):
                 self.sf.add(target)
         for obj in self._all_creates:
             self.sf.add(obj)
+        if self.sync:
+            self.unsynced=self.sf.sync_migration(self.steps)

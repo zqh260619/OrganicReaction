@@ -153,7 +153,9 @@ class Bond(VGroup):
                  attributes:AttributeHolder,
                  side:int|None=None,
                  start_side_edge:bool|None=None,
-                 end_side_edge:bool|None=None):
+                 end_side_edge:bool|None=None,
+                 atom1:str|None=None,
+                 atom2:str|None=None):
 
         super().__init__(color=attributes.color)
 
@@ -169,6 +171,8 @@ class Bond(VGroup):
         self.side=side
         self.start_side_edge=start_side_edge
         self.end_side_edge=end_side_edge
+        self.atom1=atom1
+        self.atom2=atom2
         angle_vector=self.end-self.start
         self.direction=np.arctan2(angle_vector[1],angle_vector[0])
 

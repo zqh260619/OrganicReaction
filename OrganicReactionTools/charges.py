@@ -154,12 +154,14 @@ class Charge(VGroup):
                  charge_type:ChargeType,
                  text:AtomicCluster|Vector3D,
                  pos:Vector3D,
-                 attributes:AttributeHolder):
+                 attributes:AttributeHolder,
+                 atom_name:str|None=None):
 
         super().__init__(color=attributes.color)
 
         self.charge_type=charge_type
         self.text=text
+        self.atom_name=atom_name
 
         if isinstance(text,AtomicCluster):
             charge=self.charge_type.value(text=text,pos=pos,attributes=attributes)

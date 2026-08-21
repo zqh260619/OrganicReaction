@@ -147,7 +147,9 @@ class StructuralFormula(VGroup):
                                                      attributes=self.attributes,
                                                      side=side,
                                                      start_side_edge=start_side_edge,
-                                                     end_side_edge=end_side_edge))
+                                                     end_side_edge=end_side_edge,
+                                                     atom1=adjacency,
+                                                     atom2=name))
 
         self.atomic_clusters[adjacency]["adj"].append(name)
         self.atomic_clusters[adjacency][Bond].append(self.atomic_clusters[name][Bond][0])
@@ -214,7 +216,9 @@ class StructuralFormula(VGroup):
                       attributes=self.attributes,
                       side=side,
                       start_side_edge=start_side_edge,
-                      end_side_edge=end_side_edge)
+                      end_side_edge=end_side_edge,
+                      atom1=adjacency,
+                      atom2=name)
 
             self.atomic_clusters[name][Bond].append(bond)
             self.atomic_clusters[name]["adj"].append(adjacency)
@@ -234,7 +238,7 @@ class StructuralFormula(VGroup):
         if text in self.charges:
             raise ValueError(f"原子 '{text}' 上已经存在电荷，不能重复添加。")
 
-        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes)
+        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes,atom_name=text)
 
         self.add(self.charges[text])
 
@@ -279,7 +283,9 @@ class StructuralFormula(VGroup):
                       attributes=self.attributes,
                       side=side,
                       start_side_edge=start_side_edge,
-                      end_side_edge=end_side_edge)
+                      end_side_edge=end_side_edge,
+                      atom1=start,
+                      atom2=end)
 
         else:
             bond=Bond(bond_type=bond_type,
@@ -287,7 +293,9 @@ class StructuralFormula(VGroup):
                       end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
                       start_edge=(self.atomic_clusters[start][Mobject]!=None),
                       end_edge=(self.atomic_clusters[end][Mobject]!=None),
-                      attributes=self.attributes)
+                      attributes=self.attributes,
+                      atom1=start,
+                      atom2=end)
 
         self.add(bond)
 
@@ -339,14 +347,18 @@ class StructuralFormula(VGroup):
                         attributes=self.attributes,
                         side=side,
                         start_side_edge=start_side_edge,
-                        end_side_edge=end_side_edge)
+                        end_side_edge=end_side_edge,
+                        atom1=start,
+                        atom2=end)
         else:
             return Bond(bond_type=bond_type,
                         start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
                         end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
                         start_edge=(self.atomic_clusters[start][Mobject]!=None),
                         end_edge=(self.atomic_clusters[end][Mobject]!=None),
-                        attributes=self.attributes)
+                        attributes=self.attributes,
+                        atom1=start,
+                        atom2=end)
 
     def build_charge(self,*,
                      text:str,
@@ -373,7 +385,8 @@ class StructuralFormula(VGroup):
         return Charge(charge_type=charge_type,
                       text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],
                       pos=pos,
-                      attributes=self.attributes)
+                      attributes=self.attributes,
+                      atom_name=text)
 
     def delete_atom(self,*,
                     names:str|list[str],
@@ -495,6 +508,7 @@ class StructuralFormula(VGroup):
                            steps:list[ElectronMigrationStep],
                            lag_ratio:float=0.3,
                            run_time:float=1.0,
+                           sync:bool=True,
                            **kwargs)->"ElectronMigration":
         """创建电子迁移动画。
 
@@ -509,6 +523,9 @@ class StructuralFormula(VGroup):
             步骤之间的延迟比率（0~1）。
         run_time : float
             每个步骤内子动画的运行时间（秒）。
+        sync : bool
+            动画结束后是否自动同步元数据（默认 True）：
+            源/淡出的键与电荷自动注销，带标签的目标/新建键与电荷自动登记。
         **kwargs
             传递给 ElectronMigration 的额外参数。
 
@@ -521,7 +538,105 @@ class StructuralFormula(VGroup):
                                  steps=steps,
                                  lag_ratio=lag_ratio,
                                  run_time=run_time,
+                                 sync=sync,
                                  **kwargs)
+
+    def register_bond(self,*,
+                      start:str,
+                      end:str,
+                      bond:Bond)->None:
+        """把外部创建的化学键登记到两原子的 [Bond] 与邻接表（幂等）。"""
+        if start not in self.atomic_clusters:
+            raise ValueError(f"原子 '{start}' 不存在于结构中。")
+        if end not in self.atomic_clusters:
+            raise ValueError(f"原子 '{end}' 不存在于结构中。")
+        if bond not in self.atomic_clusters[start][Bond]:
+            self.atomic_clusters[start][Bond].append(bond)
+        if bond not in self.atomic_clusters[end][Bond]:
+            self.atomic_clusters[end][Bond].append(bond)
+        if end not in self.atomic_clusters[start]["adj"]:
+            self.atomic_clusters[start]["adj"].append(end)
+        if start not in self.atomic_clusters[end]["adj"]:
+            self.atomic_clusters[end]["adj"].append(start)
+
+    def register_charge(self,*,
+                        name:str,
+                        charge:Charge)->None:
+        """把外部创建的电荷登记到 charges 字典。"""
+        if name not in self.atomic_clusters:
+            raise ValueError(f"原子 '{name}' 不存在于结构中。")
+        self.charges[name]=charge
+
+    def unregister_bond(self,bond:Bond)->None:
+        """按身份从所有原子的 [Bond] 与邻接表中移除该键（幂等）。"""
+        endpoints=[name for name,data in self.atomic_clusters.items() if bond in data[Bond]]
+        for name in endpoints:
+            self.atomic_clusters[name][Bond].remove(bond)
+        if len(endpoints)==2:
+            a,b=endpoints
+            if b in self.atomic_clusters[a]["adj"]:
+                self.atomic_clusters[a]["adj"].remove(b)
+            if a in self.atomic_clusters[b]["adj"]:
+                self.atomic_clusters[b]["adj"].remove(a)
+
+    def unregister_charge(self,charge:Charge)->str|None:
+        """从 charges 字典移除该电荷（幂等），返回其所属原子名（无则 None）。"""
+        for name,c in list(self.charges.items()):
+            if c is charge:
+                self.charges.pop(name)
+                return name
+        return None
+
+    def sync_migration(self,
+                       steps:list[ElectronMigrationStep])->list:
+        """按步骤列表同步元数据：先注销（源与淡出），后登记（目标与新建）。
+
+        只自动登记带标签的对象（Bond.atom1/atom2、Charge.atom_name）；
+        无法自动同步的对象打印警告并收集到返回列表中，可继续手工登记。
+
+        Returns
+        -------
+        list
+            无法自动同步的对象列表。
+        """
+        unsynced=[]
+        for step in steps:
+            for source,_ in step.replace:
+                self._sync_unregister(source)
+            for obj in step.fadeout:
+                self._sync_unregister(obj)
+            for _,target in step.replace:
+                self._sync_register(target,unsynced)
+            for obj in step.create:
+                self._sync_register(obj,unsynced)
+        return unsynced
+
+    def _sync_unregister(self,obj)->None:
+        if isinstance(obj,Bond):
+            self.unregister_bond(obj)
+        elif isinstance(obj,Charge):
+            self.unregister_charge(obj)
+        elif isinstance(obj,VGroup):
+            for sub in obj.submobjects:
+                self._sync_unregister(sub)
+
+    def _sync_register(self,obj,unsynced:list)->None:
+        if isinstance(obj,Bond):
+            if obj.atom1 is not None and obj.atom2 is not None \
+                    and obj.atom1 in self.atomic_clusters and obj.atom2 in self.atomic_clusters:
+                self.register_bond(start=obj.atom1,end=obj.atom2,bond=obj)
+            else:
+                print(f"警告：无法自动同步键 {obj}（缺少 atom1/atom2 标签或原子不存在），请手动登记。")
+                unsynced.append(obj)
+        elif isinstance(obj,Charge):
+            if obj.atom_name is not None and obj.atom_name in self.atomic_clusters:
+                self.register_charge(name=obj.atom_name,charge=obj)
+            else:
+                print(f"警告：无法自动同步电荷 {obj}（缺少 atom_name 标签或原子不存在），请手动登记。")
+                unsynced.append(obj)
+        elif isinstance(obj,VGroup):
+            for sub in obj.submobjects:
+                self._sync_register(sub,unsynced)
 
 
 class Benzene(StructuralFormula):
