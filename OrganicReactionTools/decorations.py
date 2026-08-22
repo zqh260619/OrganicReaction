@@ -1,6 +1,6 @@
 """装饰图形：括号与箭头。"""
 
-from manim import VGroup, Line, CubicBezier, ArrowTriangleFilledTip, Arrow, WHITE, PI, UP, UL, YELLOW
+from manim import VGroup, Line, CubicBezier, ArrowTriangleFilledTip, Arrow, WHITE, PI, UP, UL, YELLOW, DEFAULT_STROKE_WIDTH
 from manim.typing import Vector3D
 import numpy as np
 
@@ -79,12 +79,16 @@ class PolarityArrow(VGroup):
     """化学键极性箭头：从正电端（δ+）指向负电端（δ-）。
 
     几何规格：
-    - 箭头总长度与"两端均有边距"的 NormalBond 线段长度相同，
-      即 length_global - 2*edge_global；
-    - 线段粗细为单键（manim 默认线宽）的一半；
-    - 起始端有一个与箭头垂直的短线段（十字形尾部）：其长度是
-      小线段中点到箭头起点的两倍——小线段中点位于箭头起点
-      沿箭头方向 tail_offset 处，因此小线段长度为 2*tail_offset。
+    - 总长度与"两端均有边距"的 NormalBond 线段相同
+      （length_global - 2*edge_global）；
+    - 线宽为单键（manim 默认线宽）的一半；
+    - 末端箭头三角形长度为 length*0.15；
+    - 起始端十字尾部：与箭头垂直的小线段，中点位于起点沿箭头
+      方向 tail_offset 处，长度为其两倍（2*tail_offset）。
+
+    放置规则：显示在键侧边时，起点取
+    键起点 + edge_global*键方向 + 垂直方向的侧边偏移，
+    使箭头中点与键线段中点的连线垂直于键所在直线。
 
     Parameters
     ----------
@@ -95,7 +99,7 @@ class PolarityArrow(VGroup):
     attributes : AttributeHolder
         样式属性（取 length_global、edge_global、color）。
     tail_offset : float
-        尾部小线段中点到箭头起点的距离，默认 0.1。
+        尾部小线段中点到箭头起点的距离，默认 0.07。
     **kwargs
         传递给 Arrow 的额外参数。
     """
@@ -104,28 +108,27 @@ class PolarityArrow(VGroup):
                  start:Vector3D,
                  direction:float,
                  attributes:'AttributeHolder',
-                 tail_offset:float=0.1,
+                 tail_offset:float=0.07,
                  **kwargs):
 
         start_point=np.array(start,dtype=float)
         direction_vector=np.array([np.cos(direction),np.sin(direction),0])
-        normal_vector=np.array([-np.sin(direction),np.cos(direction),0])
-
+        normal_vector=np.array([-direction_vector[1],direction_vector[0],0])
+        color=attributes.color
         length=attributes.length_global-2*attributes.edge_global
-        stroke_width=Line().stroke_width/2  # 单键默认线宽的一半
+        stroke_width=DEFAULT_STROKE_WIDTH/2  # 单键默认线宽的一半
 
         end_point=start_point+length*direction_vector
-
-        arrow=Arrow(start=start_point,end=end_point,buff=0,
-                    stroke_width=stroke_width,color=attributes.color,
-                    tip_length=length*0.3,max_tip_length_to_length_ratio=1,
-                    max_stroke_width_to_length_ratio=1000,  # 禁用按长度收缩线宽，保证恰为单键一半
+        arrow=Arrow(start=start_point,end=end_point,buff=0,color=color,
+                    stroke_width=stroke_width,tip_length=length*0.15,
+                    max_tip_length_to_length_ratio=1,
+                    max_stroke_width_to_length_ratio=1000,  # 禁用按长度收缩线宽
                     **kwargs)
 
         tail_mid=start_point+tail_offset*direction_vector
         tail_bar=Line(start=tail_mid-normal_vector*tail_offset,
                       end=tail_mid+normal_vector*tail_offset,
-                      stroke_width=stroke_width,color=attributes.color)
+                      stroke_width=stroke_width,color=color)
 
         super().__init__(arrow,tail_bar)
 
