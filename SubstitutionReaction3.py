@@ -41,6 +41,23 @@ class test(Scene):
         
         #碱催化的机理
 
+
+        #C=O键左侧的极性键箭头：从C指向O
+        delta_positive_C=MathTex(r"\delta^+",color=WHITE,font_size=txt_size*0.9)
+        delta_positive_C.move_to(acetyl_L.atomic_clusters["C1"]["pos"]+np.array([0,-0.35,0]))
+        delta_negative_O=MathTex(r"\delta^-",color=WHITE,font_size=txt_size*0.9)
+        delta_negative_O.move_to(acetyl_L.atomic_clusters["O1"]["pos"]+np.array([0,0.35,0]))
+
+        polarity_arrow=BondPolarityArrow(start=acetyl_L.atomic_clusters["C1"]["pos"],
+                                         end=acetyl_L.atomic_clusters["O1"]["pos"],
+                                         attributes=acetyl_L.attributes,
+                                         side=1,
+                                         length=bond_length*0.8,
+                                         offset=0.2)
+        self.play(FadeIn(polarity_arrow),FadeIn(delta_positive_C),FadeIn(delta_negative_O))
+        self.wait(0.5)
+        self.play(FadeOut(polarity_arrow,delta_positive_C,delta_negative_O))
+
         #Nu^-进攻羰基碳：Nu移动到中心碳的右侧
         Nu_target=acetyl_L.atomic_clusters["C1"]["pos"]+np.array([np.cos(0*DEGREES),np.sin(0*DEGREES),0])*acetyl_L.attributes.length_global
         shift_Nu=Nu_target-Nu_start
