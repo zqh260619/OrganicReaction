@@ -159,7 +159,8 @@ class BondPolarityArrow(PolarityArrow):
       可通过 offset 参数指定；
     - 默认长度与"两端均有边距"的单键线段相同
       （键长 - 2*edge_global），可通过 length 参数指定（-1 表示自动）；
-    - 箭头中点与键线段中点的连线垂直于键所在直线。
+    - 箭头中点与键线段中点的连线垂直于键所在直线，且该性质对
+      任意 length 都成立（length 变化时箭头起点会相应移动）。
 
     本类继承 PolarityArrow：self.start / self.end 为箭头自身的起终点，
     键的起终点存于 self.bond_start / self.bond_end。
@@ -212,7 +213,10 @@ class BondPolarityArrow(PolarityArrow):
         if length==-1.0:
             length=bond_length-2*attributes.edge_global
 
-        arrow_start=start_point+attributes.edge_global*direction_vector+side*offset*normal_vector
+        # 由"箭头中点与键线段中点连线垂直"反推箭头起点：
+        # 键线段中点 = 键起点 + 键长/2*键方向，
+        # 故箭头起点 = 键起点 + (键长-length)/2*键方向 + side*offset*法向。
+        arrow_start=start_point+(bond_length-length)/2*direction_vector+side*offset*normal_vector
 
         super().__init__(start=arrow_start,direction=direction,attributes=attributes,
                          length=length,tail_offset=tail_offset,**kwargs)
