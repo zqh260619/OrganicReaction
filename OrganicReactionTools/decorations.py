@@ -79,8 +79,8 @@ class PolarityArrow(VGroup):
     """化学键极性箭头：从正电端（δ+）指向负电端（δ-）。
 
     几何规格：
-    - 总长度与"两端均有边距"的 NormalBond 线段相同
-      （length_global - 2*edge_global）；
+    - 总长度默认为"两端均有边距"的 NormalBond 线段长度
+      （length_global - 2*edge_global），可通过 length 参数指定；
     - 线宽为单键（manim 默认线宽）的一半；
     - 末端箭头三角形长度为 length*0.15；
     - 起始端十字尾部：与箭头垂直的小线段，中点位于起点沿箭头
@@ -98,6 +98,9 @@ class PolarityArrow(VGroup):
         箭头指向（弧度），从正电端指向负电端。
     attributes : AttributeHolder
         样式属性（取 length_global、edge_global、color）。
+    length : float
+        箭头总长度（起点到箭头尖）；默认 -1 表示自动取
+        length_global - 2*edge_global（与"两端均有边距"的单键线段等长）。
     tail_offset : float
         尾部小线段中点到箭头起点的距离，默认 0.07。
     **kwargs
@@ -108,6 +111,7 @@ class PolarityArrow(VGroup):
                  start:Vector3D,
                  direction:float,
                  attributes:'AttributeHolder',
+                 length:float=-1.0,
                  tail_offset:float=0.07,
                  **kwargs):
 
@@ -115,7 +119,8 @@ class PolarityArrow(VGroup):
         direction_vector=np.array([np.cos(direction),np.sin(direction),0])
         normal_vector=np.array([-direction_vector[1],direction_vector[0],0])
         color=attributes.color
-        length=attributes.length_global-2*attributes.edge_global
+        if length==-1.0:
+            length=attributes.length_global-2*attributes.edge_global
         stroke_width=DEFAULT_STROKE_WIDTH/2  # 单键默认线宽的一半
 
         end_point=start_point+length*direction_vector
@@ -139,3 +144,80 @@ class PolarityArrow(VGroup):
         self.tail_offset=tail_offset
         self.arrow=arrow
         self.tail_bar=tail_bar
+
+
+class BondPolarityArrow(PolarityArrow):
+    """在化学键旁边生成极性键箭头。
+
+    给定键的起点 start 与终点 end，自动计算箭头位置与指向：
+    - 箭头与键平行，从 start 指向 end；
+    - 箭头在键的哪一侧由 side 决定，约定与 DoubleBond 的 side≠0
+      较短线相同（手平行于屏幕平面，手掌心向屏幕内侧，食指从
+      start 指向 end，大拇指的方向为箭头所在侧）：
+      side=1 用右手，side=-1 用左手；side 不能为 0；
+    - 箭头与键之间的距离默认等于尾部小线段的长度（2*tail_offset），
+      可通过 offset 参数指定；
+    - 默认长度与"两端均有边距"的单键线段相同
+      （键长 - 2*edge_global），可通过 length 参数指定（-1 表示自动）；
+    - 箭头中点与键线段中点的连线垂直于键所在直线。
+
+    本类继承 PolarityArrow：self.start / self.end 为箭头自身的起终点，
+    键的起终点存于 self.bond_start / self.bond_end。
+
+    Parameters
+    ----------
+    start : Vector3D
+        键的起点（正电端一侧的原子坐标）。
+    end : Vector3D
+        键的终点（负电端一侧的原子坐标）。
+    attributes : AttributeHolder
+        样式属性（取 edge_global、color 等）。
+    side : int
+        箭头所在侧：1（右手，+法向）或 -1（左手，-法向），不能为 0。
+    tail_offset : float
+        尾部十字参考尺寸，默认 0.07。
+    offset : float
+        箭头与键之间的距离，默认 -1 表示取尾部小线段长度（2*tail_offset）。
+    length : float
+        箭头总长度，默认 -1 表示取 键长 - 2*edge_global。
+    **kwargs
+        传递给 PolarityArrow（Arrow）的额外参数。
+    """
+
+    def __init__(self,*,
+                 start:Vector3D,
+                 end:Vector3D,
+                 attributes:'AttributeHolder',
+                 side:int,
+                 tail_offset:float=0.07,
+                 offset:float=-1.0,
+                 length:float=-1.0,
+                 **kwargs):
+
+        if side not in (1,-1):
+            raise ValueError(f"side 只能取 1（右手）或 -1（左手），不能为 0，实际为 {side}。")
+
+        start_point=np.array(start,dtype=float)
+        end_point=np.array(end,dtype=float)
+        bond_vector=end_point-start_point
+        bond_length=np.linalg.norm(bond_vector)
+        if bond_length==0:
+            raise ValueError("键的起点与终点不能重合。")
+        direction=np.arctan2(bond_vector[1],bond_vector[0])
+        direction_vector=bond_vector/bond_length
+        normal_vector=np.array([-direction_vector[1],direction_vector[0],0])
+
+        if offset==-1.0:
+            offset=2*tail_offset  # 默认间距 = 尾部小线段长度
+        if length==-1.0:
+            length=bond_length-2*attributes.edge_global
+
+        arrow_start=start_point+attributes.edge_global*direction_vector+side*offset*normal_vector
+
+        super().__init__(start=arrow_start,direction=direction,attributes=attributes,
+                         length=length,tail_offset=tail_offset,**kwargs)
+
+        self.bond_start=start_point
+        self.bond_end=end_point
+        self.side=side
+        self.offset=offset

@@ -11,6 +11,7 @@ from .atoms import AtomicCluster
 from .bonds import Bond, BondType, BondLookup
 from .charges import Charge, ChargeType
 from .animations import RotateAtoms, ElectronMigration, ElectronMigrationStep
+from .decorations import BondPolarityArrow
 
 class StructuralFormula(VGroup):
     def __init__(self,*,
@@ -387,6 +388,33 @@ class StructuralFormula(VGroup):
                       pos=pos,
                       attributes=self.attributes,
                       atom_name=text)
+
+    def polarity_arrow(self,*,
+                       start:str,
+                       end:str,
+                       side:int,
+                       **kwargs)->BondPolarityArrow:
+        """在 start-end 键旁边生成极性箭头（装饰对象，不加入结构式）。
+
+        start 与 end 为两个相邻原子的名称；箭头与键平行，从 start
+        指向 end，side=1 在右手侧（+法向）、side=-1 在左手侧（-法向），
+        不能为 0。其余参数（tail_offset、offset、length 等）透传给
+        BondPolarityArrow。
+
+        Returns
+        -------
+        BondPolarityArrow
+            可直接用于 self.play(Create(...)) 的极性箭头。
+        """
+        if start not in self.atomic_clusters:
+            raise ValueError(f"原子 '{start}' 不存在于结构中。")
+        if end not in self.atomic_clusters:
+            raise ValueError(f"原子 '{end}' 不存在于结构中。")
+        return BondPolarityArrow(start=self.atomic_clusters[start]["pos"],
+                                 end=self.atomic_clusters[end]["pos"],
+                                 attributes=self.attributes,
+                                 side=side,
+                                 **kwargs)
 
     def delete_atom(self,*,
                     names:str|list[str],
