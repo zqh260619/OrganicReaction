@@ -70,21 +70,6 @@ class test(Scene):
                                     sf=acetyl_L,
                                     run_time=1.5))
 
-        #更新结构式内部数据
-        acetyl_L.delete_bond(start="C1",end="O1")
-        acetyl_L.atomic_clusters["C1"][Bond].append(C1_O1_single)
-        acetyl_L.atomic_clusters["O1"][Bond].append(C1_O1_single)
-        acetyl_L.atomic_clusters["C1"]["adj"].append("O1")
-        acetyl_L.atomic_clusters["O1"]["adj"].append("C1")
-
-        acetyl_L.atomic_clusters["C1"][Bond].append(C1_Nu_in)
-        acetyl_L.atomic_clusters["Nu"][Bond].append(C1_Nu_in)
-        acetyl_L.atomic_clusters["C1"]["adj"].append("Nu")
-        acetyl_L.atomic_clusters["Nu"]["adj"].append("C1")
-
-        acetyl_L.charges.pop("Nu")
-        acetyl_L.charges["O1"]=O1_negative
-
         #C-Nu键顺时针旋转30°
         self.play(acetyl_L.rotate_atoms(atom_names="Nu",
                                         center="C1",
