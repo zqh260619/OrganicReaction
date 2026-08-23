@@ -173,4 +173,7 @@ class test(Scene):
                   Nu_negative_rev.animate.shift(shift_Nu_back),
                   run_time=0.2)
         acetyl_L.atomic_clusters["Nu"]["pos"]=Nu_start
+
+        #倒放Nu^-的出现：淡出，回到Nu^-显示之前
+        self.play(FadeOut(Nu_mob,Nu_negative_rev),run_time=0.2)
         self.wait(1.5)
