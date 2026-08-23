@@ -27,7 +27,7 @@ edge=0.25
 """键边距"""
 ratio_transition_state=1.2
 """过渡态键长比例"""
-default_charge_edge=0.07
+default_charge_edge=0.1
 """默认电荷边距"""
 #texts
 title_height=3
