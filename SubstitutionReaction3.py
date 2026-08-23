@@ -94,3 +94,29 @@ class test(Scene):
                                         run_time=0.8))
 
         self.wait(1.5)
+
+        #L^-离去，碳氧双键恢复
+        C1_O1_double_new=acetyl_L.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
+        L_negative=acetyl_L.build_charge(text="L",pos=UL,charge_type=ChargeType.NEGATIVE)
+        C1_Nu_normal=acetyl_L.build_bond(start="C1",end="Nu",bond_type=BondType.NORMAL_BOND)
+
+        step_elimination=ElectronMigrationStep(
+            replace=[(VGroup(C1_O1_single,O1_negative),C1_O1_double_new),
+                     (C1_L_normal,L_negative),
+                     (C1_Nu_in,C1_Nu_normal)],
+        )
+
+        self.play(acetyl_L.electron_migration(steps=[step_elimination],run_time=1.5))
+
+        #L^-从下方沿一条弧线移动到左侧
+        L_mob=acetyl_L.atomic_clusters["L"][Mobject]
+        L_start=L_mob.get_center()
+        L_final=np.array([-2*acetyl_L.attributes.length_global,0,0])
+        arc_L=ArcBetweenPoints(L_start,L_final,angle=-120*DEGREES)
+        L_charge_offset=L_negative.get_center()-L_mob.get_center()
+        arc_L_negative=arc_L.copy().shift(L_charge_offset)
+
+        self.play(MoveAlongPath(L_mob,arc_L,run_time=1.5),
+                  MoveAlongPath(L_negative,arc_L_negative,run_time=1.5))
+        acetyl_L.atomic_clusters["L"]["pos"]=L_final
+        self.wait(1.5)
