@@ -19,7 +19,7 @@ class test(Scene):
 
         #descriptions
         text1=Description(text=r"\mathrm{E^+}\text{为亲电试剂，通常为卤素阳离子或硝基阳离子等}")
-        text2=Description(text=r"\text{首先，亲电试剂}\mathrm{E^+}\text{进攻苯环的}\mathrm{\pi}\text{电子}")
+        text2=Description(text=r"\text{首先，苯环的}\mathrm{\pi}\text{电子进攻}\text{亲电试剂}\mathrm{E^+}")
         text3=Description(text=r"\text{对应的碳由}\mathrm{sp^2}\text{杂化变为}\mathrm{sp^3}\text{杂化，苯环失去芳香性，此中间体能量较高}")
         text4=Description(text=r"\text{随后，}\mathrm{H^+}\text{离去，生成产物}")
         text5=Description(text=r"\text{此时苯环恢复芳香性，能量降低，反应存在强大的热力学驱动力}")
@@ -150,7 +150,7 @@ class test(Scene):
         text6=Description(text=r"\text{接下来以}\mathrm{FeBr_3}\text{催化的苯的溴化反应为例}")
         text7=Description(text=r"\text{首先，}\mathrm{Br_2}\text{与}\mathrm{FeBr_3}\text{结合，}\mathrm{Br_2}\text{异裂}")
         text8=Description(text=r"\text{同时生成一个}\mathrm{Br^+}\text{和一个}\mathrm{FeBr_4^-}")
-        text9=Description(text=r"\text{接下来，}\mathrm{Br^+}\text{进攻苯环的}\mathrm{\pi}\text{电子}")
+        text9=Description(text=r"\text{接下来，苯环的}\mathrm{\pi}\text{电子进攻}\mathrm{Br^+}")
         text10=Description(text=r"\text{随后，}\mathrm{H^+}\text{离去，形成产物溴苯}")
         text11=Description(text=r"\text{最后，}\mathrm{H^+}\text{与}\mathrm{FeBr_4^-}\text{结合，生成}\mathrm{HBr}\text{，}\mathrm{FeBr_3}\text{催化剂再生}")
 
@@ -350,7 +350,7 @@ class test(Scene):
         text12=Description(text=r"\text{另一经典反应是苯的硝化反应，反应需要浓}\mathrm{HNO_3}\text{和浓}\mathrm{H_2SO_4}\text{，}\\\text{其中浓}\mathrm{H_2SO_4}\text{作催化剂}")
         text13=Description(text=r"\mathrm{HNO_3}\text{分子的羟基}\mathrm{O}\text{先被浓}\mathrm{H_2SO_4}\text{质子化}")
         text14=Description(text=r"\text{然后快速脱去一个水分子，形成}\mathrm{NO_2^+}")
-        text15=Description(text=r"\text{接着}\mathrm{NO_2^+}\text{进攻苯环，形成中间体}")
+        text15=Description(text=r"\text{接着苯环进攻}\mathrm{NO_2^+}\text{，形成中间体}")
         text16=Description(text=r"\text{最后中间体的}\mathrm{H^+}\text{被体系中的}\mathrm{HSO_4^-}\text{拔除，催化剂再生}")
 
         benzene3=StructuralFormula(name="C13",pos=[0,0.5*bond_length,0],text=None)
