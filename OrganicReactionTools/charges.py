@@ -49,13 +49,12 @@ class SingleCharge(Circle):
         super().__init__(radius=attributes.radius_single,color=attributes.color,arc_center=position,fill_opacity=1)
 
 class PairCharge(VGroup):
+    """孤对电子电荷：两个与 SingleCharge 形状相同的圆点。
+
+    两个圆点中心位于电荷锚点（文本角点向外偏移 edge_charge 处）两侧，
+    且两个圆点中心的连线始终垂直于文本中心到两个圆点中点的连线。
+    """
     def __init__(self,*,text:MathTex,pos:Vector3D,attributes:'AttributeHolder'):
-
-        """孤对电子电荷：两个与 SingleCharge 形状相同的圆点。
-
-        两个圆点中心位于电荷锚点（文本角点向外偏移 edge_charge 处）两侧，
-        且两个圆点中心的连线始终垂直于文本中心到两个圆点中点的连线。
-        """
 
         position=text.get_corner(pos)+pos*attributes.edge_charge
 
@@ -113,29 +112,21 @@ class SingleChargeByCoordinate(Circle):
         super().__init__(radius=attributes.radius_single,color=attributes.color,arc_center=position,fill_opacity=1)
 
 class PairChargeByCoordinate(VGroup):
-    def __init__(self,*,position:Vector3D,direction:Vector3D,attributes:'AttributeHolder'):
+    """PairCharge 的坐标版本。
 
-        """PairCharge 的坐标版本。
+    position：两个圆点的中点（电荷锚点）。
+    直接构造时两个圆点水平排列在 position 两侧；通过 Charge
+    包装器（add_charge / build_charge）构造时，会自动旋转到
+    与"原子 pos → 两圆点中点"连线垂直的方向。
+    """
+    def __init__(self,*,position:Vector3D,attributes:'AttributeHolder'):
 
-        position：两个圆点的中点（电荷锚点）。
-        direction：文本中心指向两个圆点中点的方向向量，
-        两个圆点中心的连线始终垂直于该方向。
-        """
-
-        direction=np.array(direction,dtype=float)
-        norm=np.linalg.norm(direction)
-        if norm==0:
-            direction=np.array([1.,0.,0.])
-        else:
-            direction=direction/norm
-
-        normal=np.array([-direction[1],direction[0],0])
         half=attributes.distance_pair/2
 
         circle1=Circle(radius=attributes.radius_single,color=attributes.color,
-                       arc_center=position+normal*half,fill_opacity=1)
+                       arc_center=position+np.array([half,0.,0.]),fill_opacity=1)
         circle2=Circle(radius=attributes.radius_single,color=attributes.color,
-                       arc_center=position-normal*half,fill_opacity=1)
+                       arc_center=position-np.array([half,0.,0.]),fill_opacity=1)
 
         super().__init__(circle1,circle2)
 
@@ -166,9 +157,9 @@ class Charge(VGroup):
         if isinstance(text,AtomicCluster):
             charge=self.charge_type.value(text=text,pos=pos,attributes=attributes)
         else:
+            charge=self.charge_type.value(position=pos*attributes.edge_charge+text,attributes=attributes)
             if charge_type==ChargeType.PAIR_COORDINATE:
-                charge=self.charge_type.value(position=pos*attributes.edge_charge+text,direction=pos,attributes=attributes)
-            else:
-                charge=self.charge_type.value(position=pos*attributes.edge_charge+text,attributes=attributes)
+                # 将默认水平取向的两圆点旋转到与"原子 pos → 两圆点中点"方向（即 pos）垂直
+                charge.rotate(np.arctan2(pos[1],pos[0])+np.pi/2)
 
         self.add(charge)
