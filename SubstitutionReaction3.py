@@ -120,3 +120,57 @@ class test(Scene):
                   MoveAlongPath(L_negative,arc_L_negative,run_time=1.5))
         acetyl_L.atomic_clusters["L"]["pos"]=L_final
         self.wait(1.5)
+
+        #快速倒放：回到Nu^-进攻羰基前
+        self.play(MoveAlongPath(L_mob,arc_L.reverse_points(),run_time=0.3),
+                  MoveAlongPath(L_negative,arc_L_negative.reverse_points(),run_time=0.3))
+        acetyl_L.atomic_clusters["L"]["pos"]=L_start
+
+        #倒放消除步骤：恢复四面体中间体
+        C1_O1_single_rev=acetyl_L.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
+        O1_negative_rev=acetyl_L.build_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+        C1_Nu_in_rev=acetyl_L.build_bond(start="C1",end="Nu",bond_type=BondType.IN_BOND)
+        C1_L_out_rev=acetyl_L.build_bond(start="C1",end="L",bond_type=BondType.OUT_BOND)
+
+        step_reverse_elimination=ElectronMigrationStep(
+            replace=[(C1_O1_double_new,VGroup(C1_O1_single_rev,O1_negative_rev)),
+                     (C1_Nu_normal,C1_Nu_in_rev),
+                     (L_negative,C1_L_out_rev)],
+        )
+        self.play(acetyl_L.electron_migration(steps=[step_reverse_elimination],run_time=0.3))
+
+        #倒放C-Nu键旋转（先逆时针旋转；正放0.8s，倒放0.16s）
+        self.play(acetyl_L.rotate_atoms(atom_names="Nu",
+                                        center="C1",
+                                        angle=30*DEGREES,
+                                        run_time=0.16))
+
+        #倒放加成步骤：C-L键边变形边旋转，同时进行逆向电子转移
+        Nu_negative_rev=acetyl_L.build_charge(text="Nu",pos=UL,charge_type=ChargeType.NEGATIVE)
+        C1_O1_double_rev=acetyl_L.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
+        L_rewind_end=acetyl_L.atomic_clusters["C1"]["pos"]+np.array([np.cos(330*DEGREES),np.sin(330*DEGREES),0])*acetyl_L.attributes.length_global
+        arc_L_rot_reverse=ArcBetweenPoints(L_start,L_rewind_end,angle=30*DEGREES)
+
+
+        step_reverse_attack=ElectronMigrationStep(
+            replace=[(C1_Nu_in_rev,Nu_negative_rev),
+                     (VGroup(C1_O1_single_rev,O1_negative_rev),C1_O1_double_rev)],
+        )
+
+        self.play(acetyl_L.electron_migration(steps=[step_reverse_attack],run_time=0.3),
+                  BondTypeTransform(bond=C1_L_out_rev,
+                                    target_type=BondType.NORMAL_BOND,
+                                    angle=30*DEGREES,
+                                    about_point=acetyl_L.atomic_clusters["C1"]["pos"],
+                                    sf=acetyl_L,
+                                    run_time=0.3),
+                  MoveAlongPath(L_mob,arc_L_rot_reverse,run_time=0.3))
+        acetyl_L.atomic_clusters["L"]["pos"]=L_rewind_end
+
+        #Nu^-移回初始位置
+        shift_Nu_back=Nu_start-Nu_mob.get_center()
+        self.play(Nu_mob.animate.shift(shift_Nu_back),
+                  Nu_negative_rev.animate.shift(shift_Nu_back),
+                  run_time=0.2)
+        acetyl_L.atomic_clusters["Nu"]["pos"]=Nu_start
+        self.wait(1.5)
