@@ -141,8 +141,8 @@ class StructuralFormula(VGroup):
                                         Bond:[]}
 
         self.atomic_clusters[name][Bond].append(Bond(bond_type=bond_type,
-                                                     start=self.atomic_clusters[adjacency][Mobject] or self.atomic_clusters[adjacency]["pos"],
-                                                     end=self.atomic_clusters[name][Mobject] or self.atomic_clusters[name]["pos"],
+                                                     start=self.atomic_clusters[adjacency]["pos"],
+                                                     end=self.atomic_clusters[name]["pos"],
                                                      start_edge=(self.atomic_clusters[adjacency][Mobject]!=None),
                                                      end_edge=(self.atomic_clusters[name][Mobject]!=None),
                                                      attributes=self.attributes,
@@ -194,7 +194,10 @@ class StructuralFormula(VGroup):
         if name in self.atomic_clusters:
             raise ValueError(f"原子 '{name}' 已经存在于结构中，不能重复添加。")
 
-        pos=np.array(mobject.get_center(),dtype=float)
+        if isinstance(mobject,AtomicCluster):
+            pos=np.array(mobject.atom_pos,dtype=float)  # 锚点：不受 text_offset 影响
+        else:
+            pos=np.array(mobject.get_center(),dtype=float)
 
         self.atomic_clusters[name]={
             Mobject:mobject,
@@ -210,8 +213,8 @@ class StructuralFormula(VGroup):
                 bond_type=BondType.NORMAL_BOND
 
             bond=Bond(bond_type=bond_type,
-                      start=self.atomic_clusters[adjacency][Mobject] or self.atomic_clusters[adjacency]["pos"],
-                      end=mobject,
+                      start=self.atomic_clusters[adjacency]["pos"],
+                      end=pos,
                       start_edge=(self.atomic_clusters[adjacency][Mobject]!=None),
                       end_edge=True,
                       attributes=self.attributes,
@@ -277,8 +280,8 @@ class StructuralFormula(VGroup):
 
         if bond_type==BondType.DOUBLE_BOND:
             bond=Bond(bond_type=bond_type,
-                      start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
-                      end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
+                      start=self.atomic_clusters[start]["pos"],
+                      end=self.atomic_clusters[end]["pos"],
                       start_edge=(self.atomic_clusters[start][Mobject]!=None),
                       end_edge=(self.atomic_clusters[end][Mobject]!=None),
                       attributes=self.attributes,
@@ -290,8 +293,8 @@ class StructuralFormula(VGroup):
 
         else:
             bond=Bond(bond_type=bond_type,
-                      start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
-                      end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
+                      start=self.atomic_clusters[start]["pos"],
+                      end=self.atomic_clusters[end]["pos"],
                       start_edge=(self.atomic_clusters[start][Mobject]!=None),
                       end_edge=(self.atomic_clusters[end][Mobject]!=None),
                       attributes=self.attributes,
@@ -341,8 +344,8 @@ class StructuralFormula(VGroup):
 
         if bond_type==BondType.DOUBLE_BOND:
             return Bond(bond_type=bond_type,
-                        start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
-                        end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
+                        start=self.atomic_clusters[start]["pos"],
+                        end=self.atomic_clusters[end]["pos"],
                         start_edge=(self.atomic_clusters[start][Mobject]!=None),
                         end_edge=(self.atomic_clusters[end][Mobject]!=None),
                         attributes=self.attributes,
@@ -353,8 +356,8 @@ class StructuralFormula(VGroup):
                         atom2=end)
         else:
             return Bond(bond_type=bond_type,
-                        start=self.atomic_clusters[start][Mobject] or self.atomic_clusters[start]["pos"],
-                        end=self.atomic_clusters[end][Mobject] or self.atomic_clusters[end]["pos"],
+                        start=self.atomic_clusters[start]["pos"],
+                        end=self.atomic_clusters[end]["pos"],
                         start_edge=(self.atomic_clusters[start][Mobject]!=None),
                         end_edge=(self.atomic_clusters[end][Mobject]!=None),
                         attributes=self.attributes,

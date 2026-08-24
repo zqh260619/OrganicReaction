@@ -62,6 +62,7 @@ class AtomicCluster(MathTex):
 
         super().__init__(text,color=attributes.color,font_size=attributes.font_size,
                          tex_template=mytemplate)
+        self.atom_pos=np.array(pos,dtype=float)  # 原子锚点：text_offset 只影响显示，不影响锚点
         self.move_to(pos)
         if np.any(text_offset != 0):
             self.shift(text_offset)

@@ -163,9 +163,9 @@ class Bond(VGroup):
         self.start=start
         self.end=end
         if isinstance(start,AtomicCluster):
-            self.start=self.start.get_center()
+            self.start=start.atom_pos  # 键端点取原子锚点，不受 text_offset 影响
         if isinstance(end,AtomicCluster):
-            self.end=self.end.get_center()
+            self.end=end.atom_pos
         self.start_edge=start_edge
         self.end_edge=end_edge
         self.side=side
