@@ -13,7 +13,7 @@ class test(Scene):
 
         #-----------------------Addition-elimination mechanism-----------------------
 
-        Addition_elimination_mechanism=Title(text=r"\text{加成-消除机理}")
+        Addition_elimination_mechanism=Title(text=r"\text{加成}-\text{消除机理}")
         self.play(Write(Addition_elimination_mechanism))
         self.wait(0.5)
 
@@ -176,4 +176,294 @@ class test(Scene):
 
         #倒放Nu^-的出现：淡出，回到Nu^-显示之前
         self.play(FadeOut(Nu_mob,Nu_negative_rev),run_time=0.2)
+        self.wait(1.5)
+
+        #右侧出现H^+，O的右上30°方向出现孤对电子
+        O_pos=acetyl_L.atomic_clusters["O1"]["pos"]
+        lone_pair_direction=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])
+        acetyl_L.add_charge(text="O1",pos=lone_pair_direction,charge_type=ChargeType.PAIR)
+        lone_pair=acetyl_L.charges["O1"]
+
+        H_pos=O_pos+lone_pair_direction*acetyl_L.attributes.length_global
+        H_mob=AtomicCluster(text=r"\mathrm{H}",pos=H_pos,attributes=acetyl_L.attributes)
+        acetyl_L.register_atom(name="H",mobject=H_mob)
+        acetyl_L.add_charge(text="H",pos=UR,charge_type=ChargeType.POSITIVE)
+        H_positive=acetyl_L.charges["H"]
+
+        self.play(FadeIn(H_mob),FadeIn(H_positive),FadeIn(lone_pair))
+        self.wait(0.5)
+
+        #孤对电子进攻H^+：变为O-H键，O带正电荷，H^+的电荷消失
+        O_H_bond=acetyl_L.build_bond(start="O1",end="H",bond_type=BondType.NORMAL_BOND)
+        O_positive=acetyl_L.build_charge(text="O1",pos=UL,charge_type=ChargeType.POSITIVE)
+
+        step_protonation=ElectronMigrationStep(
+            replace=[(lone_pair,O_H_bond)],
+            create=[O_positive],
+            fadeout=[H_positive],
+        )
+
+        self.play(acetyl_L.electron_migration(steps=[step_protonation],run_time=1.0))
+        self.wait(1.5)
+
+        #碳氧双键变为C-O单键和O上的孤对电子，O的正电荷消失，C上出现正电荷
+        C1_O1_single_oxy=acetyl_L.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
+        O_lone_pair=acetyl_L.build_charge(text="O1",pos=np.array([np.cos(150*DEGREES),np.sin(150*DEGREES),0]),charge_type=ChargeType.PAIR)
+        C1_positive=acetyl_L.build_charge(text="C1",pos=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0]),charge_type=ChargeType.POSITIVE_COORDINATE)
+
+        step_oxocarbocation=ElectronMigrationStep(
+            replace=[(C1_O1_double_rev,VGroup(C1_O1_single_oxy,O_lone_pair))],
+            create=[C1_positive],
+            fadeout=[O_positive],
+        )
+
+        self.play(acetyl_L.electron_migration(steps=[step_oxocarbocation],run_time=1.0))
+        self.wait(1.5)
+
+        #右侧出现Nu-H：H在Nu右上30°，Nu左侧有一对孤对电子
+        acetyl_L.delete_charge(text="Nu")
+
+        Nu_mob=acetyl_L.atomic_clusters["Nu"][Mobject]
+        direction30=np.array([np.cos(60*DEGREES),np.sin(60*DEGREES),0])
+        H2_pos=Nu_mob.get_center()+direction30*acetyl_L.attributes.length_global
+        H2_mob=AtomicCluster(text=r"\mathrm{H}",pos=H2_pos,attributes=acetyl_L.attributes)
+        acetyl_L.register_atom(name="H2",mobject=H2_mob,adjacency="Nu",bond_type=BondType.NORMAL_BOND)
+        Nu_H2_bond=acetyl_L.bond_lookup.between("Nu","H2")
+        acetyl_L.add_charge(text="Nu",pos=LEFT,charge_type=ChargeType.PAIR)
+        Nu_lone_pair=acetyl_L.charges["Nu"]
+
+        self.play(FadeIn(Nu_mob),FadeIn(H2_mob),FadeIn(Nu_H2_bond),FadeIn(Nu_lone_pair))
+        self.wait(0.5)
+
+        #Nu-H的孤对电子进攻碳正离子：Nu移动到中心碳右侧
+        Nu_target2=acetyl_L.atomic_clusters["C1"]["pos"]+np.array([np.cos(0*DEGREES),np.sin(0*DEGREES),0])*acetyl_L.attributes.length_global
+        H2_pos_before=acetyl_L.atomic_clusters["H2"]["pos"]
+        shift_NuH=Nu_target2-Nu_mob.get_center()
+        self.play(Nu_mob.animate.shift(shift_NuH),
+                  H2_mob.animate.shift(shift_NuH),
+                  Nu_H2_bond.animate.shift(shift_NuH),
+                  Nu_lone_pair.animate.shift(shift_NuH),
+                  run_time=1)
+        acetyl_L.atomic_clusters["Nu"]["pos"]=Nu_target2
+        acetyl_L.atomic_clusters["H2"]["pos"]=H2_pos_before+shift_NuH
+
+        #孤对电子变为C-Nu InBond；C-L键顺时针旋转30°并变为OutBond
+        C1_Nu_in2=acetyl_L.build_bond(start="C1",end="Nu",bond_type=BondType.IN_BOND)
+        Nu_positive=acetyl_L.build_charge(text="Nu",pos=DR,charge_type=ChargeType.POSITIVE)
+        C1_L_current=acetyl_L.bond_lookup.between("C1","L")
+        L_forward_start=acetyl_L.atomic_clusters["L"]["pos"]
+        L_forward_end=acetyl_L.atomic_clusters["C1"]["pos"]+np.array([np.cos(300*DEGREES),np.sin(300*DEGREES),0])*acetyl_L.attributes.length_global
+        arc_L_forward2=ArcBetweenPoints(L_forward_start,L_forward_end,angle=-30*DEGREES)
+
+        step_nu_attack2=ElectronMigrationStep(
+            replace=[(Nu_lone_pair,C1_Nu_in2)],
+            create=[Nu_positive],
+            fadeout=[C1_positive],
+        )
+
+        self.play(acetyl_L.electron_migration(steps=[step_nu_attack2],run_time=1.5),
+                  BondTypeTransform(bond=C1_L_current,
+                                    target_type=BondType.OUT_BOND,
+                                    angle=-30*DEGREES,
+                                    about_point=acetyl_L.atomic_clusters["C1"]["pos"],
+                                    sf=acetyl_L,
+                                    run_time=1.5),
+                  MoveAlongPath(L_mob,arc_L_forward2,run_time=1.5))
+        acetyl_L.atomic_clusters["L"]["pos"]=L_forward_end
+
+        #紧接着C-Nu键顺时针旋转30°
+        self.play(acetyl_L.rotate_atoms(atom_names=["Nu","H2"],
+                                        center="C1",
+                                        angle=-30*DEGREES,
+                                        run_time=0.8))
+        self.wait(1.5)
+
+        #右边出现OH_2，O（OH_2标签）左侧有一对孤对电子
+        OH2_pos=H2_mob.get_center()+np.array([acetyl_L.attributes.length_global,0,0])
+        OH2_mob=AtomicCluster(text=r"\mathrm{OH_2}",pos=OH2_pos,text_offset=np.array([0.2,-0.03,0]),
+                              attributes=acetyl_L.attributes)
+        acetyl_L.register_atom(name="OH2",mobject=OH2_mob)
+        acetyl_L.add_charge(text="OH2",pos=LEFT,charge_type=ChargeType.PAIR)
+        OH2_lone_pair=acetyl_L.charges["OH2"]
+
+        self.play(FadeIn(OH2_mob),FadeIn(OH2_lone_pair))
+        self.wait(0.5)
+
+        #孤对电子进攻Nu上的H：Nu-H变为Nu右上30°的孤对电子，Nu^+消失，OH_2带正电荷
+        OH2_H2_bond=acetyl_L.build_bond(start="OH2",end="H2",bond_type=BondType.NORMAL_BOND)
+        Nu_lone_pair_after=acetyl_L.build_charge(text="Nu",pos=direction30,charge_type=ChargeType.PAIR)
+        OH2_positive=acetyl_L.build_charge(text="OH2",pos=UL,charge_type=ChargeType.POSITIVE)
+
+        step_deprotonation=ElectronMigrationStep(
+            replace=[(OH2_lone_pair,OH2_H2_bond),
+                     (Nu_H2_bond,Nu_lone_pair_after)],
+            create=[OH2_positive],
+            fadeout=[Nu_positive],
+        )
+
+        self.play(acetyl_L.electron_migration(steps=[step_deprotonation],run_time=1.5))
+
+        #随后Nu上的孤对电子消失
+        self.play(FadeOut(Nu_lone_pair_after))
+        acetyl_L.delete_charge(text="Nu")
+        self.wait(1.5)
+
+        #右侧水合氢离子消失
+        self.play(FadeOut(OH2_mob,OH2_positive,H2_mob,OH2_H2_bond))
+        acetyl_L.delete_atom(names=["OH2","H2"])
+
+        #整个分子分为左右两种情况，分别向左向右平移三个单位
+        left_shift=np.array([-3,0,0],dtype=float)
+        right_shift=np.array([3,0,0],dtype=float)
+        right_mol=acetyl_L.copy()
+        right_mol.shift(right_shift)
+
+        self.play(acetyl_L.animate.shift(left_shift),
+                  ReplacementTransform(acetyl_L.copy(),right_mol),
+                  run_time=1.5)
+        for data in acetyl_L.atomic_clusters.values():
+            data["pos"]=np.array(data["pos"],dtype=float)+left_shift
+        for data in right_mol.atomic_clusters.values():
+            data["pos"]=np.array(data["pos"],dtype=float)+right_shift
+
+        #左边的L变为X
+        left_L_mob=acetyl_L.atomic_clusters["L"][Mobject]
+        X_mob=AtomicCluster(text=r"\mathrm{X}",pos=left_L_mob.get_center(),attributes=acetyl_L.attributes)
+        self.play(ReplacementTransform(left_L_mob,X_mob),run_time=0.8)
+        acetyl_L.remove(left_L_mob)
+        acetyl_L.atomic_clusters["L"][Mobject]=X_mob
+        acetyl_L.add(X_mob)
+
+        #左边：氧上的孤对电子和C-O单键变为双键，C-X键变为X^-，O左上30°出现正电荷
+        direction150=np.array([np.cos(150*DEGREES),np.sin(150*DEGREES),0])
+        left_C1_O1_single=acetyl_L.bond_lookup.between("C1","O1")
+        left_O_lone_pair=acetyl_L.charges["O1"]
+        left_C1_X_bond=acetyl_L.bond_lookup.between("C1","L")
+
+        left_C1_O1_double=acetyl_L.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
+        left_X_negative=acetyl_L.build_charge(text="L",pos=UL,charge_type=ChargeType.NEGATIVE)
+        left_O_positive=acetyl_L.build_charge(text="O1",pos=direction150,charge_type=ChargeType.POSITIVE)
+
+        left_step_restore=ElectronMigrationStep(
+            replace=[(VGroup(left_C1_O1_single,left_O_lone_pair),left_C1_O1_double),
+                     (left_C1_X_bond,left_X_negative)],
+            create=[left_O_positive],
+        )
+        self.play(acetyl_L.electron_migration(steps=[left_step_restore],run_time=1.5))
+
+        #X^-及X原子消失
+        left_X_mob=acetyl_L.atomic_clusters["L"][Mobject]
+        self.play(FadeOut(left_X_negative,left_X_mob))
+        acetyl_L.delete_charge(text="L")
+        acetyl_L.delete_atom(names=["L"])
+        self.wait(0.5)
+
+        #左边：OH2夺取羰基O上的H
+        left_H_mob=acetyl_L.atomic_clusters["H"][Mobject]
+        left_O1_H_bond=acetyl_L.bond_lookup.between("O1","H")
+        left_OH2_pos=left_H_mob.get_center()+np.array([acetyl_L.attributes.length_global,0,0])
+        left_OH2_mob=AtomicCluster(text=r"\mathrm{OH_2}",pos=left_OH2_pos,text_offset=np.array([0.2,-0.03,0]),
+                                   attributes=acetyl_L.attributes)
+        acetyl_L.register_atom(name="OH2",mobject=left_OH2_mob)
+        acetyl_L.add_charge(text="OH2",pos=LEFT,charge_type=ChargeType.PAIR)
+        left_OH2_lone_pair=acetyl_L.charges["OH2"]
+
+        self.play(FadeIn(left_OH2_mob),FadeIn(left_OH2_lone_pair))
+        self.wait(0.5)
+
+        left_OH2_H_bond=acetyl_L.build_bond(start="OH2",end="H",bond_type=BondType.NORMAL_BOND)
+        left_O_lone_pair_after=acetyl_L.build_charge(text="O1",pos=direction30,charge_type=ChargeType.PAIR)
+        left_OH2_positive=acetyl_L.build_charge(text="OH2",pos=UL,charge_type=ChargeType.POSITIVE)
+
+        left_step_deprotonation=ElectronMigrationStep(
+            replace=[(left_OH2_lone_pair,left_OH2_H_bond),
+                     (left_O1_H_bond,left_O_lone_pair_after)],
+            create=[left_OH2_positive],
+            fadeout=[left_O_positive],
+        )
+        self.play(acetyl_L.electron_migration(steps=[left_step_deprotonation],run_time=1.5))
+
+        #羰基O上的孤对电子消失，左侧水合氢离子消失
+        self.play(FadeOut(left_O_lone_pair_after))
+        acetyl_L.delete_charge(text="O1")
+        self.play(FadeOut(left_OH2_mob,left_OH2_positive,left_H_mob,left_OH2_H_bond))
+        acetyl_L.delete_atom(names=["OH2","H"])
+        self.wait(0.5)
+
+        #右边：L右侧出现孤对电子，H^+进攻生成L-H，L下方出现正电荷
+        right_L_mob=right_mol.atomic_clusters["L"][Mobject]
+        right_L_pos=right_mol.atomic_clusters["L"]["pos"]
+        right_mol.add_charge(text="L",pos=RIGHT,charge_type=ChargeType.PAIR)
+        right_L_lone_pair=right_mol.charges["L"]
+
+        right_Hplus_pos=right_L_pos+np.array([right_mol.attributes.length_global,0,0])
+        right_Hplus_mob=AtomicCluster(text=r"\mathrm{H}",pos=right_Hplus_pos,attributes=right_mol.attributes)
+        right_mol.register_atom(name="HplusR",mobject=right_Hplus_mob)
+        right_mol.add_charge(text="HplusR",pos=UR,charge_type=ChargeType.POSITIVE)
+        right_Hplus_positive=right_mol.charges["HplusR"]
+
+        self.play(FadeIn(right_L_lone_pair),FadeIn(right_Hplus_mob),FadeIn(right_Hplus_positive))
+        self.wait(0.5)
+
+        right_L_H_bond=right_mol.build_bond(start="L",end="HplusR",bond_type=BondType.NORMAL_BOND)
+        right_L_positive=right_mol.build_charge(text="L",pos=DOWN,charge_type=ChargeType.POSITIVE)
+
+        right_step_protonation=ElectronMigrationStep(
+            replace=[(right_L_lone_pair,right_L_H_bond)],
+            create=[right_L_positive],
+            fadeout=[right_Hplus_positive],
+        )
+        self.play(right_mol.electron_migration(steps=[right_step_protonation],run_time=1.5))
+
+        #右边：其余流程与左边相同
+        right_C1_O1_single=right_mol.bond_lookup.between("C1","O1")
+        right_O_lone_pair=right_mol.charges["O1"]
+        right_C1_L_bond=right_mol.bond_lookup.between("C1","L")
+        right_C1_O1_double=right_mol.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
+        right_L_lone_pair_after=right_mol.build_charge(text="L",pos=LEFT,charge_type=ChargeType.PAIR)
+        right_O_positive=right_mol.build_charge(text="O1",pos=direction150,charge_type=ChargeType.POSITIVE)
+
+        right_step_restore=ElectronMigrationStep(
+            replace=[(VGroup(right_C1_O1_single,right_O_lone_pair),right_C1_O1_double),
+                     (right_C1_L_bond,right_L_lone_pair_after)],
+            create=[right_O_positive],
+            fadeout=[right_L_positive],
+        )
+        self.play(right_mol.electron_migration(steps=[right_step_restore],run_time=1.5))
+
+        #L-H^+离去基团消失
+        self.play(FadeOut(right_L_mob,right_L_H_bond,right_Hplus_mob,right_L_lone_pair_after))
+        right_mol.delete_atom(names=["L","HplusR"])
+        self.wait(0.5)
+
+        #右边：OH2夺取羰基O上的H
+        right_H_mob=right_mol.atomic_clusters["H"][Mobject]
+        right_O1_H_bond=right_mol.bond_lookup.between("O1","H")
+        right_OH2_pos=right_H_mob.get_center()+np.array([right_mol.attributes.length_global,0,0])
+        right_OH2_mob=AtomicCluster(text=r"\mathrm{OH_2}",pos=right_OH2_pos,text_offset=np.array([0.2,-0.03,0]),
+                                    attributes=right_mol.attributes)
+        right_mol.register_atom(name="OH2",mobject=right_OH2_mob)
+        right_mol.add_charge(text="OH2",pos=LEFT,charge_type=ChargeType.PAIR)
+        right_OH2_lone_pair=right_mol.charges["OH2"]
+
+        self.play(FadeIn(right_OH2_mob),FadeIn(right_OH2_lone_pair))
+        self.wait(0.5)
+
+        right_OH2_H_bond=right_mol.build_bond(start="OH2",end="H",bond_type=BondType.NORMAL_BOND)
+        right_O_lone_pair_after=right_mol.build_charge(text="O1",pos=direction30,charge_type=ChargeType.PAIR)
+        right_OH2_positive=right_mol.build_charge(text="OH2",pos=UL,charge_type=ChargeType.POSITIVE)
+
+        right_step_deprotonation=ElectronMigrationStep(
+            replace=[(right_OH2_lone_pair,right_OH2_H_bond),
+                     (right_O1_H_bond,right_O_lone_pair_after)],
+            create=[right_OH2_positive],
+            fadeout=[right_O_positive],
+        )
+        self.play(right_mol.electron_migration(steps=[right_step_deprotonation],run_time=1.5))
+
+        #羰基O上的孤对电子消失，右侧水合氢离子消失
+        self.play(FadeOut(right_O_lone_pair_after))
+        right_mol.delete_charge(text="O1")
+        self.play(FadeOut(right_OH2_mob,right_OH2_positive,right_H_mob,right_OH2_H_bond))
+        right_mol.delete_atom(names=["OH2","H"])
         self.wait(1.5)
