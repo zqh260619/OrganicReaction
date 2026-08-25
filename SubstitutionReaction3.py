@@ -17,6 +17,12 @@ class test(Scene):
         self.play(Write(Addition_elimination_mechanism))
         self.wait(0.5)
 
+        #descriptions
+        text1=Description(text=r"\text{芳香环上可以发生亲核加成}\mathrm{-}\text{消除机理的取代反应，羧酸及其衍生物上同样可以}")
+        text2=Description(text=r"\mathrm{L}\text{是离去基团，}\mathrm{Nu^-}\text{是亲核试剂}")
+        text3=Description(text=r"\text{碳氧双键有极性，双键的电子更偏向氧原子，}\\\text{这使得氧原子上带部分负电，碳原子上带部分正电}")
+        text4=Description(text=r"\text{条件分别为酸催化和碱催化时，有着不同的机理，但是其内在的逻辑是类似的}")
+
         acetyl_L=StructuralFormula(name="C1",pos=ORIGIN,text=None)
         acetyl_L.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
                           bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
@@ -26,8 +32,9 @@ class test(Scene):
                           bond_type=BondType.NORMAL_BOND,adjacency="C1")
 
         #先显示中间底物
+        self.play(Write(text1))
         self.play(Create(acetyl_L))
-        self.wait(0.5)
+        self.wait(1.5)
 
         #右侧亲核试剂 Nu^-（先独立显示，进攻时再并入乙酰基结构）
         Nu_start=np.array([3*acetyl_L.attributes.length_global,0,0])
@@ -36,11 +43,8 @@ class test(Scene):
         acetyl_L.add_charge(text="Nu",pos=UL,charge_type=ChargeType.NEGATIVE)
         Nu_negative=acetyl_L.charges["Nu"]
 
-        self.play(FadeIn(Nu_mob),FadeIn(Nu_negative))
-        self.wait(0.5)
-        
-        #碱催化的机理
-
+        self.play(FadeIn(Nu_mob),FadeIn(Nu_negative),ReplacementTransform(text1,text2))
+        self.wait(1)
 
         #C=O键左侧的极性键箭头：从C指向O
         delta_positive_C=MathTex(r"\delta^+",color=WHITE,font_size=txt_size*0.9)
@@ -54,9 +58,21 @@ class test(Scene):
                                          side=1,
                                          length=bond_length*0.8,
                                          offset=0.2)
-        self.play(FadeIn(polarity_arrow),FadeIn(delta_positive_C),FadeIn(delta_negative_O))
-        self.wait(0.5)
+        self.play(FadeIn(polarity_arrow),FadeIn(delta_positive_C),FadeIn(delta_negative_O),ReplacementTransform(text2,text3))
+        self.wait(2)
         self.play(FadeOut(polarity_arrow,delta_positive_C,delta_negative_O))
+        self.play(ReplacementTransform(text3,text4))
+        self.wait(2)
+
+        #碱催化的机理
+        subtitle1=Subtitle(text=r"\text{碱催化}")
+        self.play(Write(subtitle1))
+
+        #descriptions
+        text5=Description(text=r"\text{带负电的}\mathrm{Nu^-}\text{首先进攻带部分正电的羰基碳，}\\\text{发生亲核加成，形成一个带负电的四面体中间体}")
+        text6=Description(text=r"\text{接着发生消除，}\mathrm{L^-}\text{离去，碳氧双键恢复，生成取代产物}")
+
+        self.play(ReplacementTransform(text4,text5))
 
         #Nu^-进攻羰基碳：Nu移动到中心碳的右侧
         Nu_target=acetyl_L.atomic_clusters["C1"]["pos"]+np.array([np.cos(0*DEGREES),np.sin(0*DEGREES),0])*acetyl_L.attributes.length_global
@@ -106,7 +122,9 @@ class test(Scene):
                      (C1_Nu_in,C1_Nu_normal)],
         )
 
+        self.play(ReplacementTransform(text5,text6))
         self.play(acetyl_L.electron_migration(steps=[step_elimination],run_time=1.5))
+        self.wait(1)
 
         #L^-从下方沿一条弧线移动到左侧
         L_mob=acetyl_L.atomic_clusters["L"][Mobject]
@@ -120,6 +138,7 @@ class test(Scene):
                   MoveAlongPath(L_negative,arc_L_negative,run_time=1.5))
         acetyl_L.atomic_clusters["L"]["pos"]=L_final
         self.wait(1.5)
+        self.play(FadeOut(text6))
 
         #快速倒放：回到Nu^-进攻羰基前
         self.play(MoveAlongPath(L_mob,arc_L.reverse_points(),run_time=0.3),
@@ -178,6 +197,20 @@ class test(Scene):
         self.play(FadeOut(Nu_mob,Nu_negative_rev),run_time=0.2)
         self.wait(1.5)
 
+        #酸催化的机理
+        subtitle2=Subtitle(text=r"\text{酸催化}")
+        self.play(ReplacementTransform(subtitle1,subtitle2))
+
+        #descriptions
+        text7=Description(text=r"\text{在有}\mathrm{H^+}\text{的条件下，首先带部分负电的氧被质子化}")
+        text8=Description(text=r"\text{带正电的氧对碳氧双键的电子的吸引力更强，使得碳更具正电性}")
+        text9=Description(text=r"\text{此时存在这种共振式，可以看出碳的正电性相较于质子化之前大大增加，}\\\text{因此也更易被亲核试剂进攻}")
+        text10=Description(text=r"\text{接着}\mathrm{NuH}\text{进攻活化的带正电的碳，}\\\text{随后被体系中的碱夺去质子，得到不带电荷的四面体中间体}")
+        text11=Description(text=r"\text{最后发生消除反应}")
+        text12=Description(text=r"\text{如果}\mathrm{L}\text{是卤素原子}\mathrm{X}\text{，作为一个好的离去基团，}\\\mathrm{X^-}\text{会直接离去，羰基上的质子被碱拔除}")
+        text13=Description(text=r"\text{如果}\mathrm{L}\text{不是卤素原子，那么}\mathrm{L}\text{会先被质子化，形成一个好的离去基团}")
+        text14=Description(text=r"\text{然后以}\mathrm{HL}\text{的形式离去，羰基上的质子被碱拔除}")
+
         #右侧出现H^+，O的右上30°方向出现孤对电子
         O_pos=acetyl_L.atomic_clusters["O1"]["pos"]
         lone_pair_direction=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])
@@ -190,8 +223,9 @@ class test(Scene):
         acetyl_L.add_charge(text="H",pos=UR,charge_type=ChargeType.POSITIVE)
         H_positive=acetyl_L.charges["H"]
 
+        self.play(FadeIn(text7))
         self.play(FadeIn(H_mob),FadeIn(H_positive),FadeIn(lone_pair))
-        self.wait(0.5)
+        self.wait(1)
 
         #孤对电子进攻H^+：变为O-H键，O带正电荷，H^+的电荷消失
         O_H_bond=acetyl_L.build_bond(start="O1",end="H",bond_type=BondType.NORMAL_BOND)
@@ -204,6 +238,7 @@ class test(Scene):
         )
 
         self.play(acetyl_L.electron_migration(steps=[step_protonation],run_time=1.0))
+        self.play(ReplacementTransform(text7,text8))
         self.wait(1.5)
 
         #碳氧双键变为C-O单键和O上的孤对电子，O的正电荷消失，C上出现正电荷
@@ -217,8 +252,9 @@ class test(Scene):
             fadeout=[O_positive],
         )
 
+        self.play(ReplacementTransform(text8,text9))
         self.play(acetyl_L.electron_migration(steps=[step_oxocarbocation],run_time=1.0))
-        self.wait(1.5)
+        self.wait(2)
 
         #右侧出现Nu-H：H在Nu右上30°，Nu左侧有一对孤对电子
         acetyl_L.delete_charge(text="Nu")
@@ -232,6 +268,7 @@ class test(Scene):
         acetyl_L.add_charge(text="Nu",pos=LEFT,charge_type=ChargeType.PAIR)
         Nu_lone_pair=acetyl_L.charges["Nu"]
 
+        self.play(ReplacementTransform(text9,text10))
         self.play(FadeIn(Nu_mob),FadeIn(H2_mob),FadeIn(Nu_H2_bond),FadeIn(Nu_lone_pair))
         self.wait(0.5)
 
@@ -306,10 +343,12 @@ class test(Scene):
         #随后Nu上的孤对电子消失
         self.play(FadeOut(Nu_lone_pair_after))
         acetyl_L.delete_charge(text="Nu")
-        self.wait(1.5)
 
         #右侧水合氢离子消失
         self.play(FadeOut(OH2_mob,OH2_positive,H2_mob,OH2_H2_bond))
+        self.wait(1.5)
+        self.play(ReplacementTransform(text10,text11))
+        self.wait(2)
         acetyl_L.delete_atom(names=["OH2","H2"])
 
         #整个分子分为左右两种情况，分别向左向右平移三个单位
@@ -329,7 +368,9 @@ class test(Scene):
         #左边的L变为X
         left_L_mob=acetyl_L.atomic_clusters["L"][Mobject]
         X_mob=AtomicCluster(text=r"\mathrm{X}",pos=left_L_mob.get_center(),attributes=acetyl_L.attributes)
+        self.play(ReplacementTransform(text11,text12))
         self.play(ReplacementTransform(left_L_mob,X_mob),run_time=0.8)
+        self.wait(1.5)
         acetyl_L.remove(left_L_mob)
         acetyl_L.atomic_clusters["L"][Mobject]=X_mob
         acetyl_L.add(X_mob)
@@ -389,6 +430,7 @@ class test(Scene):
         self.play(FadeOut(left_OH2_mob,left_OH2_positive,left_H_mob,left_OH2_H_bond))
         acetyl_L.delete_atom(names=["OH2","H"])
         self.wait(0.5)
+        self.play(ReplacementTransform(text12,text13))
 
         #右边：L右侧出现孤对电子，H^+进攻生成L-H，L下方出现正电荷
         right_L_mob=right_mol.atomic_clusters["L"][Mobject]
@@ -403,7 +445,7 @@ class test(Scene):
         right_Hplus_positive=right_mol.charges["HplusR"]
 
         self.play(FadeIn(right_L_lone_pair),FadeIn(right_Hplus_mob),FadeIn(right_Hplus_positive))
-        self.wait(0.5)
+        self.wait(1.5)
 
         right_L_H_bond=right_mol.build_bond(start="L",end="HplusR",bond_type=BondType.NORMAL_BOND)
         right_L_positive=right_mol.build_charge(text="L",pos=DOWN,charge_type=ChargeType.POSITIVE)
@@ -429,6 +471,7 @@ class test(Scene):
             create=[right_O_positive],
             fadeout=[right_L_positive],
         )
+        self.play(ReplacementTransform(text13,text14))
         self.play(right_mol.electron_migration(steps=[right_step_restore],run_time=1.5))
 
         #L-H^+离去基团消失
