@@ -510,3 +510,64 @@ class test(Scene):
         self.play(FadeOut(right_OH2_mob,right_OH2_positive,right_H_mob,right_OH2_H_bond))
         right_mol.delete_atom(names=["OH2","H"])
         self.wait(1.5)
+        self.play(FadeOut(*self.mobjects),run_time=1)
+
+        #-----------------------alpha-H substitution-----------------------
+        alpha_H_substitution=Title(text=r"\text{羰基活泼}\mathrm{\alpha-H}\text{的亲电取代}")
+        self.play(Write(alpha_H_substitution))
+
+        #显示一个丙酮分子
+        acetone=StructuralFormula(name="C1",pos=ORIGIN,text=r"\mathrm{C}")
+        acetone.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
+                         bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
+        acetone.add_atom(name="C2",direction=210*DEGREES,text=None,
+                         bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        acetone.add_atom(name="C3",direction=330*DEGREES,text=r"\mathrm{C}",
+                         bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        acetone.add_atom(name="H1",direction=30*DEGREES,text=r"\mathrm{H}",
+                         bond_type=BondType.NORMAL_BOND,adjacency="C3")
+        acetone.add_atom(name="H2",direction=330*DEGREES,text=r"\mathrm{H}",
+                         bond_type=BondType.NORMAL_BOND,adjacency="C3")
+        acetone.add_atom(name="H3",direction=270*DEGREES,text=r"\mathrm{H}",
+                         bond_type=BondType.NORMAL_BOND,adjacency="C3")
+
+        self.play(Create(acetone))
+        self.wait(1.5)
+
+        #诱导效应：O=C键、C-αC键、三个αC-H键依次向前一个原子略平移
+        O_C_bond=acetone.bond_lookup.between("O1","C1")
+        C_alphaC_bond=acetone.bond_lookup.between("C1","C3")
+        C3_H1_bond=acetone.bond_lookup.between("C3","H1")
+        C3_H2_bond=acetone.bond_lookup.between("C3","H2")
+        C3_H3_bond=acetone.bond_lookup.between("C3","H3")
+
+        shift_amount=0.08
+        O_pos=acetone.atomic_clusters["O1"]["pos"]
+        C1_pos=acetone.atomic_clusters["C1"]["pos"]
+        C3_pos=acetone.atomic_clusters["C3"]["pos"]
+        H1_pos=acetone.atomic_clusters["H1"]["pos"]
+        H2_pos=acetone.atomic_clusters["H2"]["pos"]
+        H3_pos=acetone.atomic_clusters["H3"]["pos"]
+
+        O_C_shift=(O_pos-C1_pos)/np.linalg.norm(O_pos-C1_pos)*shift_amount
+        C_alphaC_shift=(C1_pos-C3_pos)/np.linalg.norm(C1_pos-C3_pos)*shift_amount
+        C3_H1_shift=(C3_pos-H1_pos)/np.linalg.norm(C3_pos-H1_pos)*shift_amount
+        C3_H2_shift=(C3_pos-H2_pos)/np.linalg.norm(C3_pos-H2_pos)*shift_amount
+        C3_H3_shift=(C3_pos-H3_pos)/np.linalg.norm(C3_pos-H3_pos)*shift_amount
+
+        self.play(O_C_bond.animate.shift(O_C_shift),run_time=0.8,rate_func=smoothererstep)
+        self.play(C_alphaC_bond.animate.shift(C_alphaC_shift),run_time=0.8,rate_func=smoothererstep)
+        self.play(C3_H1_bond.animate.shift(C3_H1_shift),
+                  C3_H2_bond.animate.shift(C3_H2_shift),
+                  C3_H3_bond.animate.shift(C3_H3_shift),
+                  run_time=0.8,rate_func=smoothererstep)
+
+        self.wait(1.5)
+
+        self.play(O_C_bond.animate.shift(-O_C_shift),
+                  C_alphaC_bond.animate.shift(-C_alphaC_shift),
+                  C3_H1_bond.animate.shift(-C3_H1_shift),
+                  C3_H2_bond.animate.shift(-C3_H2_shift),
+                  C3_H3_bond.animate.shift(-C3_H3_shift),
+                  run_time=1.0,rate_func=smoothererstep)
+        self.wait(1.0)
