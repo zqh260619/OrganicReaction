@@ -29,6 +29,7 @@
     <Compile Include="OrganicReactionTools\bonds.py" />
     <Compile Include="OrganicReactionTools\charges.py" />
     <Compile Include="OrganicReactionTools\decorations.py" />
+    <Compile Include="OrganicReactionTools\electron_clouds.py" />
     <Compile Include="OrganicReactionTools\animations.py" />
     <Compile Include="OrganicReactionTools\structures.py" />
     <Compile Include="OrganicReactionTools\texts.py" />

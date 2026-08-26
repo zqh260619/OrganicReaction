@@ -12,6 +12,7 @@
     bonds        化学键类、Bond 包装器、BondType 枚举与键查找器 BondLookup
     charges      电荷类、Charge 包装器与 ChargeType 枚举
     decorations  括号、箭头等装饰图形
+     electron_clouds  电子云图形类与 ElectronCloud 包装器
     animations   动画类与电子迁移步骤描述
     structures   结构式 StructuralFormula 与苯环 Benzene
     texts        标题文本类
@@ -30,6 +31,7 @@ from .atoms import *
 from .bonds import *
 from .charges import *
 from .decorations import *
+from .electron_clouds import *
 from .animations import *
 from .structures import *
 from .texts import *

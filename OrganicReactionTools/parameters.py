@@ -29,6 +29,15 @@ ratio_transition_state=1.2
 """过渡态键长比例"""
 default_charge_edge=0.1
 """默认电荷边距"""
+#electron clouds
+electron_cloud_length=bond_length
+"""电子云单瓣卵形线长度"""
+electron_cloud_width=0.7*bond_length
+"""电子云单瓣卵形线宽度"""
+electron_cloud_radius=0.5*bond_length
+"""s轨道电子云半径"""
+electron_cloud_small_ratio=0.5
+"""杂化轨道小瓣与大瓣的尺寸比例"""
 #texts
 title_height=3
 """标题高度"""
