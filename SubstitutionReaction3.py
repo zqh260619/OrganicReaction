@@ -549,25 +549,53 @@ class test(Scene):
         H2_pos=acetone.atomic_clusters["H2"]["pos"]
         H3_pos=acetone.atomic_clusters["H3"]["pos"]
 
-        O_C_shift=(O_pos-C1_pos)/np.linalg.norm(O_pos-C1_pos)*shift_amount
-        C_alphaC_shift=(C1_pos-C3_pos)/np.linalg.norm(C1_pos-C3_pos)*shift_amount
-        C3_H1_shift=(C3_pos-H1_pos)/np.linalg.norm(C3_pos-H1_pos)*shift_amount
-        C3_H2_shift=(C3_pos-H2_pos)/np.linalg.norm(C3_pos-H2_pos)*shift_amount
-        C3_H3_shift=(C3_pos-H3_pos)/np.linalg.norm(C3_pos-H3_pos)*shift_amount
+        O_C_direction=(O_pos-C1_pos)/np.linalg.norm(O_pos-C1_pos)
+        C_alphaC_direction=(C1_pos-C3_pos)/np.linalg.norm(C1_pos-C3_pos)
+        C3_H1_direction=(C3_pos-H1_pos)/np.linalg.norm(C3_pos-H1_pos)
+        C3_H2_direction=(C3_pos-H2_pos)/np.linalg.norm(C3_pos-H2_pos)
+        C3_H3_direction=(C3_pos-H3_pos)/np.linalg.norm(C3_pos-H3_pos)
 
-        self.play(O_C_bond.animate.shift(O_C_shift),run_time=0.8,rate_func=smoothererstep)
-        self.play(C_alphaC_bond.animate.shift(C_alphaC_shift),run_time=0.8,rate_func=smoothererstep)
-        self.play(C3_H1_bond.animate.shift(C3_H1_shift),
-                  C3_H2_bond.animate.shift(C3_H2_shift),
-                  C3_H3_bond.animate.shift(C3_H3_shift),
+        O_C_shift=O_C_direction*shift_amount
+        C_alphaC_shift=C_alphaC_direction*shift_amount
+        C3_H1_shift=C3_H1_direction*shift_amount
+        C3_H2_shift=C3_H2_direction*shift_amount
+        C3_H3_shift=C3_H3_direction*shift_amount
+
+        def shorten_bond(bond,shift,direction):
+            target=bond.copy()
+            center=bond.get_center()
+            def func(p):
+                rel=p-center
+                along=np.dot(rel,direction)
+                return center+shift+direction*(along*0.8)+(rel-direction*along)
+            target.apply_function(func)
+            return target
+
+        O_C_bond_original=O_C_bond.copy()
+        C_alphaC_bond_original=C_alphaC_bond.copy()
+        C3_H1_bond_original=C3_H1_bond.copy()
+        C3_H2_bond_original=C3_H2_bond.copy()
+        C3_H3_bond_original=C3_H3_bond.copy()
+
+        O_C_bond_short=shorten_bond(O_C_bond,O_C_shift,O_C_direction)
+        C_alphaC_bond_short=shorten_bond(C_alphaC_bond,C_alphaC_shift,C_alphaC_direction)
+        C3_H1_bond_short=shorten_bond(C3_H1_bond,C3_H1_shift,C3_H1_direction)
+        C3_H2_bond_short=shorten_bond(C3_H2_bond,C3_H2_shift,C3_H2_direction)
+        C3_H3_bond_short=shorten_bond(C3_H3_bond,C3_H3_shift,C3_H3_direction)
+
+        self.play(Transform(O_C_bond,O_C_bond_short),run_time=0.8,rate_func=smoothererstep)
+        self.play(Transform(C_alphaC_bond,C_alphaC_bond_short),run_time=0.8,rate_func=smoothererstep)
+        self.play(Transform(C3_H1_bond,C3_H1_bond_short),
+                  Transform(C3_H2_bond,C3_H2_bond_short),
+                  Transform(C3_H3_bond,C3_H3_bond_short),
                   run_time=0.8,rate_func=smoothererstep)
 
         self.wait(1.5)
 
-        self.play(O_C_bond.animate.shift(-O_C_shift),
-                  C_alphaC_bond.animate.shift(-C_alphaC_shift),
-                  C3_H1_bond.animate.shift(-C3_H1_shift),
-                  C3_H2_bond.animate.shift(-C3_H2_shift),
-                  C3_H3_bond.animate.shift(-C3_H3_shift),
+        self.play(Transform(O_C_bond,O_C_bond_original),
+                  Transform(C_alphaC_bond,C_alphaC_bond_original),
+                  Transform(C3_H1_bond,C3_H1_bond_original),
+                  Transform(C3_H2_bond,C3_H2_bond_original),
+                  Transform(C3_H3_bond,C3_H3_bond_original),
                   run_time=1.0,rate_func=smoothererstep)
         self.wait(1.0)
