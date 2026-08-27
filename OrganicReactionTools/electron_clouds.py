@@ -187,6 +187,20 @@ def _build_ellipse(*,center:Vector3D,direction:float,length:float,width:float,
     _style_lobe(ellipse,color,opacity)
     return ellipse
 
+def _outward_oval_lobe(*,reference_center:Vector3D,tip:Vector3D,outward_direction:float,
+                       length:float,width:float,color:ManimColor,opacity:float,
+                       stroke_width:float,text_buff:float=0.,**kwargs)->'OvalLine':
+    """创建尖端朝内、圆端朝外的卵形线，并在构造时校验方向。"""
+    lobe=OvalLine(center=tip,direction=outward_direction,length=length,width=width,
+                  color=color,opacity=opacity,stroke_width=stroke_width,
+                  text=None,text_buff=text_buff,**kwargs)
+    reference=np.array(reference_center,dtype=float)
+    tip_distance=float(np.linalg.norm(lobe.tip_point-reference))
+    round_end_distance=float(np.linalg.norm(lobe.round_end_point-reference))
+    if round_end_distance<=tip_distance+1e-9:
+        raise ValueError("卵形线必须尖端朝里、圆端朝外，请检查 outward_direction 参数。")
+    return lobe
+
 #Mobject classes
 class OvalLine(ParametricFunction):
     """卵形线：单瓣电子云轮廓。
@@ -274,7 +288,9 @@ class OvalLine(ParametricFunction):
 
         def egg_curve(t):
             r=c+a*np.cos(t)
-            x=(r*np.cos(t)+(c-a))*length
+            # 原基准曲线在 t=0 处更尖、t=PI 处更圆；
+            # 将 x 反向，使尖端落在 center_point，圆端沿 direction 向外。
+            x=(1-(r*np.cos(t)+(c-a)))*length
             y=r*np.sin(t)/(2*half_width)*width
             return center_point+x*direction_vector+y*normal_vector
 
@@ -285,6 +301,8 @@ class OvalLine(ParametricFunction):
         _style_lobe(self,color,opacity)
 
         self.center_point=center_point
+        self.tip_point=center_point
+        self.round_end_point=center_point+length*direction_vector
         self.direction=direction
         self.length=length
         self.lobe_width=width
@@ -381,12 +399,14 @@ class POrbital(VGroup):
 
         positive_center=center_point+direction_vector*separation/2
         negative_center=center_point-direction_vector*separation/2
-        self.positive_lobe=OvalLine(center=positive_center,direction=direction,
-                                    length=length,width=width,color=colors[0],opacity=opacities[0],
-                                    stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
-        self.negative_lobe=OvalLine(center=negative_center,direction=direction+PI,
-                                    length=length,width=width,color=colors[1],opacity=opacities[1],
-                                    stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
+        self.positive_lobe=_outward_oval_lobe(reference_center=center_point,tip=positive_center,
+                                             outward_direction=direction,
+                                             length=length,width=width,color=colors[0],opacity=opacities[0],
+                                             stroke_width=stroke_width,text_buff=text_buff,**kwargs)
+        self.negative_lobe=_outward_oval_lobe(reference_center=center_point,tip=negative_center,
+                                             outward_direction=direction+PI,
+                                             length=length,width=width,color=colors[1],opacity=opacities[1],
+                                             stroke_width=stroke_width,text_buff=text_buff,**kwargs)
         self.add(self.positive_lobe,self.negative_lobe)
 
         _lift_text(text)
@@ -449,13 +469,15 @@ class HybridOrbital(VGroup):
 
         large_center=center_point+direction_vector*separation/2
         small_center=center_point-direction_vector*separation/2
-        self.large_lobe=OvalLine(center=large_center,direction=direction,
-                                 length=length,width=width,color=colors[0],opacity=opacities[0],
-                                 stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
-        self.small_lobe=OvalLine(center=small_center,direction=direction+PI,
-                                 length=length*small_ratio,width=width*small_ratio,
-                                 color=colors[1],opacity=opacities[1],
-                                 stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
+        self.large_lobe=_outward_oval_lobe(reference_center=center_point,tip=large_center,
+                                           outward_direction=direction,
+                                           length=length,width=width,color=colors[0],opacity=opacities[0],
+                                           stroke_width=stroke_width,text_buff=text_buff,**kwargs)
+        self.small_lobe=_outward_oval_lobe(reference_center=center_point,tip=small_center,
+                                           outward_direction=direction+PI,
+                                           length=length*small_ratio,width=width*small_ratio,
+                                           color=colors[1],opacity=opacities[1],
+                                           stroke_width=stroke_width,text_buff=text_buff,**kwargs)
         self.add(self.large_lobe,self.small_lobe)
 
         _lift_text(text)
@@ -615,12 +637,14 @@ class SigmaAntiBondSS(VGroup):
 
         right_center=center_point+direction_vector*separation/2
         left_center=center_point-direction_vector*separation/2
-        self.right_lobe=OvalLine(center=right_center,direction=direction,
-                                 length=length,width=width,color=colors[0],opacity=opacities[0],
-                                 stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
-        self.left_lobe=OvalLine(center=left_center,direction=direction+PI,
-                                length=length,width=width,color=colors[1],opacity=opacities[1],
-                                stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
+        self.right_lobe=_outward_oval_lobe(reference_center=center_point,tip=right_center,
+                                           outward_direction=direction,
+                                           length=length,width=width,color=colors[0],opacity=opacities[0],
+                                           stroke_width=stroke_width,text_buff=text_buff,**kwargs)
+        self.left_lobe=_outward_oval_lobe(reference_center=center_point,tip=left_center,
+                                          outward_direction=direction+PI,
+                                          length=length,width=width,color=colors[1],opacity=opacities[1],
+                                          stroke_width=stroke_width,text_buff=text_buff,**kwargs)
         self.add(self.right_lobe,self.left_lobe)
 
         self.center_point=center_point
@@ -705,12 +729,14 @@ class SigmaBondPP(VGroup):
                                    length=middle_length,width=middle_width,
                                    color=colors[0],opacity=opacities[0],
                                    stroke_width=stroke_width,**kwargs)
-        self.left_lobe=OvalLine(center=left_tip,direction=direction+PI,
-                                length=lobe_length,width=lobe_width,color=colors[1],opacity=opacities[1],
-                                stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
-        self.right_lobe=OvalLine(center=right_tip,direction=direction,
-                                 length=lobe_length,width=lobe_width,color=colors[2],opacity=opacities[2],
-                                 stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
+        self.left_lobe=_outward_oval_lobe(reference_center=center_point,tip=left_tip,
+                                          outward_direction=direction+PI,
+                                          length=lobe_length,width=lobe_width,color=colors[1],opacity=opacities[1],
+                                          stroke_width=stroke_width,text_buff=text_buff,**kwargs)
+        self.right_lobe=_outward_oval_lobe(reference_center=center_point,tip=right_tip,
+                                           outward_direction=direction,
+                                           length=lobe_length,width=lobe_width,color=colors[2],opacity=opacities[2],
+                                           stroke_width=stroke_width,text_buff=text_buff,**kwargs)
         self.add(self.middle,self.left_lobe,self.right_lobe)
 
         self.center_point=center_point
@@ -790,13 +816,15 @@ class SigmaBondSP(VGroup):
 
         large_center=center_point-direction_vector*separation/2
         small_center=center_point+direction_vector*separation/2
-        self.large_lobe=OvalLine(center=large_center,direction=direction+PI,
-                                 length=length,width=width,color=colors[0],opacity=opacities[0],
-                                 stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
-        self.small_lobe=OvalLine(center=small_center,direction=direction,
-                                 length=length*small_ratio,width=width*small_ratio,
-                                 color=colors[1],opacity=opacities[1],
-                                 stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
+        self.large_lobe=_outward_oval_lobe(reference_center=center_point,tip=large_center,
+                                           outward_direction=direction+PI,
+                                           length=length,width=width,color=colors[0],opacity=opacities[0],
+                                           stroke_width=stroke_width,text_buff=text_buff,**kwargs)
+        self.small_lobe=_outward_oval_lobe(reference_center=center_point,tip=small_center,
+                                           outward_direction=direction,
+                                           length=length*small_ratio,width=width*small_ratio,
+                                           color=colors[1],opacity=opacities[1],
+                                           stroke_width=stroke_width,text_buff=text_buff,**kwargs)
         self.add(self.large_lobe,self.small_lobe)
 
         self.center_point=center_point
@@ -950,10 +978,11 @@ class PiAntiBondPP(VGroup):
                 lobe_direction=base_direction+sign*tilt_angle
                 lobe_direction_vector=np.array([np.cos(lobe_direction),np.sin(lobe_direction),0])
                 lobe_center=anchor+lobe_direction_vector*tip_offset
-                lobe=OvalLine(center=lobe_center,direction=lobe_direction,
-                              length=lobe_length,width=lobe_width,
-                              color=colors[lobe_index],opacity=opacities[lobe_index],
-                              stroke_width=stroke_width,text=None,text_buff=text_buff,**kwargs)
+                lobe=_outward_oval_lobe(reference_center=center_point,tip=lobe_center,
+                                         outward_direction=lobe_direction,
+                                         length=lobe_length,width=lobe_width,
+                                         color=colors[lobe_index],opacity=opacities[lobe_index],
+                                         stroke_width=stroke_width,text_buff=text_buff,**kwargs)
                 self.lobes.append(lobe)
                 self.add(lobe)
                 lobe_index+=1
