@@ -10,6 +10,7 @@ from .attributes import AttributeHolder, DEFAULT_ATTRIBUTES
 from .parameters import (electron_cloud_length, electron_cloud_width,
                          electron_cloud_radius, electron_cloud_small_ratio)
 
+_ATOMIC_TEXT_BUFF=0.06
 _DEFAULT_TEXT_BUFF=0.15
 _DEFAULT_CURVE_GAP=0.05
 
@@ -86,7 +87,7 @@ def _resolve_lobe_styles(*,lobe_count:int,color:ManimColor|None,opacity:float,
 
 def _lobe_defaults(*,text:Mobject|None,text_buff:float,base_length:float,base_width:float)->tuple[float,float]:
     radius=_text_radius(text,text_buff)
-    return max(base_length,2*radius),max(base_width,2*radius)
+    return max(base_length,2*radius),max(base_width,1.5*radius)
 
 def _ellipse_defaults(*,text:Mobject|None,text_buff:float,base_length:float,base_width:float)->tuple[float,float]:
     radius=_text_radius(text,text_buff)
@@ -221,6 +222,10 @@ class OvalLine(ParametricFunction):
         垂直于 direction 方向的最大宽度；缺省时根据文本标签大小自动调整。
     sharpness : float
         卵形线不对称程度，范围 (0, 1)，默认 0.4。
+    tip_ratio : float
+        尖端附近的宽度比例，默认 0.9；越小尖端越尖。
+    round_ratio : float
+        圆端附近的宽度比例，默认 1.1；越大圆端越粗。
     color : ManimColor | None
         统一的边界与填充颜色。
     opacity : float
@@ -244,17 +249,23 @@ class OvalLine(ParametricFunction):
                  length:float|None=None,
                  width:float|None=None,
                  sharpness:float=0.4,
+                 tip_ratio:float=0.9,
+                 round_ratio:float=1.1,
                  color:ManimColor|None=None,
                  opacity:float=1.0,
                  stroke_width:float=2,
                  attributes:'AttributeHolder'=None,
                  text:Mobject|None=None,
-                 text_buff:float=_DEFAULT_TEXT_BUFF,
+                 text_buff:float=_ATOMIC_TEXT_BUFF,
                  use_smoothing:bool=False,
                  **kwargs):
 
         if not 0<sharpness<1:
             raise ValueError(f"sharpness 必须在 (0, 1) 内，实际为 {sharpness}。")
+        if tip_ratio<=0:
+            raise ValueError(f"tip_ratio 必须大于 0，实际为 {tip_ratio}。")
+        if round_ratio<=0:
+            raise ValueError(f"round_ratio 必须大于 0，实际为 {round_ratio}。")
         if not 0<=opacity<=1:
             raise ValueError(f"opacity 必须在 [0, 1] 内，实际为 {opacity}。")
 
@@ -269,7 +280,7 @@ class OvalLine(ParametricFunction):
         if length is None:
             length=max(electron_cloud_length,2*text_radius)
         if width is None:
-            width=max(electron_cloud_width,2*text_radius)
+            width=max(electron_cloud_width,1.5*text_radius)
         if length<=0:
             raise ValueError(f"length 必须大于 0，实际为 {length}。")
         if width<=0:
@@ -280,18 +291,24 @@ class OvalLine(ParametricFunction):
 
         # 先构造 x 范围为 [0,1]、y 范围为 [-0.5,0.5] 的基准凸卵形线，
         # 再分别缩放到指定的 length 与 width，使两个尺寸参数互相独立。
+        # tip_ratio 控制尖端附近宽窄，round_ratio 控制圆端附近粗细。
         c=0.5
         a=c*sharpness
-        cos_peak=(-c+np.sqrt(c*c+8*a*a))/(4*a)
-        sin_peak=np.sqrt(max(0.,1-cos_peak*cos_peak))
-        half_width=(c+a*cos_peak)*sin_peak
+        t_samples=np.linspace(0,TAU,2001)
+        r_samples=c+a*np.cos(t_samples)
+        base_x_samples=(r_samples*np.cos(t_samples)+(c-a))
+        multiplier_samples=tip_ratio*base_x_samples+round_ratio*(1-base_x_samples)
+        y_samples=r_samples*np.sin(t_samples)*multiplier_samples
+        half_width=max(float(np.max(np.abs(y_samples))),1e-12)
 
         def egg_curve(t):
             r=c+a*np.cos(t)
-            # 原基准曲线在 t=0 处更尖、t=PI 处更圆；
-            # 将 x 反向，使尖端落在 center_point，圆端沿 direction 向外。
-            x=(1-(r*np.cos(t)+(c-a)))*length
-            y=r*np.sin(t)/(2*half_width)*width
+            base_x=(r*np.cos(t)+(c-a))
+            # base_x 在 t=0 处为 1、t=PI 处为 0；将 x 反向后，
+            # 尖端落在 center_point，圆端沿 direction 向外。
+            x=(1-base_x)*length
+            multiplier=tip_ratio*base_x+round_ratio*(1-base_x)
+            y=r*np.sin(t)*multiplier/(2*half_width)*width
             return center_point+x*direction_vector+y*normal_vector
 
         super().__init__(egg_curve,t_range=[0,TAU],color=color,stroke_width=stroke_width,
@@ -307,6 +324,8 @@ class OvalLine(ParametricFunction):
         self.length=length
         self.lobe_width=width
         self.sharpness=sharpness
+        self.tip_ratio=tip_ratio
+        self.round_ratio=round_ratio
         self.lobe_color=color
         self.lobe_opacity=opacity
         self.text=text
@@ -324,7 +343,7 @@ class SOrbital(Circle):
                  stroke_width:float=2,
                  attributes:'AttributeHolder'=None,
                  text:Mobject|None=None,
-                 text_buff:float=_DEFAULT_TEXT_BUFF,
+                 text_buff:float=_ATOMIC_TEXT_BUFF,
                  **kwargs):
 
         if not 0<=opacity<=1:
@@ -374,7 +393,7 @@ class POrbital(VGroup):
                  stroke_width:float=2,
                  attributes:'AttributeHolder'=None,
                  text:Mobject|None=None,
-                 text_buff:float=_DEFAULT_TEXT_BUFF,
+                 text_buff:float=_ATOMIC_TEXT_BUFF,
                  **kwargs):
 
         center_point=_resolve_center(center,text)
@@ -441,7 +460,7 @@ class HybridOrbital(VGroup):
                  stroke_width:float=2,
                  attributes:'AttributeHolder'=None,
                  text:Mobject|None=None,
-                 text_buff:float=_DEFAULT_TEXT_BUFF,
+                 text_buff:float=_ATOMIC_TEXT_BUFF,
                  **kwargs):
 
         if small_ratio<=0:
@@ -506,7 +525,8 @@ class SigmaBondSS(Ellipse):
     """s-s sigma 成键轨道：基于两个原子文本标签绘制的填充椭圆。
 
     椭圆自动放置在 text1 与 text2 之间，长轴沿 text1 -> text2 方向，
-    并且不会覆盖任一文本标签。未提供标签时回退到 center/direction 绘制。
+    并且把两个文本标签包在椭圆内部。未提供标签时回退到
+    center/direction 绘制。
     """
     def __init__(self,*,
                  center:Vector3D|None=None,
@@ -533,19 +553,20 @@ class SigmaBondSS(Ellipse):
             direction=0. if direction is None else direction
             pos=0.
             if length is None:
-                length=electron_cloud_length
+                length=electron_cloud_length*0.8
             if width is None:
-                width=0.4
+                width=max(0.4,0.75*length)
         else:
             direction=frame["direction"]
             base_center=frame["center_point"] if center is None else np.array(center,dtype=float)
             direction_vector,normal_vector=_direction_frame(direction)
-            pos,inner_length=_inner_ellipse_geometry(frame)
             if length is None:
-                length=inner_length
+                length=0.8*max(electron_cloud_length,
+                               frame["end_outer"]-frame["start_outer"]+2*text_buff)
             if width is None:
-                width=max(0.4,2*frame["max_normal_half"])
-            center_point=base_center+direction_vector*pos
+                width=max(0.5,2*frame["max_normal_half"])
+                width=max(width,0.75*length)
+            center_point=base_center
             _lift_text(text1)
             _lift_text(text2)
 
@@ -580,8 +601,8 @@ class SigmaAntiBondSSLobe(OvalLine):
 class SigmaAntiBondSS(VGroup):
     """s-s sigma 反键轨道：基于两个原子文本标签绘制的两瓣填充卵形线。
 
-    两瓣分别位于 text1 与 text2 的外侧，尖端朝向键中心，圆端朝外，
-    与两个文本标签及彼此均不重叠。
+    两瓣分别包住 text1 与 text2，尖端朝向键中心，圆端朝外；
+    两个文本标签位于各自一侧的卵形线内部。
     """
     def __init__(self,*,
                  center:Vector3D|None=None,
@@ -620,12 +641,16 @@ class SigmaAntiBondSS(VGroup):
             direction=frame["direction"]
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
             direction_vector,normal_vector=_direction_frame(direction)
+            use_explicit_tips=False
             if separation is None:
-                separation=frame["end_outer"]-frame["start_outer"]+2*_DEFAULT_CURVE_GAP
+                left_tip_pos=frame["start_inner"]+_DEFAULT_CURVE_GAP
+                right_tip_pos=frame["end_inner"]-_DEFAULT_CURVE_GAP
+                separation=right_tip_pos-left_tip_pos
+                use_explicit_tips=True
             if length is None:
-                length=max(electron_cloud_length,2*frame["max_axis_half"])
+                length=max(electron_cloud_length*1.2,2*frame["max_axis_half"])
             if width is None:
-                width=max(electron_cloud_width,2*frame["max_normal_half"])
+                width=max(electron_cloud_width*1.2,2*frame["max_normal_half"])
             _lift_text(text1)
             _lift_text(text2)
 
@@ -635,8 +660,12 @@ class SigmaAntiBondSS(VGroup):
 
         super().__init__(color=colors[0])
 
-        right_center=center_point+direction_vector*separation/2
-        left_center=center_point-direction_vector*separation/2
+        if frame is not None and use_explicit_tips:
+            right_center=center_point+direction_vector*right_tip_pos
+            left_center=center_point+direction_vector*left_tip_pos
+        else:
+            right_center=center_point+direction_vector*separation/2
+            left_center=center_point-direction_vector*separation/2
         self.right_lobe=_outward_oval_lobe(reference_center=center_point,tip=right_center,
                                            outward_direction=direction,
                                            length=length,width=width,color=colors[0],opacity=opacities[0],
@@ -691,13 +720,13 @@ class SigmaBondPP(VGroup):
             direction_vector,normal_vector=_direction_frame(direction)
             middle_center=center_point
             if middle_length is None:
-                middle_length=electron_cloud_length
+                middle_length=electron_cloud_length*0.8
             if middle_width is None:
-                middle_width=0.4
+                middle_width=0.32
             if lobe_length is None:
-                lobe_length=0.5
+                lobe_length=0.3
             if lobe_width is None:
-                lobe_width=0.4
+                lobe_width=0.24
             left_tip=center_point-direction_vector*(middle_length/2+_DEFAULT_CURVE_GAP)
             right_tip=center_point+direction_vector*(middle_length/2+_DEFAULT_CURVE_GAP)
         else:
@@ -706,14 +735,16 @@ class SigmaBondPP(VGroup):
             direction_vector,normal_vector=_direction_frame(direction)
             middle_pos,inner_middle_length=_inner_ellipse_geometry(frame)
             middle_center=center_point+direction_vector*middle_pos
-            if middle_length is None:
-                middle_length=inner_middle_length
             if middle_width is None:
-                middle_width=max(0.4,2*frame["max_normal_half"])
+                middle_width=0.8*max(0.5,2.4*frame["max_normal_half"])
+            if middle_length is None:
+                # 长轴必须沿键轴，因此键轴方向长度要大于垂直方向宽度；
+                # 同时整体缩小为原来的 0.8 倍，避免与文本标签重合。
+                middle_length=0.8*max(inner_middle_length,1.3*middle_width)
             if lobe_length is None:
-                lobe_length=max(0.5,2*frame["max_axis_half"])
+                lobe_length=0.6*max(0.4,1.5*frame["max_axis_half"])
             if lobe_width is None:
-                lobe_width=max(0.4,2*frame["max_normal_half"])
+                lobe_width=0.6*max(0.3,1.1*frame["max_normal_half"])
             left_tip=center_point+direction_vector*(frame["start_outer"]-_DEFAULT_CURVE_GAP)
             right_tip=center_point+direction_vector*(frame["end_outer"]+_DEFAULT_CURVE_GAP)
             _lift_text(text1)
@@ -755,8 +786,9 @@ class SigmaBondPP(VGroup):
 class SigmaBondSP(VGroup):
     """s-p sigma 成键轨道：基于两个原子文本标签绘制的大小两瓣填充卵形线。
 
-    大瓣位于 direction 负侧文本标签外侧，小瓣位于 direction 正侧
-    文本标签外侧；未提供标签时退化为围绕 center 的大小两瓣。
+    大瓣位于 direction 负侧，并把该侧文本标签包在内部；小瓣位于
+    direction 正侧文本标签外侧。未提供标签时退化为围绕 center 的
+    大小两瓣。
     """
     def __init__(self,*,
                  center:Vector3D|None=None,
@@ -764,7 +796,7 @@ class SigmaBondSP(VGroup):
                  separation:float|None=None,
                  length:float|None=None,
                  width:float|None=None,
-                 small_ratio:float=electron_cloud_small_ratio,
+                 small_ratio:float=electron_cloud_small_ratio*0.7,
                  color:ManimColor|None=None,
                  opacity:float=1.0,
                  lobe_colors:list[ManimColor|None]|None=None,
@@ -799,12 +831,17 @@ class SigmaBondSP(VGroup):
             direction=frame["direction"]
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
             direction_vector,normal_vector=_direction_frame(direction)
+            use_explicit_tips=False
             if separation is None:
-                separation=frame["end_outer"]-frame["start_outer"]+2*_DEFAULT_CURVE_GAP
+                # 大瓣尖端向另一侧靠近，使大瓣整体更贴近键中心
+                large_tip_pos=frame["start_inner"]+_DEFAULT_CURVE_GAP+0.15
+                small_tip_pos=frame["end_outer"]+_DEFAULT_CURVE_GAP
+                separation=small_tip_pos-large_tip_pos
+                use_explicit_tips=True
             if length is None:
-                length=max(electron_cloud_length,2*frame["max_axis_half"])
+                length=max(electron_cloud_length*1.5,2*frame["max_axis_half"])
             if width is None:
-                width=max(electron_cloud_width,2*frame["max_normal_half"])
+                width=max(electron_cloud_width*1.5,2*frame["max_normal_half"])
             _lift_text(text1)
             _lift_text(text2)
 
@@ -814,8 +851,12 @@ class SigmaBondSP(VGroup):
 
         super().__init__(color=colors[0])
 
-        large_center=center_point-direction_vector*separation/2
-        small_center=center_point+direction_vector*separation/2
+        if frame is not None and use_explicit_tips:
+            large_center=center_point+direction_vector*large_tip_pos
+            small_center=center_point+direction_vector*small_tip_pos
+        else:
+            large_center=center_point-direction_vector*separation/2
+            small_center=center_point+direction_vector*separation/2
         self.large_lobe=_outward_oval_lobe(reference_center=center_point,tip=large_center,
                                            outward_direction=direction+PI,
                                            length=length,width=width,color=colors[0],opacity=opacities[0],
@@ -867,21 +908,21 @@ class PiBondPP(VGroup):
             direction_vector,normal_vector=_direction_frame(direction)
             ellipse_center=center_point
             if length is None:
-                length=electron_cloud_length
+                length=electron_cloud_length*1.2
             if width is None:
-                width=0.25
+                width=0.3
             if offset is None:
                 offset=0.35
         else:
             direction=frame["direction"]
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
             direction_vector,normal_vector=_direction_frame(direction)
-            middle_pos,inner_length=_inner_ellipse_geometry(frame)
-            ellipse_center=center_point+direction_vector*middle_pos
+            ellipse_center=center_point
             if length is None:
-                length=inner_length
+                length=1.2*max(electron_cloud_length,
+                               frame["end_pos"]-frame["start_pos"]+0.1)
             if width is None:
-                width=max(0.25,0.5*frame["max_normal_half"])
+                width=1.2*max(0.25,0.5*frame["max_normal_half"])
             if offset is None:
                 offset=max(0.35,frame["max_normal_half"]+width/2+_DEFAULT_CURVE_GAP)
             _lift_text(text1)
@@ -916,8 +957,8 @@ class PiBondPP(VGroup):
 class PiAntiBondPP(VGroup):
     """p-p pi 反键轨道：基于两个原子文本标签绘制的四个倾斜填充卵形线。
 
-    左右两个文本标签外侧各有一对上下倾斜的卵形线，尖端朝内、圆端
-    朝外，四个瓣互不重叠且不覆盖标签。
+    左右两个文本标签外侧各有一对上下倾斜的卵形线，四个瓣稍大且
+    分别远离文本标签；尖端均指向两个文本标签，圆端朝外。
     """
     def __init__(self,*,
                  center:Vector3D|None=None,
@@ -925,7 +966,7 @@ class PiAntiBondPP(VGroup):
                  separation:float|None=None,
                  lobe_length:float|None=None,
                  lobe_width:float|None=None,
-                 tilt_angle:float=np.pi/4,
+                 tilt_angle:float=np.pi/3,
                  color:ManimColor|None=None,
                  opacity:float=1.0,
                  lobe_colors:list[ManimColor|None]|None=None,
@@ -951,16 +992,35 @@ class PiAntiBondPP(VGroup):
                 lobe_width=0.4
             left_anchor=center_point-direction_vector*separation/2
             right_anchor=center_point+direction_vector*separation/2
+            anchors=[left_anchor,left_anchor,right_anchor,right_anchor]
+            lobe_directions=[
+                PI-tilt_angle,
+                PI+tilt_angle,
+                tilt_angle,
+                -tilt_angle,
+            ]
         else:
             direction=frame["direction"]
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
             direction_vector,normal_vector=_direction_frame(direction)
-            left_anchor=center_point+direction_vector*(frame["start_outer"]-_DEFAULT_CURVE_GAP)
-            right_anchor=center_point+direction_vector*(frame["end_outer"]+_DEFAULT_CURVE_GAP)
+            start_text=frame["start_text"]
+            end_text=frame["end_text"]
+            anchors=[
+                start_text.get_corner(UL),
+                start_text.get_corner(DL),
+                end_text.get_corner(UR),
+                end_text.get_corner(DR),
+            ]
+            lobe_directions=[
+                PI-tilt_angle,
+                PI+tilt_angle,
+                tilt_angle,
+                -tilt_angle,
+            ]
             if lobe_length is None:
-                lobe_length=max(0.6,1.2*frame["max_axis_half"])
+                lobe_length=max(0.7,1.5*frame["max_axis_half"])
             if lobe_width is None:
-                lobe_width=max(0.4,frame["max_normal_half"])
+                lobe_width=max(0.35,1.0*frame["max_normal_half"])
             _lift_text(text1)
             _lift_text(text2)
 
@@ -973,25 +1033,27 @@ class PiAntiBondPP(VGroup):
         tip_offset=max(2*_DEFAULT_CURVE_GAP,0.25*lobe_width)
         self.lobes=[]
         lobe_index=0
-        for anchor,base_direction in ((left_anchor,PI),(right_anchor,0.)):
-            for sign in (1,-1):
-                lobe_direction=base_direction+sign*tilt_angle
-                lobe_direction_vector=np.array([np.cos(lobe_direction),np.sin(lobe_direction),0])
-                lobe_center=anchor+lobe_direction_vector*tip_offset
-                lobe=_outward_oval_lobe(reference_center=center_point,tip=lobe_center,
-                                         outward_direction=lobe_direction,
-                                         length=lobe_length,width=lobe_width,
-                                         color=colors[lobe_index],opacity=opacities[lobe_index],
-                                         stroke_width=stroke_width,text_buff=text_buff,**kwargs)
-                self.lobes.append(lobe)
-                self.add(lobe)
-                lobe_index+=1
+        for anchor,lobe_direction in zip(anchors,lobe_directions):
+            lobe_direction_vector=np.array([np.cos(lobe_direction),np.sin(lobe_direction),0])
+            lobe_center=anchor+lobe_direction_vector*tip_offset
+            lobe=_outward_oval_lobe(reference_center=center_point,tip=lobe_center,
+                                     outward_direction=lobe_direction,
+                                     length=lobe_length,width=lobe_width,
+                                     color=colors[lobe_index],opacity=opacities[lobe_index],
+                                     stroke_width=stroke_width,text_buff=text_buff,**kwargs)
+            self.lobes.append(lobe)
+            self.add(lobe)
+            lobe_index+=1
 
         self.center_point=center_point
         self.direction=direction
-        self.left_anchor=left_anchor
-        self.right_anchor=right_anchor
-        self.separation=float(np.linalg.norm(right_anchor-left_anchor))
+        self.left_anchor=anchors[0]
+        self.right_anchor=anchors[2]
+        self.upper_left_anchor=anchors[0]
+        self.lower_left_anchor=anchors[1]
+        self.upper_right_anchor=anchors[2]
+        self.lower_right_anchor=anchors[3]
+        self.separation=float(np.linalg.norm(anchors[2]-anchors[0]))
         self.lobe_length=lobe_length
         self.lobe_width=lobe_width
         self.tilt_angle=tilt_angle
@@ -1043,7 +1105,7 @@ class ElectronCloud(VGroup):
                  text:Mobject|None=None,
                  text1:Mobject|None=None,
                  text2:Mobject|None=None,
-                 text_buff:float=_DEFAULT_TEXT_BUFF,
+                 text_buff:float|None=None,
                  **kwargs):
 
         color=kwargs.pop("color",None)
@@ -1051,20 +1113,23 @@ class ElectronCloud(VGroup):
 
         super().__init__(color=color)
 
+        cloud_kwargs=dict(kwargs)
+        if text_buff is not None:
+            cloud_kwargs["text_buff"]=text_buff
+
         is_molecular=cloud_type in _MOLECULAR_CLOUD_TYPES
         if is_molecular:
             if text is not None:
                 raise ValueError("成键轨道与反键轨道请使用 text1、text2 传入两个原子文本标签。")
-            cloud_kwargs=dict(kwargs)
             cloud_kwargs.update(text1=text1,text2=text2)
             cloud=cloud_type.value(center=center,direction=direction,
                                    color=color,attributes=attributes,
-                                   text_buff=text_buff,**cloud_kwargs)
+                                   **cloud_kwargs)
         else:
             cloud_direction=0. if direction is None else direction
             cloud=cloud_type.value(center=center,direction=cloud_direction,
                                    color=color,attributes=attributes,
-                                   text=text,text_buff=text_buff,**kwargs)
+                                   text=text,**cloud_kwargs)
 
         self.cloud_type=cloud_type
         self.center_point=cloud.center_point
@@ -1072,6 +1137,6 @@ class ElectronCloud(VGroup):
         self.text=text
         self.text1=text1
         self.text2=text2
-        self.text_buff=text_buff
+        self.text_buff=cloud.text_buff
         self.cloud=cloud
         self.add(cloud)

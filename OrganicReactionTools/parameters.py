@@ -32,7 +32,7 @@ default_charge_edge=0.1
 #electron clouds
 electron_cloud_length=bond_length
 """电子云单瓣卵形线长度"""
-electron_cloud_width=0.7*bond_length
+electron_cloud_width=0.55*bond_length
 """电子云单瓣卵形线宽度"""
 electron_cloud_radius=0.5*bond_length
 """s轨道电子云半径"""
