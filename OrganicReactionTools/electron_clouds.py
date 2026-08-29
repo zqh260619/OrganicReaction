@@ -398,7 +398,6 @@ class POrbital(VGroup):
 
         center_point=_resolve_center(center,text)
         direction_vector,_=_direction_frame(direction)
-        text_radius=_text_radius(text,text_buff)
         if separation is None:
             separation=_separation_default(text=text,text_buff=text_buff,base=_DEFAULT_CURVE_GAP)
         if length is None or width is None:
@@ -468,7 +467,6 @@ class HybridOrbital(VGroup):
 
         center_point=_resolve_center(center,text)
         direction_vector,_=_direction_frame(direction)
-        text_radius=_text_radius(text,text_buff)
         if separation is None:
             separation=_separation_default(text=text,text_buff=text_buff,base=_DEFAULT_CURVE_GAP)
         if length is None or width is None:
@@ -551,7 +549,6 @@ class SigmaBondSS(Ellipse):
         if frame is None:
             center_point=_resolve_center(center,None)
             direction=0. if direction is None else direction
-            pos=0.
             if length is None:
                 length=electron_cloud_length*0.8
             if width is None:
@@ -559,7 +556,6 @@ class SigmaBondSS(Ellipse):
         else:
             direction=frame["direction"]
             base_center=frame["center_point"] if center is None else np.array(center,dtype=float)
-            direction_vector,normal_vector=_direction_frame(direction)
             if length is None:
                 length=0.8*max(electron_cloud_length,
                                frame["end_outer"]-frame["start_outer"]+2*text_buff)
@@ -575,7 +571,6 @@ class SigmaBondSS(Ellipse):
         if width<=0:
             raise ValueError(f"width 必须大于 0，实际为 {width}。")
 
-        direction_vector,normal_vector=_direction_frame(direction)
         kwargs=_clean_style_kwargs(kwargs)
 
         super().__init__(width=length,height=width,color=color,stroke_width=stroke_width,
@@ -626,7 +621,7 @@ class SigmaAntiBondSS(VGroup):
         if frame is None:
             center_point=_resolve_center(center,None)
             direction=0. if direction is None else direction
-            direction_vector,normal_vector=_direction_frame(direction)
+            direction_vector,_=_direction_frame(direction)
             if separation is None:
                 separation=0.3
             if length is None or width is None:
@@ -640,7 +635,7 @@ class SigmaAntiBondSS(VGroup):
         else:
             direction=frame["direction"]
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
-            direction_vector,normal_vector=_direction_frame(direction)
+            direction_vector,_=_direction_frame(direction)
             use_explicit_tips=False
             if separation is None:
                 left_tip_pos=frame["start_inner"]+_DEFAULT_CURVE_GAP
@@ -717,7 +712,7 @@ class SigmaBondPP(VGroup):
         if frame is None:
             center_point=_resolve_center(center,None)
             direction=0. if direction is None else direction
-            direction_vector,normal_vector=_direction_frame(direction)
+            direction_vector,_=_direction_frame(direction)
             middle_center=center_point
             if middle_length is None:
                 middle_length=electron_cloud_length*0.8
@@ -732,7 +727,7 @@ class SigmaBondPP(VGroup):
         else:
             direction=frame["direction"]
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
-            direction_vector,normal_vector=_direction_frame(direction)
+            direction_vector,_=_direction_frame(direction)
             middle_pos,inner_middle_length=_inner_ellipse_geometry(frame)
             middle_center=center_point+direction_vector*middle_pos
             if middle_width is None:
@@ -831,7 +826,7 @@ class SigmaBondSP(VGroup):
         if frame is None:
             center_point=_resolve_center(center,None)
             direction=0. if direction is None else direction
-            direction_vector,normal_vector=_direction_frame(direction)
+            direction_vector,_=_direction_frame(direction)
             if separation is None:
                 separation=_separation_default(text=None,text_buff=text_buff,base=_DEFAULT_CURVE_GAP)
             if length is None or width is None:
@@ -845,7 +840,7 @@ class SigmaBondSP(VGroup):
         else:
             direction=frame["direction"]
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
-            direction_vector,normal_vector=_direction_frame(direction)
+            direction_vector,_=_direction_frame(direction)
             use_explicit_tips=False
             if separation is None:
                 # 大瓣尖端向另一侧靠近，使大瓣整体更贴近键中心
@@ -998,7 +993,7 @@ class PiAntiBondPP(VGroup):
         if frame is None:
             center_point=_resolve_center(center,None)
             direction=0. if direction is None else direction
-            direction_vector,normal_vector=_direction_frame(direction)
+            direction_vector,_=_direction_frame(direction)
             if separation is None:
                 separation=electron_cloud_length
             if lobe_length is None:
@@ -1017,7 +1012,6 @@ class PiAntiBondPP(VGroup):
         else:
             direction=frame["direction"]
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
-            direction_vector,normal_vector=_direction_frame(direction)
             start_text=frame["start_text"]
             end_text=frame["end_text"]
             anchors=[
@@ -1108,15 +1102,20 @@ class ElectronCloud(VGroup):
     图形类，包装器负责记录 center、direction 等元数据并把生成的
     图形加入自身。
 
-    原子轨道与杂化轨道通过 text 传入一个原子文本标签；所有成键
-    轨道与反键轨道通过 text1、text2 传入两个原子文本标签，中心与
-    方向会根据标签自动确定，图形尺寸也会自动调整以避免覆盖标签。
+    简化标签传入方式：统一使用 texts 参数。
+
+    - 原子轨道/杂化轨道：texts 传入一个文本标签
+    - 成键轨道/反键轨道：texts 传入两个文本标签
+
+    中心与方向会根据标签自动确定，图形尺寸也会自动调整。
+    text、text1、text2 仍保留用于向后兼容。
     """
     def __init__(self,*,
                  cloud_type:ElectronCloudType,
                  center:Vector3D|None=None,
                  direction:float|None=None,
                  attributes:'AttributeHolder'=DEFAULT_ATTRIBUTES,
+                 texts:Mobject|list[Mobject]|None=None,
                  text:Mobject|None=None,
                  text1:Mobject|None=None,
                  text2:Mobject|None=None,
@@ -1133,9 +1132,23 @@ class ElectronCloud(VGroup):
             cloud_kwargs["text_buff"]=text_buff
 
         is_molecular=cloud_type in _MOLECULAR_CLOUD_TYPES
+        if texts is not None:
+            if isinstance(texts,Mobject):
+                texts=[texts]
+            else:
+                texts=list(texts)
+            if is_molecular:
+                if len(texts)!=2:
+                    raise ValueError("成键轨道与反键轨道需要通过 texts 传入两个原子文本标签。")
+                text1,text2=texts
+            else:
+                if len(texts)!=1:
+                    raise ValueError("原子轨道与杂化轨道需要通过 texts 传入一个原子文本标签。")
+                text=texts[0]
+
         if is_molecular:
             if text is not None:
-                raise ValueError("成键轨道与反键轨道请使用 text1、text2 传入两个原子文本标签。")
+                raise ValueError("成键轨道与反键轨道请通过 texts 传入两个原子文本标签。")
             cloud_kwargs.update(text1=text1,text2=text2)
             cloud=cloud_type.value(center=center,direction=direction,
                                    color=color,attributes=attributes,
@@ -1149,6 +1162,7 @@ class ElectronCloud(VGroup):
         self.cloud_type=cloud_type
         self.center_point=cloud.center_point
         self.direction=cloud.direction
+        self.texts=texts if texts is not None else ([text] if text is not None else [text1,text2] if text1 is not None and text2 is not None else None)
         self.text=text
         self.text1=text1
         self.text2=text2
