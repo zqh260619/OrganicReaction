@@ -722,7 +722,7 @@ class SigmaBondPP(VGroup):
             if middle_length is None:
                 middle_length=electron_cloud_length*0.8
             if middle_width is None:
-                middle_width=0.32
+                middle_width=0.256
             if lobe_length is None:
                 lobe_length=0.3
             if lobe_width is None:
@@ -736,17 +736,32 @@ class SigmaBondPP(VGroup):
             middle_pos,inner_middle_length=_inner_ellipse_geometry(frame)
             middle_center=center_point+direction_vector*middle_pos
             if middle_width is None:
-                middle_width=0.8*max(0.5,2.4*frame["max_normal_half"])
+                # 短轴在整体 0.8 倍的基础上再缩短为 0.8 倍
+                middle_width_base=0.8*max(0.5,2.4*frame["max_normal_half"])
+                middle_width=0.8*middle_width_base
             if middle_length is None:
-                # 长轴必须沿键轴，因此键轴方向长度要大于垂直方向宽度；
-                # 同时整体缩小为原来的 0.8 倍，避免与文本标签重合。
-                middle_length=0.8*max(inner_middle_length,1.3*middle_width)
+                # 长轴基于缩短前的短轴计算，避免短轴调整时把长轴一并缩短
+                middle_length=0.8*max(inner_middle_length,1.3*middle_width_base)
             if lobe_length is None:
                 lobe_length=0.6*max(0.4,1.5*frame["max_axis_half"])
             if lobe_width is None:
                 lobe_width=0.6*max(0.3,1.1*frame["max_normal_half"])
-            left_tip=center_point+direction_vector*(frame["start_outer"]-_DEFAULT_CURVE_GAP)
-            right_tip=center_point+direction_vector*(frame["end_outer"]+_DEFAULT_CURVE_GAP)
+            start_corners=[
+                frame["start_text"].get_corner(UL),
+                frame["start_text"].get_corner(UR),
+                frame["start_text"].get_corner(DL),
+                frame["start_text"].get_corner(DR),
+            ]
+            end_corners=[
+                frame["end_text"].get_corner(UL),
+                frame["end_text"].get_corner(UR),
+                frame["end_text"].get_corner(DL),
+                frame["end_text"].get_corner(DR),
+            ]
+            left_outer=min(float(np.dot(corner-center_point,direction_vector)) for corner in start_corners)
+            right_outer=max(float(np.dot(corner-center_point,direction_vector)) for corner in end_corners)
+            left_tip=center_point+direction_vector*(left_outer-0.02)
+            right_tip=center_point+direction_vector*(right_outer+0.02)
             _lift_text(text1)
             _lift_text(text2)
 
