@@ -599,3 +599,47 @@ class test(Scene):
                   Transform(C3_H3_bond,C3_H3_bond_original),
                   run_time=1.0,rate_func=smoothererstep)
         self.wait(1.0)
+
+        #让现有结构式消失，显示另一种样式的丙酮
+        self.play(FadeOut(acetone),run_time=1)
+
+        acetone2=StructuralFormula(name="C1",pos=ORIGIN,text=r"\mathrm{C}")
+        acetone2.add_atom(name="O1",direction=0*DEGREES,text=r"\mathrm{O}",
+                          bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
+        acetone2.add_atom(name="C2",direction=135*DEGREES,text=None,
+                          bond_type=BondType.IN_BOND,adjacency="C1")
+        acetone2.add_atom(name="C3",direction=210*DEGREES,text=r"\mathrm{C}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        acetone2.add_atom(name="H1",direction=105*DEGREES,text=r"\mathrm{H}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C3")
+        acetone2.add_atom(name="H2",direction=195*DEGREES,text=r"\mathrm{H}",
+                          bond_type=BondType.IN_BOND,adjacency="C3")
+        acetone2.add_atom(name="H3",direction=255*DEGREES,text=r"\mathrm{H}",
+                          bond_type=BondType.OUT_BOND,adjacency="C3")
+
+        self.play(Create(acetone2))
+        self.wait(1.5)
+
+        #碳氧双键的p-p pi反键轨道电子云
+        C1_mob=acetone2.atomic_clusters["C1"][Mobject]
+        O1_mob=acetone2.atomic_clusters["O1"][Mobject]
+        pi_star_cloud=ElectronCloud(cloud_type=ElectronCloudType.PI_ANTIBOND_PP,
+                                    texts=[C1_mob,O1_mob],
+                                    direction=0*DEGREES,
+                                    attributes=acetone2.attributes,
+                                    lobe_colors=[BLUE,RED,RED,BLUE],
+                                    tilt_angle=75*DEGREES,
+                                    opacity=0.6)
+
+        #朝向左上的C-H单键的s-p成键轨道电子云
+        C3_mob=acetone2.atomic_clusters["C3"][Mobject]
+        H1_mob=acetone2.atomic_clusters["H1"][Mobject]
+        sigma_sp_cloud=ElectronCloud(cloud_type=ElectronCloudType.SIGMA_BOND_SP,
+                                     texts=[C3_mob,H1_mob],
+                                     direction=285*DEGREES,
+                                     attributes=acetone2.attributes,
+                                     lobe_colors=[BLUE,RED],
+                                     opacity=0.6)
+
+        self.play(FadeIn(pi_star_cloud),FadeIn(sigma_sp_cloud))
+        self.wait(1.5)
