@@ -878,11 +878,31 @@ class SigmaBondSP(VGroup):
                                            stroke_width=stroke_width,text_buff=text_buff,**kwargs)
         self.add(self.large_lobe,self.small_lobe)
 
-        self.center_point=center_point
+        if frame is not None:
+            # 默认几何：两瓣共同以右侧原子中心为位似中心，缩小为原来的 3/4
+            scale_center=np.array(frame["end_text"].get_center(),dtype=float)
+            self.scale_factor=0.75
+            self.scale_center=scale_center
+            self.scale(self.scale_factor,about_point=scale_center)
+            for lobe in (self.large_lobe,self.small_lobe):
+                lobe.center_point=scale_center+(lobe.center_point-scale_center)*self.scale_factor
+                lobe.tip_point=scale_center+(lobe.tip_point-scale_center)*self.scale_factor
+                lobe.round_end_point=scale_center+(lobe.round_end_point-scale_center)*self.scale_factor
+                lobe.length*=self.scale_factor
+                lobe.lobe_width*=self.scale_factor
+            self.center_point=scale_center
+            self.separation=separation*self.scale_factor
+            self.length=length*self.scale_factor
+            self.lobe_width=width*self.scale_factor
+        else:
+            self.scale_factor=1.0
+            self.scale_center=np.array(center_point,dtype=float)
+            self.center_point=center_point
+            self.separation=separation
+            self.length=length
+            self.lobe_width=width
+
         self.direction=direction
-        self.separation=separation
-        self.length=length
-        self.lobe_width=width
         self.small_ratio=small_ratio
         self.lobe_colors=colors
         self.lobe_opacities=opacities
