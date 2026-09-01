@@ -629,7 +629,7 @@ class test(Scene):
                                     attributes=acetone2.attributes,
                                     lobe_colors=[BLUE,RED,RED,BLUE],
                                     tilt_angle=75*DEGREES,
-                                    opacity=0.6)
+                                    opacity=0.3)
 
         #朝向左上的C-H单键的s-p成键轨道电子云
         C3_mob=acetone2.atomic_clusters["C3"][Mobject]
@@ -641,5 +641,11 @@ class test(Scene):
                                      lobe_colors=[BLUE,RED],
                                      opacity=0.6)
 
-        self.play(FadeIn(pi_star_cloud),FadeIn(sigma_sp_cloud))
+        pi_star_label=MathTex(r"\mathrm{C=O}\ \pi^*",color=WHITE,font_size=22.5)
+        pi_star_label.move_to(pi_star_cloud.get_corner(UR)+0.2*UR)
+        sigma_label=MathTex(r"\mathrm{C-H}\ \sigma",color=WHITE,font_size=22.5)
+        sigma_label.move_to(sigma_sp_cloud.get_corner(UL)+0.2*UL)
+
+        self.play(FadeIn(pi_star_cloud),FadeIn(sigma_sp_cloud),
+                  FadeIn(pi_star_label),FadeIn(sigma_label))
         self.wait(1.5)
