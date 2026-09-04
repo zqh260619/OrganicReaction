@@ -49,11 +49,21 @@ class InBond(VGroup):
         super().__init__(*lines)
 
 class DashedBond(DashedLine):
-    def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder'):
+    """过渡态虚键。
 
+    length=None 时按旧约定绘制固定标称长度
+    ``length_global*ratio_transition_state_dashedbond``（过渡态虚键比成键略长）；
+    length 显式给定时按该长度精确绘制。经 Bond 包装器构造时
+    会自动传入 start 与 end 的真实距离，使虚键画到指定端点。
+    """
+    def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,
+                 attributes:'AttributeHolder',length:float|None=None):
+
+        if length is None:
+            length=attributes.length_global*attributes.ratio_transition_state_dashedbond
         start_point=start+np.array([np.cos(direction),np.sin(direction),0])*attributes.edge_global*start_edge
         end_point=start+np.array([np.cos(direction),np.sin(direction),0])*\
-            (attributes.length_global*attributes.ratio_transition_state_dashedbond-attributes.edge_global*end_edge)
+            (length-attributes.edge_global*end_edge)
         super().__init__(color=attributes.color,start=start_point,end=end_point,
                        dash_length=attributes.dashed_length_dashedbond,
                        dashed_ratio=attributes.dashed_ratio_dashedbond)
@@ -181,6 +191,12 @@ class Bond(VGroup):
                                       start_edge=self.start_edge,end_edge=self.end_edge,
                                       attributes=attributes,
                                       side=side,start_side_edge=start_side_edge,end_side_edge=end_side_edge)
+        elif bond_type==BondType.DASHED_BOND:
+            # 虚键常用于超共轭等非标准长度的连接线，按 start 与 end 的真实距离绘制
+            bond=self.bond_type.value(start=self.start,direction=self.direction,
+                                      length=float(np.linalg.norm(angle_vector)),
+                                      start_edge=self.start_edge,end_edge=self.end_edge,
+                                      attributes=attributes)
         else:
             bond=self.bond_type.value(start=self.start,direction=self.direction,
                                       start_edge=self.start_edge,end_edge=self.end_edge,

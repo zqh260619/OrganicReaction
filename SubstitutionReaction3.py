@@ -655,10 +655,12 @@ class test(Scene):
         hc_1_1=Bond(bond_type=BondType.DASHED_BOND,
                     start=acetone2.atomic_clusters["H1"]["pos"],
                     end=left_center,
+                    end_edge=False,
                     attributes=DEFAULT_ATTRIBUTES)
         hc_1_2=Bond(bond_type=BondType.DASHED_BOND,
                     start=left_center,
                     end=right_center,
+                    end_edge=False,
                     attributes=DEFAULT_ATTRIBUTES)
         
         self.play(Create(hc_1_1))

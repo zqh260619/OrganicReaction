@@ -147,8 +147,9 @@ class RotateAtoms(Animation):
             geo.put_start_and_end_on(sp,ep)
 
         elif bt==BondType.DASHED_BOND:
+            # 与 Bond 包装器的契约一致：虚键按两端点真实距离重建
             sp=start+dv*attrs.edge_global*se
-            ep=start+dv*(attrs.length_global*attrs.ratio_transition_state_dashedbond-attrs.edge_global*ee)
+            ep=start+dv*(float(np.linalg.norm(angle_vector))-attrs.edge_global*ee)
             geo.put_start_and_end_on(sp,ep)
 
         elif bt==BondType.OUT_BOND:
