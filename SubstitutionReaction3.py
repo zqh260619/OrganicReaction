@@ -641,11 +641,27 @@ class test(Scene):
                                      lobe_colors=[BLUE,RED],
                                      opacity=0.6)
 
-        pi_star_label=MathTex(r"\mathrm{C=O}\ \pi^*",color=WHITE,font_size=22.5)
+        pi_star_label=MathTex(r"\mathrm{C=O}\pi^*",color=WHITE,font_size=22.5)
         pi_star_label.move_to(pi_star_cloud.get_corner(UR)+0.2*UR)
-        sigma_label=MathTex(r"\mathrm{C-H}\ \sigma",color=WHITE,font_size=22.5)
+        sigma_label=MathTex(r"\mathrm{C-H}\sigma",color=WHITE,font_size=22.5)
         sigma_label.move_to(sigma_sp_cloud.get_corner(UL)+0.2*UL)
 
         self.play(FadeIn(pi_star_cloud),FadeIn(sigma_sp_cloud),
                   FadeIn(pi_star_label),FadeIn(sigma_label))
+
+        #Hyperconjugation
+        left_center=acetone2.atomic_clusters["H1"]["pos"]+np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])*DEFAULT_ATTRIBUTES.length_global
+        right_center=[DEFAULT_ATTRIBUTES.length_global-left_center[0],left_center[1],0]
+        hc_1_1=Bond(bond_type=BondType.DASHED_BOND,
+                    start=acetone2.atomic_clusters["H1"]["pos"],
+                    end=left_center,
+                    attributes=DEFAULT_ATTRIBUTES)
+        hc_1_2=Bond(bond_type=BondType.DASHED_BOND,
+                    start=left_center,
+                    end=right_center,
+                    attributes=DEFAULT_ATTRIBUTES)
+        
+        self.play(Create(hc_1_1))
+        self.play(Create(hc_1_2))
+
         self.wait(1.5)

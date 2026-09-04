@@ -996,7 +996,7 @@ class PiAntiBondPP(VGroup):
                  separation:float|None=None,
                  lobe_length:float|None=None,
                  lobe_width:float|None=None,
-                 tilt_angle:float=np.pi/3,
+                 tilt_angle:float=np.pi*75/180,
                  color:ManimColor|None=None,
                  opacity:float=1.0,
                  lobe_colors:list[ManimColor|None]|None=None,
@@ -1017,9 +1017,9 @@ class PiAntiBondPP(VGroup):
             if separation is None:
                 separation=electron_cloud_length
             if lobe_length is None:
-                lobe_length=0.6
+                lobe_length=0.72
             if lobe_width is None:
-                lobe_width=0.4
+                lobe_width=0.48
             left_anchor=center_point-direction_vector*separation/2
             right_anchor=center_point+direction_vector*separation/2
             anchors=[left_anchor,left_anchor,right_anchor,right_anchor]
@@ -1034,22 +1034,34 @@ class PiAntiBondPP(VGroup):
             center_point=frame["center_point"] if center is None else np.array(center,dtype=float)
             start_text=frame["start_text"]
             end_text=frame["end_text"]
-            anchors=[
-                start_text.get_corner(UL),
-                start_text.get_corner(DL),
-                end_text.get_corner(UR),
-                end_text.get_corner(DR),
-            ]
             lobe_directions=[
                 PI-tilt_angle,
                 PI+tilt_angle,
                 tilt_angle,
                 -tilt_angle,
             ]
+
+            def anchor_on_ray(center, direction, text):
+                center=np.array(center,dtype=float)
+                direction_vector=np.array([np.cos(direction),np.sin(direction),0])
+                corners=[
+                    text.get_corner(UL),text.get_corner(UR),
+                    text.get_corner(DL),text.get_corner(DR),
+                ]
+                distances=[max(0.,float(np.dot(np.array(corner)-center,direction_vector)))
+                           for corner in corners]
+                return center+direction_vector*(max(distances)+0.02)
+
+            anchors=[
+                anchor_on_ray(start_text.get_center(),lobe_directions[0],start_text),
+                anchor_on_ray(start_text.get_center(),lobe_directions[1],start_text),
+                anchor_on_ray(end_text.get_center(),lobe_directions[2],end_text),
+                anchor_on_ray(end_text.get_center(),lobe_directions[3],end_text),
+            ]
             if lobe_length is None:
-                lobe_length=max(0.7,1.5*frame["max_axis_half"])
+                lobe_length=1.2*max(0.7,1.5*frame["max_axis_half"])
             if lobe_width is None:
-                lobe_width=max(0.35,1.0*frame["max_normal_half"])
+                lobe_width=1.2*max(0.35,1.0*frame["max_normal_half"])
             _lift_text(text1)
             _lift_text(text2)
 
