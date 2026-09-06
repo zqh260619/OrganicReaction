@@ -667,3 +667,35 @@ class test(Scene):
         self.play(Create(hc_1_2))
 
         self.wait(1.5)
+
+        #左上的C-H键不透明度降为0.3再恢复，表现σ(C-H)电子向π*离域
+        C3_H1_bond=acetone2.bond_lookup.between("C3","H1")
+        self.play(C3_H1_bond.animate(rate_func=there_and_back).set_stroke(opacity=0.3),
+                  run_time=1.5)
+
+        #淡出屏幕上除标题、副标题与底部描述文本以外的所有对象
+        fade_mobjects=[m for m in self.mobjects
+                       if not isinstance(m,(Title,Subtitle,Description))]
+        self.play(FadeOut(*fade_mobjects),run_time=1)
+
+        #显示丙酮骨架：中心C不带标签，上方经双键连接O，左右偏下30°各有一个不带标签的C，右侧C的右上30°连接H
+        acetone3=StructuralFormula(name="C1",pos=ORIGIN,text=None)
+        acetone3.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
+                          bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
+        acetone3.add_atom(name="C2",direction=210*DEGREES,text=None,
+                          bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        acetone3.add_atom(name="C3",direction=330*DEGREES,text=None,
+                          bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        acetone3.add_atom(name="H1",direction=30*DEGREES,text=r"\mathrm{H}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C3")
+        self.play(Create(acetone3))
+        self.wait(1)
+
+        #其右侧显示B^-
+        B_pos=acetone3.atomic_clusters["H1"]["pos"]+np.array([np.cos(0*DEGREES),np.sin(0*DEGREES),0])*acetone3.attributes.length_global
+        B_mob=AtomicCluster(text=r"\mathrm{B}",pos=B_pos,attributes=acetone3.attributes)
+        acetone3.register_atom(name="B",mobject=B_mob)
+        acetone3.add_charge(text="B",pos=UR,charge_type=ChargeType.NEGATIVE)
+        B_negative=acetone3.charges["B"]
+        self.play(FadeIn(B_mob),FadeIn(B_negative))
+        self.wait(1.5)
