@@ -699,3 +699,42 @@ class test(Scene):
         B_negative=acetone3.charges["B"]
         self.play(FadeIn(B_mob),FadeIn(B_negative))
         self.wait(1.5)
+
+        #B^-的负电荷进攻H，变换为B-H键
+        B_H_bond=acetone3.build_bond(start="B",end="H1",bond_type=BondType.NORMAL_BOND)
+        step_B_attack=ElectronMigrationStep(
+            replace=[(B_negative,B_H_bond)],
+        )
+        self.play(acetone3.electron_migration(steps=[step_B_attack],run_time=1.5))
+
+        #C-H键变换为右侧C右上方的负电荷
+        C3_H1_bond=acetone3.bond_lookup.between("C3","H1")
+        C3_negative=acetone3.build_charge(text="C3",
+                                          pos=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0]),
+                                          charge_type=ChargeType.NEGATIVE_COORDINATE)
+        step_CH_to_Cneg=ElectronMigrationStep(
+            replace=[(C3_H1_bond,C3_negative)],
+        )
+        self.play(acetone3.electron_migration(steps=[step_CH_to_Cneg],run_time=1.5))
+        self.wait(1.5)
+
+        #BH消失
+        H1_mob=acetone3.atomic_clusters["H1"][Mobject]
+        self.play(FadeOut(B_mob,H1_mob,B_H_bond))
+        acetone3.delete_atom(names=["B","H1"])
+
+        #互变异构：C负电荷+C-C单键变为双键，C=O双键变为单键和O负电荷
+        C1_C3_single=acetone3.bond_lookup.between("C1","C3")
+        C1_O1_double=acetone3.bond_lookup.between("C1","O1")
+
+        C1_C3_double=acetone3.build_bond(start="C1",end="C3",bond_type=BondType.DOUBLE_BOND,side=1,
+                                          start_side_edge=True,end_side_edge=True)
+        C1_O1_single=acetone3.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
+        O1_negative=acetone3.build_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        step_tautomerization=ElectronMigrationStep(
+            replace=[(VGroup(C1_C3_single,C3_negative),C1_C3_double),
+                     (C1_O1_double,VGroup(C1_O1_single,O1_negative))],
+        )
+        self.play(acetone3.electron_migration(steps=[step_tautomerization],run_time=1.5))
+        self.wait(1.5)
