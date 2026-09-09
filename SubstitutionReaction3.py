@@ -700,22 +700,17 @@ class test(Scene):
         self.play(FadeIn(B_mob),FadeIn(B_negative))
         self.wait(1.5)
 
-        #B^-的负电荷进攻H，变换为B-H键
+        #B^-的负电荷进攻H，同时C-H键的电子转移到右侧C上
         B_H_bond=acetone3.build_bond(start="B",end="H1",bond_type=BondType.NORMAL_BOND)
-        step_B_attack=ElectronMigrationStep(
-            replace=[(B_negative,B_H_bond)],
-        )
-        self.play(acetone3.electron_migration(steps=[step_B_attack],run_time=1.5))
-
-        #C-H键变换为右侧C右上方的负电荷
         C3_H1_bond=acetone3.bond_lookup.between("C3","H1")
         C3_negative=acetone3.build_charge(text="C3",
                                           pos=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0]),
                                           charge_type=ChargeType.NEGATIVE_COORDINATE)
-        step_CH_to_Cneg=ElectronMigrationStep(
-            replace=[(C3_H1_bond,C3_negative)],
+        step_B_attack=ElectronMigrationStep(
+            replace=[(B_negative,B_H_bond),
+                     (C3_H1_bond,C3_negative)],
         )
-        self.play(acetone3.electron_migration(steps=[step_CH_to_Cneg],run_time=1.5))
+        self.play(acetone3.electron_migration(steps=[step_B_attack],run_time=1.5))
         self.wait(1.5)
 
         #BH消失
