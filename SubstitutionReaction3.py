@@ -738,3 +738,45 @@ class test(Scene):
         )
         self.play(acetone3.electron_migration(steps=[step_tautomerization],run_time=1.5))
         self.wait(1.5)
+
+        #在右侧C的右上30°显示E-X分子
+        C3_pos=acetone3.atomic_clusters["C3"]["pos"]
+        E_pos=C3_pos+np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])*acetone3.attributes.length_global
+
+        EX_mol=StructuralFormula(name="E",pos=E_pos,text=r"\mathrm{E}")
+        EX_mol.add_atom(name="X",direction=0*DEGREES,text=r"\mathrm{X}",
+                        bond_type=BondType.NORMAL_BOND,adjacency="E")
+        EX_original=EX_mol.copy()
+
+        self.play(FadeIn(EX_mol))
+        self.wait(0.5)
+
+        #1 Br-Br
+        BrBr_mol=StructuralFormula(name="Br1",pos=E_pos,text=r"\mathrm{Br}")
+        BrBr_mol.add_atom(name="Br2",direction=0*DEGREES,text=r"\mathrm{Br}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="Br1")
+        self.play(ReplacementTransform(EX_mol,BrBr_mol),run_time=1.2)
+        self.wait(0.5)
+
+        #2 CH3-I
+        CH3I_mol=StructuralFormula(name="CH3",pos=E_pos,text=r"\mathrm{CH_3}",
+                                   text_offset=np.array([-0.3,-0.03,0]))
+        CH3I_mol.add_atom(name="I",direction=0*DEGREES,text=r"\mathrm{I}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="CH3")
+        self.play(ReplacementTransform(BrBr_mol,CH3I_mol),run_time=1.2)
+        self.wait(0.5)
+
+        #3 RCHO
+        RCHO_mol=StructuralFormula(name="C",pos=E_pos,text=None)
+        RCHO_mol.add_atom(name="R",direction=120*DEGREES,text=r"\mathrm{R}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C")
+        RCHO_mol.add_atom(name="H",direction=240*DEGREES,text=r"\mathrm{H}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C")
+        RCHO_mol.add_atom(name="O",direction=0*DEGREES,text=r"\mathrm{O}",
+                          bond_type=BondType.DOUBLE_BOND,adjacency="C",side=0)
+        self.play(ReplacementTransform(CH3I_mol,RCHO_mol),run_time=1.2)
+        self.wait(0.5)
+
+        #回到原始的E-X
+        self.play(ReplacementTransform(RCHO_mol,EX_original),run_time=1.2)
+        self.wait(1.5)
