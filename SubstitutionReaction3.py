@@ -776,84 +776,72 @@ class test(Scene):
         self.play(ReplacementTransform(RCHO_mol,EX_original),run_time=1.2)
         self.wait(1.5)
 
-        #O负电荷和C-O单键变为C=O双键；C=C双键变为C-C单键和alphaC-E单键；E-X单键变为X负电荷
-        E_mob=EX_original.atomic_clusters["E"][Mobject]
-        X_mob=EX_original.atomic_clusters["X"][Mobject]
-        E_X_bond=EX_original.bond_lookup.between("E","X")
-        EX_original.remove(E_mob,X_mob,E_X_bond)
+        #将E-X并入acetone3，保证E、X文本标签持续显示
+        E_mob_new=AtomicCluster(text=r"\mathrm{E}",pos=E_pos,attributes=acetone3.attributes)
+        X_pos=EX_original.atomic_clusters["X"]["pos"]
+        X_mob_new=AtomicCluster(text=r"\mathrm{X}",pos=X_pos,attributes=acetone3.attributes)
         self.remove(EX_original)
+        self.add(E_mob_new,X_mob_new)
+        acetone3.register_atom(name="E",mobject=E_mob_new)
+        acetone3.register_atom(name="X",mobject=X_mob_new,
+                               adjacency="E",bond_type=BondType.NORMAL_BOND)
+        E_X_bond_new=acetone3.bond_lookup.between("E","X")
+        self.add(E_X_bond_new)
 
-        acetone3.register_atom(name="E",mobject=E_mob)
-        acetone3.register_atom(name="X",mobject=X_mob)
-        acetone3.register_bond(start="E",end="X",bond=E_X_bond)
-        acetone3.add(E_X_bond)
-
+        #三个正向变化按顺序放在一个electron_migration中
         C1_C3_single_add=acetone3.build_bond(start="C1",end="C3",bond_type=BondType.NORMAL_BOND)
-        C3_E_bond=acetone3.build_bond(start="C3",end="E",bond_type=BondType.NORMAL_BOND)
+        C3_E_bond=Bond(bond_type=BondType.NORMAL_BOND,
+                       start=acetone3.atomic_clusters["C3"]["pos"],
+                       end=E_pos,
+                       start_edge=False,
+                       end_edge=True,
+                       attributes=acetone3.attributes,
+                       atom1="C3",atom2="E")
         C1_O1_double_add=acetone3.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
         X_negative=acetone3.build_charge(text="X",pos=UR,charge_type=ChargeType.NEGATIVE)
 
-        step_E_addition=ElectronMigrationStep(
-            replace=[(C1_C3_double,VGroup(C1_C3_single_add,C3_E_bond)),
-                     (VGroup(C1_O1_single,O1_negative),C1_O1_double_add),
-                     (E_X_bond,X_negative)],
+        step_O_restore=ElectronMigrationStep(
+            replace=[(VGroup(C1_O1_single,O1_negative),C1_O1_double_add)],
         )
-        self.play(acetone3.electron_migration(steps=[step_E_addition],run_time=1.5))
+        step_C_E_add=ElectronMigrationStep(
+            replace=[(C1_C3_double,VGroup(C1_C3_single_add,C3_E_bond))],
+        )
+        step_E_X_leave=ElectronMigrationStep(
+            replace=[(E_X_bond_new,X_negative)],
+        )
+
+        self.play(acetone3.electron_migration(steps=[step_O_restore,step_C_E_add,step_E_X_leave],
+                                              run_time=1.5))
         self.wait(1.5)
         #倒放：从当前状态退回到B^-显示之前
-        #倒放新增的E-X加成动画
+        #倒放三个变化：按相反顺序放在一个electron_migration中
         C1_C3_double_rev_add=acetone3.build_bond(start="C1",end="C3",bond_type=BondType.DOUBLE_BOND,side=1,
                                                  start_side_edge=True,end_side_edge=True)
         C1_O1_single_rev_add=acetone3.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
         O1_negative_rev_add=acetone3.build_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
         E_X_bond_rev=acetone3.build_bond(start="E",end="X",bond_type=BondType.NORMAL_BOND)
 
-        step_rev_E_addition=ElectronMigrationStep(
-            replace=[(VGroup(C1_C3_single_add,C3_E_bond),C1_C3_double_rev_add),
-                     (C1_O1_double_add,VGroup(C1_O1_single_rev_add,O1_negative_rev_add)),
-                     (X_negative,E_X_bond_rev)],
+        step_rev_E_X_bond=ElectronMigrationStep(
+            replace=[(X_negative,E_X_bond_rev)],
         )
-        self.play(acetone3.electron_migration(steps=[step_rev_E_addition],run_time=0.3))
+        step_rev_C_E_add=ElectronMigrationStep(
+            replace=[(VGroup(C1_C3_single_add,C3_E_bond),C1_C3_double_rev_add)],
+        )
+        step_rev_O_restore=ElectronMigrationStep(
+            replace=[(C1_O1_double_add,VGroup(C1_O1_single_rev_add,O1_negative_rev_add))],
+        )
 
-        #将E-X移回独立结构式，继续后续倒放
-        EX_original_rev=StructuralFormula(name="E",pos=E_pos,text=r"\mathrm{E}")
-        EX_original_rev.add_atom(name="X",direction=0*DEGREES,text=r"\mathrm{X}",
-                                 bond_type=BondType.NORMAL_BOND,adjacency="E")
-        EX_group_rev=VGroup(E_mob,X_mob,E_X_bond_rev)
-        self.play(ReplacementTransform(EX_group_rev,EX_original_rev),run_time=0.2)
+        self.play(acetone3.electron_migration(steps=[step_rev_E_X_bond,step_rev_C_E_add,step_rev_O_restore],
+                                              run_time=0.3))
+
+        #E、X标签消失，从acetone3中移除
+        self.play(FadeOut(E_mob_new,X_mob_new,E_X_bond_rev),run_time=0.2)
         acetone3.delete_atom(names=["E","X"])
-        EX_original=EX_original_rev
+        self.remove(E_mob_new,X_mob_new,E_X_bond_rev)
 
         C1_C3_double=C1_C3_double_rev_add
         C1_O1_single=C1_O1_single_rev_add
         O1_negative=O1_negative_rev_add
-        #倒放E-X的ReplacementTransform
-        RCHO_rev=StructuralFormula(name="C",pos=E_pos,text=None)
-        RCHO_rev.add_atom(name="R",direction=120*DEGREES,text=r"\mathrm{R}",
-                          bond_type=BondType.NORMAL_BOND,adjacency="C")
-        RCHO_rev.add_atom(name="H",direction=240*DEGREES,text=r"\mathrm{H}",
-                          bond_type=BondType.NORMAL_BOND,adjacency="C")
-        RCHO_rev.add_atom(name="O",direction=0*DEGREES,text=r"\mathrm{O}",
-                          bond_type=BondType.DOUBLE_BOND,adjacency="C",side=0)
-
-        CH3I_rev=StructuralFormula(name="CH3",pos=E_pos,text=r"\mathrm{CH_3}",
-                                   text_offset=np.array([0.3,-0.03,0]))
-        CH3I_rev.add_atom(name="I",direction=0*DEGREES,text=r"\mathrm{I}",
-                          bond_type=BondType.NORMAL_BOND,adjacency="CH3")
-
-        BrBr_rev=StructuralFormula(name="Br1",pos=E_pos,text=r"\mathrm{Br}")
-        BrBr_rev.add_atom(name="Br2",direction=0*DEGREES,text=r"\mathrm{Br}",
-                          bond_type=BondType.NORMAL_BOND,adjacency="Br1")
-
-        EX_rev=StructuralFormula(name="E",pos=E_pos,text=r"\mathrm{E}")
-        EX_rev.add_atom(name="X",direction=0*DEGREES,text=r"\mathrm{X}",
-                        bond_type=BondType.NORMAL_BOND,adjacency="E")
-
-        self.play(ReplacementTransform(EX_original,RCHO_rev),run_time=0.24)
-        self.play(ReplacementTransform(RCHO_rev,CH3I_rev),run_time=0.24)
-        self.play(ReplacementTransform(CH3I_rev,BrBr_rev),run_time=0.24)
-        self.play(ReplacementTransform(BrBr_rev,EX_rev),run_time=0.24)
-        self.play(FadeOut(EX_rev),run_time=0.2)
 
         #倒放互变异构
         C1_C3_single_rev=acetone3.build_bond(start="C1",end="C3",bond_type=BondType.NORMAL_BOND)
