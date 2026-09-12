@@ -877,4 +877,31 @@ class test(Scene):
         self.play(FadeOut(B_mob,B_negative_rev),run_time=0.2)
         acetone3.delete_charge(text="B")
         acetone3.delete_atom(names=["B"])
+
+        #O右上30°出现H^+，同时O右上30°出现一对孤对电子
+        O1_pos=acetone3.atomic_clusters["O1"]["pos"]
+        H2_pos=O1_pos+np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])*acetone3.attributes.length_global
+        H2_mob=AtomicCluster(text=r"\mathrm{H}",pos=H2_pos,attributes=acetone3.attributes)
+        acetone3.register_atom(name="H2",mobject=H2_mob)
+        acetone3.add_charge(text="H2",pos=UR,charge_type=ChargeType.POSITIVE)
+        H2_positive=acetone3.charges["H2"]
+
+        acetone3.add_charge(text="O1",pos=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0]),charge_type=ChargeType.PAIR)
+        O1_lone_pair=acetone3.charges["O1"]
+        O1_center=acetone3.atomic_clusters["O1"]["pos"]
+        O1_pair_offset=O1_lone_pair.get_center()-O1_center
+        O1_pair_angle=np.arctan2(O1_pair_offset[1],O1_pair_offset[0])
+        O1_lone_pair.rotate(30*DEGREES-O1_pair_angle,about_point=O1_center)
+
+        self.add(H2_mob,H2_positive,O1_lone_pair)
+        self.play(FadeIn(H2_mob),FadeIn(H2_positive),FadeIn(O1_lone_pair))
+        self.wait(0.5)
+
+        #孤对电子进攻H^+，变换为O-H键，H^+的正电荷消失
+        O1_H2_bond=acetone3.build_bond(start="O1",end="H2",bond_type=BondType.NORMAL_BOND)
+        step_protonation_acetone=ElectronMigrationStep(
+            replace=[(O1_lone_pair,O1_H2_bond)],
+            fadeout=[H2_positive],
+        )
+        self.play(acetone3.electron_migration(steps=[step_protonation_acetone],run_time=1.5))
         self.wait(1.5)
