@@ -1127,6 +1127,11 @@ _MOLECULAR_CLOUD_TYPES={
     ElectronCloudType.PI_ANTIBOND_PP,
 }
 
+_ANTIBONDING_CLOUD_TYPES={
+    ElectronCloudType.SIGMA_ANTIBOND_SS,
+    ElectronCloudType.PI_ANTIBOND_PP,
+}
+
 class ElectronCloud(VGroup):
     """电子云图形包装器。
 
@@ -1141,6 +1146,9 @@ class ElectronCloud(VGroup):
 
     中心与方向会根据标签自动确定，图形尺寸也会自动调整。
     text、text1、text2 仍保留用于向后兼容。
+
+    show_border 控制是否显示边界：默认原子轨道与成键轨道显示边界，
+    反键轨道默认隐藏边界；显式传入 True/False 可覆盖默认行为。
     """
     def __init__(self,*,
                  cloud_type:ElectronCloudType,
@@ -1152,6 +1160,7 @@ class ElectronCloud(VGroup):
                  text1:Mobject|None=None,
                  text2:Mobject|None=None,
                  text_buff:float|None=None,
+                 show_border:bool|None=None,
                  **kwargs):
 
         color=kwargs.pop("color",None)
@@ -1191,6 +1200,12 @@ class ElectronCloud(VGroup):
                                    color=color,attributes=attributes,
                                    text=text,**cloud_kwargs)
 
+        if show_border is None:
+            show_border=cloud_type not in _ANTIBONDING_CLOUD_TYPES
+        if not show_border:
+            for lobe in getattr(cloud,"lobes",[cloud]):
+                lobe.set_stroke(width=0)
+
         self.cloud_type=cloud_type
         self.center_point=cloud.center_point
         self.direction=cloud.direction
@@ -1199,5 +1214,6 @@ class ElectronCloud(VGroup):
         self.text1=text1
         self.text2=text2
         self.text_buff=cloud.text_buff
+        self.show_border=show_border
         self.cloud=cloud
         self.add(cloud)
