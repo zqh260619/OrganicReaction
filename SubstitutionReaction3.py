@@ -917,4 +917,44 @@ class test(Scene):
             fadeout=[H2_positive],
         )
         self.play(acetone3.electron_migration(steps=[step_protonation_acetone],run_time=1.5))
+
+        #右侧alphaH的右侧显示OH_2，并在OH_2左侧显示孤对电子
+        H1_pos=acetone3.atomic_clusters["H1"]["pos"]
+        OH2_pos=H1_pos+np.array([acetone3.attributes.length_global,0,0])
+        OH2_mob=AtomicCluster(text=r"\mathrm{OH_2}",pos=OH2_pos,
+                              text_offset=np.array([0.2,-0.03,0]),
+                              attributes=acetone3.attributes)
+        acetone3.register_atom(name="OH2",mobject=OH2_mob)
+        acetone3.add_charge(text="OH2",pos=LEFT,charge_type=ChargeType.PAIR)
+        OH2_lone_pair=acetone3.charges["OH2"]
+
+        self.add(OH2_mob,OH2_lone_pair)
+        self.play(FadeIn(OH2_mob),FadeIn(OH2_lone_pair))
+
+        #孤对电子进攻alphaH，形成OH2-H键；alphaC-H与C-C成C=C，C=O成C-O和O孤对电子
+        C3_H1_bond_current=acetone3.bond_lookup.between("C3","H1")
+        C1_C3_bond_current=acetone3.bond_lookup.between("C1","C3")
+        C1_O1_double_current=acetone3.bond_lookup.between("C1","O1")
+
+        OH2_H1_bond=acetone3.build_bond(start="OH2",end="H1",bond_type=BondType.NORMAL_BOND)
+        C1_C3_double_new=acetone3.build_bond(start="C1",end="C3",bond_type=BondType.DOUBLE_BOND,side=1,
+                                             start_side_edge=True,end_side_edge=True)
+        C1_O1_single_new=acetone3.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
+        O1_lone_pair_new=acetone3.build_charge(text="O1",pos=UL,charge_type=ChargeType.PAIR)
+        OH2_positive=acetone3.build_charge(text="OH2",pos=UL,charge_type=ChargeType.POSITIVE)
+
+        step_enolate=ElectronMigrationStep(
+            replace=[(OH2_lone_pair,OH2_H1_bond),
+                     (VGroup(C3_H1_bond_current,C1_C3_bond_current),C1_C3_double_new),
+                     (C1_O1_double_current,VGroup(C1_O1_single_new,O1_lone_pair_new))],
+            create=[OH2_positive],
+            fadeout=[O1_positive],
+        )
+        self.play(acetone3.electron_migration(steps=[step_enolate],run_time=1.5))
+
+        #羰基O孤对电子和右侧水合氢离子同时消失
+        H1_mob_current=acetone3.atomic_clusters["H1"][Mobject]
+        self.play(FadeOut(O1_lone_pair_new,OH2_mob,OH2_positive,OH2_H1_bond,H1_mob_current),run_time=1)
+        acetone3.delete_charge(text="O1")
+        acetone3.delete_atom(names=["OH2","H1"])
         self.wait(1.5)
