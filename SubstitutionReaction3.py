@@ -629,7 +629,7 @@ class test(Scene):
                                     attributes=acetone2.attributes,
                                     lobe_colors=[BLUE,RED,RED,BLUE],
                                     tilt_angle=75*DEGREES,
-                                    opacity=0.3)
+                                    opacity=0.2)
 
         #朝向左上的C-H单键的s-p成键轨道电子云
         C3_mob=acetone2.atomic_clusters["C3"][Mobject]
@@ -670,8 +670,19 @@ class test(Scene):
 
         #左上的C-H键不透明度降为0.3再恢复，表现σ(C-H)电子向π*离域
         C3_H1_bond=acetone2.bond_lookup.between("C3","H1")
-        self.play(C3_H1_bond.animate(rate_func=there_and_back).set_stroke(opacity=0.3),
-                  run_time=1.5)
+        C3_H1_opacity=C3_H1_bond.get_stroke_opacity()
+        sigma_sp_opacity=sigma_sp_cloud.cloud.lobe_opacities[0]
+        pi_star_opacity=pi_star_cloud.cloud.lobe_opacities[0]
+
+        self.play(C3_H1_bond.animate.set_stroke(opacity=0.3),
+                  sigma_sp_cloud.animate.set_opacity(sigma_sp_opacity-0.15),
+                  pi_star_cloud.animate.set_opacity(pi_star_opacity+0.15),
+                  run_time=1.25)
+        self.wait(0.5)
+        self.play(C3_H1_bond.animate.set_stroke(opacity=C3_H1_opacity),
+                  sigma_sp_cloud.animate.set_opacity(sigma_sp_opacity),
+                  pi_star_cloud.animate.set_opacity(pi_star_opacity),
+                  run_time=1.25)
 
         #淡出屏幕上除标题、副标题与底部描述文本以外的所有对象
         fade_mobjects=[m for m in self.mobjects
