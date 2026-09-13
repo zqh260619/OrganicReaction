@@ -910,8 +910,10 @@ class test(Scene):
 
         #孤对电子进攻H^+，变换为O-H键，H^+的正电荷消失
         O1_H2_bond=acetone3.build_bond(start="O1",end="H2",bond_type=BondType.NORMAL_BOND)
+        O1_positive=acetone3.build_charge(text="O1",pos=UL,charge_type=ChargeType.POSITIVE)
         step_protonation_acetone=ElectronMigrationStep(
             replace=[(O1_lone_pair,O1_H2_bond)],
+            create=[O1_positive],
             fadeout=[H2_positive],
         )
         self.play(acetone3.electron_migration(steps=[step_protonation_acetone],run_time=1.5))
