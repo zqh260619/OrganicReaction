@@ -954,7 +954,78 @@ class test(Scene):
 
         #羰基O孤对电子和右侧水合氢离子同时消失
         H1_mob_current=acetone3.atomic_clusters["H1"][Mobject]
-        self.play(FadeOut(O1_lone_pair_new,OH2_mob,OH2_positive,OH2_H1_bond,H1_mob_current),run_time=1)
-        acetone3.delete_charge(text="O1")
+        self.play(FadeOut(OH2_mob,OH2_positive,OH2_H1_bond,H1_mob_current),run_time=1)
         acetone3.delete_atom(names=["OH2","H1"])
+
+        #右侧显示E^+
+        E_plus_pos=np.array([3*acetone3.attributes.length_global,0,0])
+        E_plus_mob=AtomicCluster(text=r"\mathrm{E}",pos=E_plus_pos,attributes=acetone3.attributes)
+        acetone3.register_atom(name="E",mobject=E_plus_mob)
+        acetone3.add_charge(text="E",pos=UR,charge_type=ChargeType.POSITIVE)
+        E_positive=acetone3.charges["E"]
+
+        self.add(E_plus_mob,E_positive)
+        self.play(FadeIn(E_plus_mob),FadeIn(E_positive))
+
+        #先把E^+移动到alphaC右侧一个键长处
+        C3_pos=acetone3.atomic_clusters["C3"]["pos"]
+        E_target=C3_pos+np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])*acetone3.attributes.length_global
+        E_move_shift=E_target-E_plus_mob.get_center()
+        self.play(E_plus_mob.animate.shift(E_move_shift),
+                  E_positive.animate.shift(E_move_shift),
+                  run_time=1)
+        E_plus_mob.atom_pos=E_target
+        acetone3.atomic_clusters["E"]["pos"]=E_target
+
+        #O孤对电子和C-O单键变C=O双键，O左上出现正电荷；C=C双键变C-C单键和alphaC-E单键，E^+电荷消失
+        C1_O1_double_final=acetone3.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
+        C1_C3_single_final=acetone3.build_bond(start="C1",end="C3",bond_type=BondType.NORMAL_BOND)
+        C3_E_bond_final=acetone3.build_bond(start="C3",end="E",bond_type=BondType.NORMAL_BOND)
+        O1_positive_final=acetone3.build_charge(text="O1",pos=UL,charge_type=ChargeType.POSITIVE)
+
+        step_E_addition_final=ElectronMigrationStep(
+            replace=[(VGroup(O1_lone_pair_new,C1_O1_single_new),C1_O1_double_final),
+                     (C1_C3_double_new,VGroup(C1_C3_single_final,C3_E_bond_final))],
+            create=[O1_positive_final],
+            fadeout=[E_positive],
+        )
+        self.play(acetone3.electron_migration(steps=[step_E_addition_final],run_time=1.5))
+
+        #右侧显示OH_2，像之前一样拔除羰基氧上的H
+        H2_pos=acetone3.atomic_clusters["H2"]["pos"]
+        OH2_pos=H2_pos+np.array([acetone3.attributes.length_global,0,0])
+        OH2_mob_after=AtomicCluster(text=r"\mathrm{OH_2}",pos=OH2_pos,
+                                    text_offset=np.array([0.2,-0.03,0]),
+                                    attributes=acetone3.attributes)
+        acetone3.register_atom(name="OH2",mobject=OH2_mob_after)
+        acetone3.add_charge(text="OH2",pos=LEFT,charge_type=ChargeType.PAIR)
+        OH2_lone_pair_after=acetone3.charges["OH2"]
+
+        self.add(OH2_mob_after,OH2_lone_pair_after)
+        self.play(FadeIn(OH2_mob_after),FadeIn(OH2_lone_pair_after))
+        self.wait(0.5)
+
+        O1_H2_bond_current=acetone3.bond_lookup.between("O1","H2")
+        OH2_H2_bond_after=acetone3.build_bond(start="OH2",end="H2",bond_type=BondType.NORMAL_BOND)
+        O1_lone_pair_after=acetone3.build_charge(text="O1",
+                                                 pos=np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0]),
+                                                 charge_type=ChargeType.PAIR)
+        OH2_positive_after=acetone3.build_charge(text="OH2",pos=UL,charge_type=ChargeType.POSITIVE)
+
+        step_deprotonation_final=ElectronMigrationStep(
+            replace=[(OH2_lone_pair_after,OH2_H2_bond_after),
+                     (O1_H2_bond_current,O1_lone_pair_after)],
+            create=[OH2_positive_after],
+            fadeout=[O1_positive_final],
+        )
+        self.play(acetone3.electron_migration(steps=[step_deprotonation_final],run_time=1.5))
+
+        #先让右侧水合氢离子消失
+        H2_mob_current=acetone3.atomic_clusters["H2"][Mobject]
+        self.play(FadeOut(OH2_mob_after,OH2_positive_after,OH2_H2_bond_after,H2_mob_current),run_time=1)
+        acetone3.delete_atom(names=["OH2","H2"])
+        self.wait(0.5)
+
+        #再让屏幕上所有对象消失
+        self.play(FadeOut(*self.mobjects),run_time=1)
         self.wait(1.5)
