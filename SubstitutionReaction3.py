@@ -64,7 +64,7 @@ class test(Scene):
         self.play(ReplacementTransform(text3,text4))
         self.wait(2)
 
-        #碱催化的机理
+        #碱催化
         subtitle1=Subtitle(text=r"\text{碱催化}")
         self.play(Write(subtitle1))
 
@@ -197,7 +197,7 @@ class test(Scene):
         self.play(FadeOut(Nu_mob,Nu_negative_rev),run_time=0.2)
         self.wait(1.5)
 
-        #酸催化的机理
+        #酸催化
         subtitle2=Subtitle(text=r"\text{酸催化}")
         self.play(ReplacementTransform(subtitle1,subtitle2))
 
@@ -513,8 +513,18 @@ class test(Scene):
         self.play(FadeOut(*self.mobjects),run_time=1)
 
         #-----------------------alpha-H substitution-----------------------
+
         alpha_H_substitution=Title(text=r"\text{羰基活泼}\mathrm{\alpha-H}\text{的亲电取代}")
         self.play(Write(alpha_H_substitution))
+
+        #descriptions
+        text15=Description(text=r"\text{羰基α-H的活性较强，这有两个原因，一个是羰基的吸电子诱导效应，一个是α碳氢键受到羰基的诱导效应。}")
+        text16=Description(text=r"\text{从诱导效应角度看，碳氧双键的极性很强，双键的电子偏向氧，这让羰基碳带有部分正电荷}")
+        text17=Description(text=r"\text{羰基碳带部分正电荷后，会通过σ键拉扯α-C的电子，导致α-C也带部分正电荷}")
+        text18=Description(text=r"\text{α-碳又拉α-H的电子，最终让α-H也带上了部分正电荷}")
+        text19=Description(text=r"\text{这就导致了α-H具有一定的酸性}")
+        text20=Description(text=r"\text{从超共轭效应角度看，α-C-H的σ成键轨道与羰基的π反键轨道平行时，α碳氢键的σ成键轨道可以和碳氧双键的π反键轨道部分重叠}")
+        text21=Description(text=r"\text{这使得α碳氢键被削弱，更容易断裂}")
 
         #显示一个丙酮分子
         acetone=StructuralFormula(name="C1",pos=ORIGIN,text=r"\mathrm{C}")
@@ -689,6 +699,15 @@ class test(Scene):
                        if not isinstance(m,(Title,Subtitle,Description))]
         self.play(FadeOut(*fade_mobjects),run_time=1)
 
+        #碱催化
+        subtitle3=Subtitle(text=r"\text{碱催化}")
+        self.play(Write(subtitle3))
+
+        #descriptions
+        text22=Text(text=r"\text{α-H被体系中的碱拔除，α-C上的负电荷可以通过共振转移到羰基氧上分摊负电荷}")
+        text23=Text(text=r"\text{亲电试剂可以为卤素，CH3I，RCHO等}")
+        text24=Text(text=r"\text{α-C进攻亲电试剂，X离去，生成取代产物}")
+
         #显示丙酮骨架：中心C不带标签，上方经双键连接O，左右偏下30°各有一个不带标签的C，右侧C的右上30°连接H
         acetone3=StructuralFormula(name="C1",pos=ORIGIN,text=None)
         acetone3.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
@@ -824,6 +843,7 @@ class test(Scene):
         self.play(acetone3.electron_migration(steps=[step_O_restore,step_C_E_add,step_E_X_leave],
                                               run_time=1.5))
         self.wait(1.5)
+
         #倒放：从当前状态退回到B^-显示之前
         #倒放三个变化：按相反顺序放在一个electron_migration中
         C1_C3_double_rev_add=acetone3.build_bond(start="C1",end="C3",bond_type=BondType.DOUBLE_BOND,side=1,
@@ -888,6 +908,16 @@ class test(Scene):
         self.play(FadeOut(B_mob,B_negative_rev),run_time=0.2)
         acetone3.delete_charge(text="B")
         acetone3.delete_atom(names=["B"])
+
+        #酸催化
+        subtitle4=Subtitle(text=r"\text{酸催化}")
+        self.play(ReplacementTransform(subtitle3,subtitle4))
+
+        #descriptions
+        text25=Text(text=r"\text{首先O被质子化，羰基变得极度缺电子}")
+        text26=Text(text=r"\text{α-H被碱拔去（此处以H2O为例），形成烯醇}")
+        text27=Text(text=r"\text{然后α-C进攻亲电试剂E^+}")
+        text28=Text(text=r"\text{最后羰基氧失去一个质子，形成产物}")
 
         #O右上30°出现H^+，同时O右上30°出现一对孤对电子
         O1_pos=acetone3.atomic_clusters["O1"]["pos"]
