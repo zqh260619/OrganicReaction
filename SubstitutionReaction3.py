@@ -598,7 +598,13 @@ class test(Scene):
         C3_H2_bond_short=shorten_bond(C3_H2_bond,C3_H2_shift,C3_H2_direction)
         C3_H3_bond_short=shorten_bond(C3_H3_bond,C3_H3_shift,C3_H3_direction)
 
+        induction_delta_negative_O=MathTex(r"\delta^-",color=WHITE,font_size=txt_size*0.9)
+        induction_delta_negative_O.move_to(acetone.atomic_clusters["O1"]["pos"]+0.35*UL)
+        induction_delta_positive_C=MathTex(r"\delta^+",color=WHITE,font_size=txt_size*0.9)
+        induction_delta_positive_C.move_to(acetone.atomic_clusters["C1"]["pos"]+0.35*UL)
+
         self.play(Transform(O_C_bond,O_C_bond_short),run_time=0.8,rate_func=smoothererstep)
+        self.play(FadeIn(induction_delta_negative_O,induction_delta_positive_C))
         self.wait(1.5)
         self.play(ReplacementTransform(text17,text18))
         self.wait(0.5)
@@ -618,6 +624,7 @@ class test(Scene):
                   Transform(C3_H1_bond,C3_H1_bond_original),
                   Transform(C3_H2_bond,C3_H2_bond_original),
                   Transform(C3_H3_bond,C3_H3_bond_original),
+                  FadeOut(induction_delta_negative_O,induction_delta_positive_C),
                   run_time=1.0,rate_func=smoothererstep)
         self.wait(1.0)
 
