@@ -2,7 +2,7 @@
 
 from manim import WHITE, ManimColor
 
-from .parameters import bond_length, ratio_transition_state, edge, txt_size, default_charge_edge
+from .parameters import bond_length, ratio_transition_state, edge, txt_size, default_charge_edge, partial_charge_font_size
 
 class AttributeHolder:
     def __init__(self,*,
@@ -16,6 +16,7 @@ class AttributeHolder:
                  color:ManimColor,
                  edge_global:float,
                  font_size:float,
+                 font_size_partial:float,
                  radius_negative:float,
                  ratio_negative:float,
                  stroke_width_negative:float,
@@ -39,6 +40,7 @@ class AttributeHolder:
         self.color=color
         self.edge_global=edge_global
         self.font_size=font_size
+        self.font_size_partial=font_size_partial
         self.radius_negative=radius_negative
         self.ratio_negative=ratio_negative
         self.stroke_width_negative=stroke_width_negative
@@ -63,6 +65,7 @@ DEFAULT_ATTRIBUTES=AttributeHolder(base_ratio_outbond=0.2,
                                    color=WHITE,
                                    edge_global=edge,
                                    font_size=txt_size,
+                                   font_size_partial=partial_charge_font_size,
                                    radius_negative=0.05,
                                    ratio_negative=0.6,
                                    stroke_width_negative=1.2,

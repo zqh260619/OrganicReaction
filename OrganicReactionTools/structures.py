@@ -5,7 +5,7 @@ from manim.typing import Vector3D
 import numpy as np
 from typing import Callable
 
-from .parameters import bond_length, ratio_transition_state, edge, txt_size, default_charge_edge
+from .parameters import bond_length, ratio_transition_state, edge, txt_size, default_charge_edge, partial_charge_font_size
 from .attributes import AttributeHolder
 from .atoms import AtomicCluster
 from .bonds import Bond, BondType, BondLookup
@@ -25,6 +25,7 @@ class StructuralFormula(VGroup):
                  color=WHITE,
                  edge_global=edge,
                  font_size=txt_size,
+                 font_size_partial=partial_charge_font_size,
                  radius_negative=0.05,
                  ratio_negative=0.6,
                  stroke_width_negative=1.2,
@@ -53,6 +54,7 @@ class StructuralFormula(VGroup):
                                         color=color,
                                         edge_global=edge_global,
                                         font_size=font_size,
+                                        font_size_partial=font_size_partial,
                                         radius_negative=radius_negative,
                                         ratio_negative=ratio_negative,
                                         stroke_width_negative=stroke_width_negative,
@@ -235,14 +237,16 @@ class StructuralFormula(VGroup):
     def add_charge(self,*,
                    text:str,
                    pos:Vector3D,
-                   charge_type:ChargeType):
+                   charge_type:ChargeType,
+                   delta_count:int=1,
+                   sign:str="+"):
 
         if text not in self.atomic_clusters:
             raise ValueError(f"原子 '{text}' 不存在于结构中。")
         if text in self.charges:
             raise ValueError(f"原子 '{text}' 上已经存在电荷，不能重复添加。")
 
-        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes,atom_name=text)
+        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes,atom_name=text,delta_count=delta_count,sign=sign)
 
         self.add(self.charges[text])
 
@@ -367,7 +371,9 @@ class StructuralFormula(VGroup):
     def build_charge(self,*,
                      text:str,
                      pos:Vector3D,
-                     charge_type:ChargeType)->Charge:
+                     charge_type:ChargeType,
+                     delta_count:int=1,
+                     sign:str="+")->Charge:
         """创建电荷对象但不添加到结构式中。
 
         Parameters
@@ -378,6 +384,10 @@ class StructuralFormula(VGroup):
             电荷相对于原子文本的位置（方向向量，如 UR, DOWN 等）。
         charge_type : ChargeType
             电荷类型。
+        delta_count : int
+            部分电荷（PARTIAL）中 δ 的数目，默认 1。
+        sign : str
+            部分电荷（PARTIAL）的正负号，"+" 或 "-"，默认 "+"。
 
         Returns
         -------
@@ -390,7 +400,9 @@ class StructuralFormula(VGroup):
                       text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],
                       pos=pos,
                       attributes=self.attributes,
-                      atom_name=text)
+                      atom_name=text,
+                      delta_count=delta_count,
+                      sign=sign)
 
     def polarity_arrow(self,*,
                        start:str,

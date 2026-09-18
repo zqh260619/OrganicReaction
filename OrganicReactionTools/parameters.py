@@ -57,3 +57,5 @@ description_coordinate=[0,description_height,0]
 """描述性文本坐标"""
 txt_size=35
 """文字大小"""
+partial_charge_font_size=25
+"""部分电荷字体大小"""
