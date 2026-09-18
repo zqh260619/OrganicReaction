@@ -518,13 +518,14 @@ class test(Scene):
         self.play(Write(alpha_H_substitution))
 
         #descriptions
-        text15=Description(text=r"\text{羰基}\mathrm{\alpha-H}\text{的活性较强，这有两个原因，一个是羰基的吸电子诱导效应，一个是}\mathrm{\alpha}\text{碳氢键受到羰基的诱导效应。}")
-        text16=Description(text=r"\text{从诱导效应角度看，碳氧双键的极性很强，双键的电子偏向氧，这让羰基碳带有部分正电荷}")
-        text17=Description(text=r"\text{羰基碳带部分正电荷后，会通过}\mathrm{\sigma}\text{键拉扯}\mathrm{\alpha-C}\text{的电子，导致}\mathrm{\alpha-C}\text{也带部分正电荷}")
-        text18=Description(text=r"\mathrm{\alpha-C}\text{又拉}\mathrm{\alpha-H}\text{的电子，最终让}\mathrm{\alpha-H}\text{也带上了部分正电荷}")
-        text19=Description(text=r"\text{这就导致了}\mathrm{\alpha-H}\text{具有一定的酸性}")
-        text20=Description(text=r"\text{从超共轭效应角度看，}\mathrm{\alpha-C-H}\text{的}\mathrm{\sigma}\text{成键轨道与羰基的}\mathrm{\pi}\text{反键轨道平行时，}\mathrm{\alpha}\text{碳氢键的}\mathrm{\sigma}\text{成键轨道可以和碳氧双键的}\mathrm{\pi}\text{反键轨道部分重叠}")
-        text21=Description(text=r"\text{这使得}\mathrm{\alpha}\text{碳氢键被削弱，更容易断裂}")
+        text15=Description(text=r"\text{羰基}\mathrm{\alpha-H}\text{的活性较强，这有两个原因}")
+        text16=Description(text=r"\text{一个是羰基的吸电子诱导效应，一个是}\mathrm{\alpha}\text{碳氢键受到羰基的超共轭效应}")
+        text17=Description(text=r"\text{从诱导效应角度看，碳氧双键的极性很强}\\\text{双键的电子偏向氧，这让羰基碳带有部分正电荷}")
+        text18=Description(text=r"\text{羰基碳带部分正电荷后，会通过}\mathrm{\sigma}\text{键拉扯}\mathrm{\alpha-C}\text{的电子，导致}\mathrm{\alpha-C}\text{也带部分正电荷}")
+        text19=Description(text=r"\mathrm{\alpha-C}\text{又拉}\mathrm{\alpha-H}\text{的电子，最终让}\mathrm{\alpha-H}\text{也带上了部分正电荷}")
+        text20=Description(text=r"\text{这就导致了}\mathrm{\alpha-H}\text{具有一定的酸性}")
+        text21=Description(text=r"\text{从超共轭效应角度看，}\mathrm{\alpha-C-H}\text{的}\mathrm{\sigma}\text{成键轨道与羰基的}\mathrm{\pi}\text{反键轨道平行时，}\mathrm{\alpha}\text{碳氢键的}\mathrm{\sigma}\text{成键轨道可以和碳氧双键的}\mathrm{\pi}\text{反键轨道部分重叠}")
+        text22=Description(text=r"\text{这使得}\mathrm{\alpha}\text{碳氢键被削弱，更容易断裂}")
 
         #显示一个丙酮分子
         acetone=StructuralFormula(name="C1",pos=ORIGIN,text=r"\mathrm{C}")
@@ -541,8 +542,12 @@ class test(Scene):
         acetone.add_atom(name="H3",direction=270*DEGREES,text=r"\mathrm{H}",
                          bond_type=BondType.NORMAL_BOND,adjacency="C3")
 
-        self.play(Create(acetone))
+        self.play(Create(acetone),Write(text15))
         self.wait(1.5)
+        self.play(ReplacementTransform(text15,text16))
+        self.wait(2.5)
+        self.play(ReplacementTransform(text16,text17))
+        self.wait(2.5)
 
         #诱导效应：O=C键、C-αC键、三个αC-H键依次向前一个原子略平移
         O_C_bond=acetone.bond_lookup.between("O1","C1")
@@ -594,7 +599,13 @@ class test(Scene):
         C3_H3_bond_short=shorten_bond(C3_H3_bond,C3_H3_shift,C3_H3_direction)
 
         self.play(Transform(O_C_bond,O_C_bond_short),run_time=0.8,rate_func=smoothererstep)
+        self.wait(1.5)
+        self.play(ReplacementTransform(text17,text18))
+        self.wait(0.5)
         self.play(Transform(C_alphaC_bond,C_alphaC_bond_short),run_time=0.8,rate_func=smoothererstep)
+        self.wait(1.5)
+        self.play(ReplacementTransform(text18,text19))
+        self.wait(0.5)
         self.play(Transform(C3_H1_bond,C3_H1_bond_short),
                   Transform(C3_H2_bond,C3_H2_bond_short),
                   Transform(C3_H3_bond,C3_H3_bond_short),
@@ -704,9 +715,9 @@ class test(Scene):
         self.play(Write(subtitle3))
 
         #descriptions
-        text22=Description(text=r"\text{体系中的碱拔除}\mathrm{\alpha-H}\text{，}\mathrm{\alpha-C}\text{上的负电荷可以通过共振转移到羰基氧上分摊负电荷}")
-        text23=Description(text=r"\text{亲电试剂可以为卤素、}\mathrm{CH_3I}\text{、}\mathrm{RCHO}\text{等}")
-        text24=Description(text=r"\mathrm{\alpha-C}\text{进攻亲电试剂，}\mathrm{X}\text{离去，生成取代产物}")
+        text23=Description(text=r"\text{体系中的碱拔除}\mathrm{\alpha-H}\text{，}\mathrm{\alpha-C}\text{上的负电荷可以通过共振转移到羰基氧上分摊负电荷}")
+        text24=Description(text=r"\text{亲电试剂可以为卤素、}\mathrm{CH_3I}\text{、}\mathrm{RCHO}\text{等}")
+        text25=Description(text=r"\mathrm{\alpha-C}\text{进攻亲电试剂，}\mathrm{X}\text{离去，生成取代产物}")
 
         #显示丙酮骨架：中心C不带标签，上方经双键连接O，左右偏下30°各有一个不带标签的C，右侧C的右上30°连接H
         acetone3=StructuralFormula(name="C1",pos=ORIGIN,text=None)
@@ -914,10 +925,10 @@ class test(Scene):
         self.play(ReplacementTransform(subtitle3,subtitle4))
 
         #descriptions
-        text25=Description(text=r"\text{首先}\mathrm{O}\text{被质子化，羰基变得极度缺电子}")
-        text26=Description(text=r"\mathrm{\alpha-H}\text{被碱拔去（此处以}\mathrm{H_2O}\text{为例），形成烯醇}")
-        text27=Description(text=r"\text{然后}\mathrm{\alpha-C}\text{进攻亲电试剂}\mathrm{E^+}")
-        text28=Description(text=r"\text{最后羰基氧失去一个质子，形成产物}")
+        text26=Description(text=r"\text{首先}\mathrm{O}\text{被质子化，羰基变得极度缺电子}")
+        text27=Description(text=r"\mathrm{\alpha-H}\text{被碱拔去（此处以}\mathrm{H_2O}\text{为例），形成烯醇}")
+        text28=Description(text=r"\text{然后}\mathrm{\alpha-C}\text{进攻亲电试剂}\mathrm{E^+}")
+        text29=Description(text=r"\text{最后羰基氧失去一个质子，形成产物}")
 
         #O右上30°出现H^+，同时O右上30°出现一对孤对电子
         O1_pos=acetone3.atomic_clusters["O1"]["pos"]
