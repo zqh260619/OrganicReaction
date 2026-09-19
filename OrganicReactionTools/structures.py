@@ -239,14 +239,15 @@ class StructuralFormula(VGroup):
                    pos:Vector3D,
                    charge_type:ChargeType,
                    delta_count:int=1,
-                   sign:str="+"):
+                   sign:str="+",
+                   anchor_mode:str="border"):
 
         if text not in self.atomic_clusters:
             raise ValueError(f"原子 '{text}' 不存在于结构中。")
         if text in self.charges:
             raise ValueError(f"原子 '{text}' 上已经存在电荷，不能重复添加。")
 
-        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes,atom_name=text,delta_count=delta_count,sign=sign)
+        self.charges[text]=Charge(charge_type=charge_type,text=self.atomic_clusters[text][Mobject] or self.atomic_clusters[text]["pos"],pos=pos,attributes=self.attributes,atom_name=text,delta_count=delta_count,sign=sign,anchor_mode=anchor_mode)
 
         self.add(self.charges[text])
 
@@ -373,7 +374,8 @@ class StructuralFormula(VGroup):
                      pos:Vector3D,
                      charge_type:ChargeType,
                      delta_count:int=1,
-                     sign:str="+")->Charge:
+                     sign:str="+",
+                     anchor_mode:str="border")->Charge:
         """创建电荷对象但不添加到结构式中。
 
         Parameters
@@ -388,6 +390,8 @@ class StructuralFormula(VGroup):
             部分电荷（PARTIAL）中 δ 的数目，默认 1。
         sign : str
             部分电荷（PARTIAL）的正负号，"+" 或 "-"，默认 "+"。
+        anchor_mode : str
+            部分电荷定位模式，"border" 或 "center"，默认 "border"。
 
         Returns
         -------
@@ -402,7 +406,8 @@ class StructuralFormula(VGroup):
                       attributes=self.attributes,
                       atom_name=text,
                       delta_count=delta_count,
-                      sign=sign)
+                      sign=sign,
+                      anchor_mode=anchor_mode)
 
     def polarity_arrow(self,*,
                        start:str,

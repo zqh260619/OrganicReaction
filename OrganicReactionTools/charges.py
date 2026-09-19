@@ -133,10 +133,13 @@ class PairChargeByCoordinate(VGroup):
 class PartialCharge(VGroup):
     """部分电荷：由 delta_count 个 δ 和上标正负号组成。
 
-    支持两种构造方式：
-    - 文本模式：传入 text 与 pos，位置取原子文本角点向外偏移
-      edge_charge 处，与其他电荷类一致；
-    - 坐标模式：直接传入 position。
+    使用 anchor_mode 控制文本定位方式：
+
+    - "border"（默认）：电荷文本边框上与 pos 相反方向的点，与原子
+      文本在 pos 方向的角点重合。例如 pos=UR 时，δδ+ 的左下角与
+      原子文本的右上角重合。该模式忽略 edge_charge。
+    - "center"：电荷文本中心位于原子文本角点向外偏移 edge_charge
+      的位置，保持原有中心对齐行为。
 
     可通过 Charge 包装器使用：
 
@@ -147,6 +150,7 @@ class PartialCharge(VGroup):
             attributes=attributes,
             delta_count=2,
             sign="+",
+            anchor_mode="border",
         )
 
     Parameters
@@ -156,13 +160,15 @@ class PartialCharge(VGroup):
     pos : Vector3D | None
         电荷相对原子文本的方向向量，如 UR、DOWN 等。
     position : Vector3D | None
-        坐标模式下电荷中心位置。
+        坐标模式下电荷的位置。
     attributes : AttributeHolder
-        样式属性（取 color、font_size、edge_charge）。
+        样式属性（取 color、font_size_partial、edge_charge）。
     delta_count : int
         δ 的数目，必须为大于等于 1 的整数，默认 1。
     sign : str
         上标正负号，取 "+" 或 "-"，默认 "+"。
+    anchor_mode : str
+        定位模式，取 "border" 或 "center"，默认 "border"。
     """
     def __init__(self,*,
                  text:MathTex|None=None,
@@ -170,45 +176,70 @@ class PartialCharge(VGroup):
                  position:Vector3D|None=None,
                  attributes:'AttributeHolder',
                  delta_count:int=1,
-                 sign:str="+"):
+                 sign:str="+",
+                 anchor_mode:str="border"):
 
         if not isinstance(delta_count,int) or delta_count<1:
             raise ValueError(f"delta_count 必须为大于等于 1 的整数，实际为 {delta_count}。")
         if sign not in ("+","-"):
             raise ValueError(f"sign 只能取 '+' 或 '-'，实际为 {sign!r}。")
+        if anchor_mode not in ("border","center"):
+            raise ValueError(f"anchor_mode 只能取 'border' 或 'center'，实际为 {anchor_mode!r}。")
+        if anchor_mode=="border" and pos is None:
+            raise ValueError("anchor_mode='border' 需要提供 pos 方向。")
 
         if position is None:
             if text is None or pos is None:
                 raise ValueError("PartialCharge 需要提供 position，或同时提供 text 与 pos。")
-            position=np.array(text.get_corner(pos)+pos*attributes.edge_charge,dtype=float)
+            corner=np.array(text.get_corner(pos),dtype=float)
+            if anchor_mode=="center":
+                target=corner+np.array(pos,dtype=float)*attributes.edge_charge
+            else:
+                target=corner
         else:
-            position=np.array(position,dtype=float)
+            target=np.array(position,dtype=float)
 
         tex_string=r"\delta"*delta_count+"^{"+sign+"}"
         font_size=attributes.font_size_partial
         charge_text=MathTex(tex_string,color=attributes.color,font_size=font_size)
-        charge_text.move_to(position)
+
+        if anchor_mode=="border":
+            opposite=-np.array(pos,dtype=float)
+            if np.linalg.norm(opposite)==0:
+                raise ValueError("anchor_mode='border' 需要非零的 pos 方向。")
+            charge_text.shift(target-charge_text.get_corner(opposite))
+        else:
+            charge_text.move_to(target)
 
         super().__init__(charge_text)
 
         self.delta_count=delta_count
         self.sign=sign
-        self.position=position
+        self.anchor_mode=anchor_mode
+        self.position=target
         self.font_size=font_size
         self.charge_text=charge_text
 
 class PartialChargeByCoordinate(PartialCharge):
-    """部分电荷的坐标版本：直接以 position 指定电荷中心。"""
+    """部分电荷的坐标版本：直接以 position 指定电荷位置。
+
+    anchor_mode="border" 时，还需要通过 pos 指定方向，用于确定
+    与 position 对齐的边框点。
+    """
     def __init__(self,*,
                  position:Vector3D,
                  attributes:'AttributeHolder',
                  delta_count:int=1,
-                 sign:str="+"):
+                 sign:str="+",
+                 anchor_mode:str="border",
+                 pos:Vector3D|None=None):
 
         super().__init__(position=position,
                          attributes=attributes,
                          delta_count=delta_count,
-                         sign=sign)
+                         sign=sign,
+                         anchor_mode=anchor_mode,
+                         pos=pos)
 
 class ChargeType(Enum):
     POSITIVE=PositiveCharge
@@ -230,7 +261,8 @@ class Charge(VGroup):
                  attributes:AttributeHolder,
                  atom_name:str|None=None,
                  delta_count:int=1,
-                 sign:str="+"):
+                 sign:str="+",
+                 anchor_mode:str="border"):
 
         super().__init__(color=attributes.color)
 
@@ -240,12 +272,25 @@ class Charge(VGroup):
 
         partial_kwargs={}
         if charge_type in (ChargeType.PARTIAL,ChargeType.PARTIAL_COORDINATE):
-            partial_kwargs={"delta_count":delta_count,"sign":sign}
+            partial_kwargs={"delta_count":delta_count,"sign":sign,"anchor_mode":anchor_mode}
+
+        is_partial=charge_type in (ChargeType.PARTIAL,ChargeType.PARTIAL_COORDINATE)
 
         if isinstance(text,AtomicCluster):
             charge=self.charge_type.value(text=text,pos=pos,attributes=attributes,**partial_kwargs)
         else:
-            charge=self.charge_type.value(position=pos*attributes.edge_charge+text,attributes=attributes,**partial_kwargs)
+            if is_partial and anchor_mode=="border":
+                # border 模式忽略 edge_charge，position 直接作为对齐点
+                coordinate_position=np.array(text,dtype=float)
+            else:
+                coordinate_position=pos*attributes.edge_charge+text
+
+            charge_kwargs=dict(partial_kwargs)
+            if is_partial:
+                charge_kwargs["pos"]=pos
+
+            charge=self.charge_type.value(position=coordinate_position,
+                                          attributes=attributes,**charge_kwargs)
             if charge_type==ChargeType.PAIR_COORDINATE:
                 # 将默认水平取向的两圆点旋转到与"原子 pos → 两圆点中点"方向（即 pos）垂直
                 charge.rotate(np.arctan2(pos[1],pos[0])+np.pi/2)
