@@ -608,14 +608,24 @@ class test(Scene):
         self.wait(1.5)
         self.play(ReplacementTransform(text17,text18))
         self.wait(0.5)
+        induction_delta2_alphaC=acetone.build_charge(text="C3",pos=UP,
+                                                     charge_type=ChargeType.PARTIAL,delta_count=2,sign="+")
         self.play(Transform(C_alphaC_bond,C_alphaC_bond_short),run_time=0.8,rate_func=smoothererstep)
+        self.play(FadeIn(induction_delta2_alphaC))
         self.wait(1.5)
         self.play(ReplacementTransform(text18,text19))
         self.wait(0.5)
+        induction_delta3_H1=acetone.build_charge(text="H1",pos=DR,
+                                                 charge_type=ChargeType.PARTIAL,delta_count=3,sign="+")
+        induction_delta3_H2=acetone.build_charge(text="H2",pos=DR,
+                                                 charge_type=ChargeType.PARTIAL,delta_count=3,sign="+")
+        induction_delta3_H3=acetone.build_charge(text="H3",pos=DR,
+                                                 charge_type=ChargeType.PARTIAL,delta_count=3,sign="+")
         self.play(Transform(C3_H1_bond,C3_H1_bond_short),
                   Transform(C3_H2_bond,C3_H2_bond_short),
                   Transform(C3_H3_bond,C3_H3_bond_short),
                   run_time=0.8,rate_func=smoothererstep)
+        self.play(FadeIn(induction_delta3_H1,induction_delta3_H2,induction_delta3_H3))
 
         self.wait(1.5)
 
@@ -624,7 +634,9 @@ class test(Scene):
                   Transform(C3_H1_bond,C3_H1_bond_original),
                   Transform(C3_H2_bond,C3_H2_bond_original),
                   Transform(C3_H3_bond,C3_H3_bond_original),
-                  FadeOut(induction_delta_negative_O,induction_delta_positive_C),
+                  FadeOut(induction_delta_negative_O,induction_delta_positive_C,
+                          induction_delta2_alphaC,
+                          induction_delta3_H1,induction_delta3_H2,induction_delta3_H3),
                   run_time=1.0,rate_func=smoothererstep)
         self.wait(1.0)
 
