@@ -739,9 +739,10 @@ class test(Scene):
         self.play(Write(subtitle3))
 
         #descriptions
-        text23=Description(text=r"\text{体系中的碱拔除}\mathrm{\alpha-H}\text{，}\mathrm{\alpha-C}\text{上的负电荷可以通过共振转移到羰基氧上分摊负电荷}")
-        text24=Description(text=r"\text{亲电试剂可以为卤素、}\mathrm{CH_3I}\text{、}\mathrm{RCHO}\text{等}")
-        text25=Description(text=r"\mathrm{\alpha-C}\text{进攻亲电试剂，}\mathrm{X}\text{离去，生成取代产物}")
+        text23=Description(text=r"\text{体系中的碱拔除}\mathrm{\alpha-H}")
+        text24=Description(text=r"\mathrm{\alpha-C}\text{上的负电荷可以通过共振转移到羰基氧上分摊负电荷}")
+        text25=Description(text=r"\text{亲电试剂可以为卤素、}\mathrm{CH_3I}\text{、}\mathrm{RCHO}\text{等}")
+        text26=Description(text=r"\mathrm{\alpha-C}\text{进攻亲电试剂，}\mathrm{X}\text{离去，生成取代产物}")
 
         #显示丙酮骨架：中心C不带标签，上方经双键连接O，左右偏下30°各有一个不带标签的C，右侧C的右上30°连接H
         acetone3=StructuralFormula(name="C1",pos=ORIGIN,text=None)
@@ -754,6 +755,7 @@ class test(Scene):
         acetone3.add_atom(name="H1",direction=30*DEGREES,text=r"\mathrm{H}",
                           bond_type=BondType.NORMAL_BOND,adjacency="C3")
         self.play(Create(acetone3))
+        self.play(Write(text23))
         self.wait(1)
 
         #其右侧显示B^-
@@ -782,6 +784,9 @@ class test(Scene):
         H1_mob=acetone3.atomic_clusters["H1"][Mobject]
         self.play(FadeOut(B_mob,H1_mob,B_H_bond))
         acetone3.delete_atom(names=["B","H1"])
+
+        self.play(ReplacementTransform(text23,text24))
+        self.wait(1.5)
 
         #互变异构：C负电荷+C-C单键变为双键，C=O双键变为单键和O负电荷
         C1_C3_single=acetone3.bond_lookup.between("C1","C3")
@@ -949,10 +954,10 @@ class test(Scene):
         self.play(ReplacementTransform(subtitle3,subtitle4))
 
         #descriptions
-        text26=Description(text=r"\text{首先}\mathrm{O}\text{被质子化，羰基变得极度缺电子}")
-        text27=Description(text=r"\mathrm{\alpha-H}\text{被碱拔去（此处以}\mathrm{H_2O}\text{为例），形成烯醇}")
-        text28=Description(text=r"\text{然后}\mathrm{\alpha-C}\text{进攻亲电试剂}\mathrm{E^+}")
-        text29=Description(text=r"\text{最后羰基氧失去一个质子，形成产物}")
+        text27=Description(text=r"\text{首先}\mathrm{O}\text{被质子化，羰基变得极度缺电子}")
+        text28=Description(text=r"\mathrm{\alpha-H}\text{被碱拔去（此处以}\mathrm{H_2O}\text{为例），形成烯醇}")
+        text29=Description(text=r"\text{然后}\mathrm{\alpha-C}\text{进攻亲电试剂}\mathrm{E^+}")
+        text30=Description(text=r"\text{最后羰基氧失去一个质子，形成产物}")
 
         #O右上30°出现H^+，同时O右上30°出现一对孤对电子
         O1_pos=acetone3.atomic_clusters["O1"]["pos"]
