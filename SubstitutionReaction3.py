@@ -524,7 +524,7 @@ class test(Scene):
         text18=Description(text=r"\text{羰基碳带部分正电荷后，会通过}\mathrm{\sigma}\text{键拉扯}\mathrm{\alpha-C}\text{的电子，导致}\mathrm{\alpha-C}\text{也带部分正电荷}")
         text19=Description(text=r"\mathrm{\alpha-C}\text{又拉}\mathrm{\alpha-H}\text{的电子，最终让}\mathrm{\alpha-H}\text{也带上了部分正电荷}")
         text20=Description(text=r"\text{这就导致了}\mathrm{\alpha-H}\text{具有一定的酸性}")
-        text21=Description(text=r"\text{从超共轭效应角度看，}\mathrm{\alpha-C-H}\text{的}\mathrm{\sigma}\text{成键轨道与羰基的}\mathrm{\pi}\text{反键轨道平行时，}\mathrm{\alpha}\text{碳氢键的}\mathrm{\sigma}\text{成键轨道可以和碳氧双键的}\mathrm{\pi}\text{反键轨道部分重叠}")
+        text21=Description(text=r"\text{从超共轭效应角度看，}\mathrm{\alpha-C-H}\text{的}\mathrm{\sigma}\text{成键轨道与羰基的}\mathrm{\pi}\text{反键轨道平行时，}\\\mathrm{\alpha}\text{碳氢键的}\mathrm{\sigma}\text{成键轨道可以和碳氧双键的}\mathrm{\pi}\text{反键轨道部分重叠}")
         text22=Description(text=r"\text{这使得}\mathrm{\alpha}\text{碳氢键被削弱，更容易断裂}")
 
         #显示一个丙酮分子
@@ -626,6 +626,8 @@ class test(Scene):
                   Transform(C3_H3_bond,C3_H3_bond_short),
                   run_time=0.8,rate_func=smoothererstep)
         self.play(FadeIn(induction_delta3_H1,induction_delta3_H2,induction_delta3_H3))
+        self.wait(1.5)
+        self.play(ReplacementTransform(text19,text20))
 
         self.wait(1.5)
 
@@ -641,7 +643,9 @@ class test(Scene):
         self.wait(1.0)
 
         #让现有结构式消失，显示另一种样式的丙酮
-        self.play(FadeOut(acetone),run_time=1)
+        self.play(FadeOut(acetone),
+                  ReplacementTransform(text20,text21),
+                  run_time=1)
 
         acetone2=StructuralFormula(name="C1",pos=ORIGIN,text=r"\mathrm{C}")
         acetone2.add_atom(name="O1",direction=0*DEGREES,text=r"\mathrm{O}",
@@ -705,8 +709,9 @@ class test(Scene):
         
         self.play(Create(hc_1_1))
         self.play(Create(hc_1_2))
-
         self.wait(1.5)
+        self.play(ReplacementTransform(text21,text22))
+        self.wait(1)
 
         #左上的C-H键不透明度降为0.3再恢复，表现σ(C-H)电子向π*离域
         C3_H1_bond=acetone2.bond_lookup.between("C3","H1")
@@ -726,7 +731,7 @@ class test(Scene):
 
         #淡出屏幕上除标题、副标题与底部描述文本以外的所有对象
         fade_mobjects=[m for m in self.mobjects
-                       if not isinstance(m,(Title,Subtitle,Description))]
+                       if not isinstance(m,(Title))]
         self.play(FadeOut(*fade_mobjects),run_time=1)
 
         #碱催化
