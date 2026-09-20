@@ -741,7 +741,7 @@ class test(Scene):
         #descriptions
         text23=Description(text=r"\text{体系中的碱拔除}\mathrm{\alpha-H}")
         text24=Description(text=r"\mathrm{\alpha-C}\text{上的负电荷可以通过共振转移到羰基氧上分摊负电荷}")
-        text25=Description(text=r"\text{亲电试剂可以为卤素、}\mathrm{CH_3I}\text{、}\mathrm{RCHO}\text{等}")
+        text25=Description(text=r"\text{亲电试剂可以为卤素、}\mathrm{CH_3I}\text{等}")
         text26=Description(text=r"\mathrm{\alpha-C}\text{进攻亲电试剂，}\mathrm{X}\text{离去，生成取代产物}")
 
         #显示丙酮骨架：中心C不带标签，上方经双键连接O，左右偏下30°各有一个不带标签的C，右侧C的右上30°连接H
@@ -814,6 +814,7 @@ class test(Scene):
         EX_original=EX_mol.copy()
 
         self.play(FadeIn(EX_mol))
+        self.play(ReplacementTransform(text24,text25))
         self.wait(0.5)
 
         #1 Br-Br
@@ -831,19 +832,8 @@ class test(Scene):
         self.play(ReplacementTransform(BrBr_mol,CH3I_mol),run_time=1.2)
         self.wait(0.5)
 
-        #3 RCHO
-        RCHO_mol=StructuralFormula(name="C",pos=E_pos,text=None)
-        RCHO_mol.add_atom(name="R",direction=120*DEGREES,text=r"\mathrm{R}",
-                          bond_type=BondType.NORMAL_BOND,adjacency="C")
-        RCHO_mol.add_atom(name="H",direction=240*DEGREES,text=r"\mathrm{H}",
-                          bond_type=BondType.NORMAL_BOND,adjacency="C")
-        RCHO_mol.add_atom(name="O",direction=0*DEGREES,text=r"\mathrm{O}",
-                          bond_type=BondType.DOUBLE_BOND,adjacency="C",side=0)
-        self.play(ReplacementTransform(CH3I_mol,RCHO_mol),run_time=1.2)
-        self.wait(0.5)
-
         #回到原始的E-X
-        self.play(ReplacementTransform(RCHO_mol,EX_original),run_time=1.2)
+        self.play(ReplacementTransform(CH3I_mol,EX_original),run_time=1.2)
         self.wait(1.5)
 
         #将E-X并入acetone3，保证E、X文本标签持续显示
@@ -880,9 +870,11 @@ class test(Scene):
             replace=[(E_X_bond_new,X_negative)],
         )
 
+        self.play(ReplacementTransform(text25,text26))
         self.play(acetone3.electron_migration(steps=[step_O_restore,step_C_E_add,step_E_X_leave],
                                               run_time=1.5))
         self.wait(1.5)
+        self.play(FadeOut(text26))
 
         #倒放：从当前状态退回到B^-显示之前
         #倒放三个变化：按相反顺序放在一个electron_migration中
@@ -975,7 +967,7 @@ class test(Scene):
         O1_lone_pair.rotate(30*DEGREES-O1_pair_angle,about_point=O1_center)
 
         self.add(H2_mob,H2_positive,O1_lone_pair)
-        self.play(FadeIn(H2_mob),FadeIn(H2_positive),FadeIn(O1_lone_pair))
+        self.play(FadeIn(H2_mob),FadeIn(H2_positive),FadeIn(O1_lone_pair),Write(text27))
         self.wait(0.5)
 
         #孤对电子进攻H^+，变换为O-H键，H^+的正电荷消失
@@ -999,7 +991,7 @@ class test(Scene):
         OH2_lone_pair=acetone3.charges["OH2"]
 
         self.add(OH2_mob,OH2_lone_pair)
-        self.play(FadeIn(OH2_mob),FadeIn(OH2_lone_pair))
+        self.play(FadeIn(OH2_mob),FadeIn(OH2_lone_pair),ReplacementTransform(text27,text28))
 
         #孤对电子进攻alphaH，形成OH2-H键；alphaC-H与C-C成C=C，C=O成C-O和O孤对电子
         C3_H1_bond_current=acetone3.bond_lookup.between("C3","H1")
@@ -1035,7 +1027,7 @@ class test(Scene):
         E_positive=acetone3.charges["E"]
 
         self.add(E_plus_mob,E_positive)
-        self.play(FadeIn(E_plus_mob),FadeIn(E_positive))
+        self.play(FadeIn(E_plus_mob),FadeIn(E_positive),ReplacementTransform(text28,text29))
 
         #先把E^+移动到alphaC右侧一个键长处
         C3_pos=acetone3.atomic_clusters["C3"]["pos"]
@@ -1072,7 +1064,7 @@ class test(Scene):
         OH2_lone_pair_after=acetone3.charges["OH2"]
 
         self.add(OH2_mob_after,OH2_lone_pair_after)
-        self.play(FadeIn(OH2_mob_after),FadeIn(OH2_lone_pair_after))
+        self.play(FadeIn(OH2_mob_after),FadeIn(OH2_lone_pair_after),ReplacementTransform(text29,text30))
         self.wait(0.5)
 
         O1_H2_bond_current=acetone3.bond_lookup.between("O1","H2")
