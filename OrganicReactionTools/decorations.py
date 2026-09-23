@@ -241,10 +241,14 @@ class ReactionArrow(VGroup):
     每一侧可以传单个对象、对象列表或 TeX 字符串：字符串会用本包默认的
     MathTex（ctex 模板，可写中文与 \\mathrm{}）按 font_size 渲染；
     列表会用 VGroup(...).arrange(DOWN, buff=0.2) 竖直堆叠成一栏，
-    宽度取整栏的矩形边界宽度。文本会置于箭头之上（z_index 提升），
-    不会被箭头压住。
+    宽度取整栏的矩形边界宽度。上下方内容统一取 color 颜色、并置于箭头
+    之上（z_index 至少提升到 2），不会被箭头压住。
 
     文本内容或字号改变后，调用 rebuild() 可让长度与间距重新按新尺寸自适应。
+
+    默认样式：线宽为 DEFAULT_STROKE_WIDTH/2（manim Arrow 默认线宽 6 的一半），
+    尖端长度为 length*0.075（本库其它箭头所用 length*0.15 的一半）；
+    两者都可通过 stroke_width、tip_length 参数覆盖。
 
     Parameters
     ----------
@@ -267,7 +271,9 @@ class ReactionArrow(VGroup):
     font_size : float
         字符串内容渲染成 MathTex 时的字号，默认 25。
     **kwargs
-        传递给内部 Arrow 的额外参数（如 stroke_width、tip_length 等）。
+        传递给内部 Arrow 的额外参数。缺省线宽为 DEFAULT_STROKE_WIDTH/2、
+        缺省尖端长度为 length*0.075，显式传入 stroke_width / tip_length
+        时以传入值为准（rebuild 时同样保持）。
     """
 
     def __init__(self,*,
@@ -308,7 +314,12 @@ class ReactionArrow(VGroup):
         else:
             self.length=float(length)  # 显式给定长度时不参与自适应
         self.arrow=self._new_arrow()
+
         self.add(self.arrow)
+        if self.above is not None:
+            self.add(self.above)
+        if self.below is not None:
+            self.add(self.below)
         self._layout()
 
     def _build_side(self,*,items,color,font_size)->VGroup|None:
@@ -334,6 +345,7 @@ class ReactionArrow(VGroup):
             group=VGroup(mobjects[0])
         else:
             group=VGroup(*mobjects).arrange(DOWN,buff=0.2)
+        group.set_color(color)  # 上下方内容统一取箭头颜色
         for mobject in group:
             mobject.set_z_index(max(float(mobject.z_index),2.))  # 文本压在箭头之上
         return group
@@ -347,9 +359,17 @@ class ReactionArrow(VGroup):
         self.length=max(self._side_width(self.above),self._side_width(self.below))+self.buffer
 
     def _new_arrow(self)->Arrow:
-        """按当前起点与长度新建内部箭头（复用构造时传入的 Arrow 参数）。"""
+        """按当前起点与长度新建内部箭头（复用构造时传入的 Arrow 参数）。
+
+        默认线宽为 DEFAULT_STROKE_WIDTH/2（manim Arrow 默认线宽 6 的一半），
+        默认尖端长度为 length*0.075（本库 PolarityArrow 所用 length*0.15
+        的一半）；两者都可通过 kwargs 覆盖（stroke_width、tip_length）。
+        """
+        kwargs=dict(self.arrow_kwargs)
+        kwargs.setdefault("stroke_width",DEFAULT_STROKE_WIDTH/2)
+        kwargs.setdefault("tip_length",self.length*0.075)
         return Arrow(start=self.start_point,end=self.start_point+RIGHT*self.length,
-                     buff=0,color=self.color,**self.arrow_kwargs)
+                     buff=0,color=self.color,**kwargs)
 
     def _layout(self)->None:
         """按当前长度与两侧尺寸重新摆放箭头与上下方对象。"""
