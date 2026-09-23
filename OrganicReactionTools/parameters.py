@@ -29,6 +29,13 @@ ratio_transition_state=1.2
 """过渡态键长比例"""
 default_charge_edge=0.1
 """默认电荷边距"""
+#reaction arrow
+reaction_arrow_buffer=1
+"""反应箭头长度相对上下方对象宽度较大值的默认余量"""
+reaction_arrow_gap=0.2
+"""反应箭头与上下方对象边界之间的默认间距"""
+reaction_arrow_font_size=25
+"""反应箭头上下方文本默认字号"""
 #electron clouds
 electron_cloud_length=bond_length
 """电子云单瓣卵形线长度"""

@@ -1,10 +1,11 @@
 """装饰图形：括号与箭头。"""
 
-from manim import VGroup, Line, CubicBezier, ArrowTriangleFilledTip, Arrow, WHITE, PI, UP, UL, YELLOW, DEFAULT_STROKE_WIDTH
+from manim import VGroup, Line, CubicBezier, ArrowTriangleFilledTip, Arrow, WHITE, PI, UP, UL, RIGHT, DOWN, YELLOW, DEFAULT_STROKE_WIDTH, Mobject
 from manim.typing import Vector3D
 import numpy as np
 
-from .parameters import MathTex
+from .parameters import (MathTex, mytemplate, reaction_arrow_buffer,
+                         reaction_arrow_gap, reaction_arrow_font_size)
 
 class BracketBetweenPoints(VGroup):
     def __init__(self,*,start:Vector3D,end:Vector3D,ratio_edge=0.1,**kwargs):
@@ -225,3 +226,159 @@ class BondPolarityArrow(PolarityArrow):
         self.bond_end=end_point
         self.side=side
         self.offset=offset
+
+
+class ReactionArrow(VGroup):
+    """反应箭头：水平指向右侧，上下方显示反应条件和试剂等信息。
+
+    几何规格：
+    - 箭头强制水平且指向右侧，由 start（起点/尾端坐标）与 length
+      （尾端到箭尖的总长度）确定；
+    - 上下方对象水平居中于箭头中点（即 start 沿 +x 方向偏移 length/2）；
+    - 上方对象整体的外沿（下沿）与箭头所在直线的距离为 gap，下方同理；
+    - length 缺省时自适应：长度 = max(上方整体宽度, 下方整体宽度) + buffer。
+
+    每一侧可以传单个对象、对象列表或 TeX 字符串：字符串会用本包默认的
+    MathTex（ctex 模板，可写中文与 \\mathrm{}）按 font_size 渲染；
+    列表会用 VGroup(...).arrange(DOWN, buff=0.2) 竖直堆叠成一栏，
+    宽度取整栏的矩形边界宽度。文本会置于箭头之上（z_index 提升），
+    不会被箭头压住。
+
+    文本内容或字号改变后，调用 rebuild() 可让长度与间距重新按新尺寸自适应。
+
+    Parameters
+    ----------
+    start : Vector3D
+        箭头起点（尾端）坐标。
+    above : Mobject | list | str | None
+        箭头上方显示的对象，默认 None（不显示）。
+    below : Mobject | list | str | None
+        箭头下方显示的对象，默认 None（不显示）。
+        above 与 below 不能同时为空。
+    length : float
+        箭头总长度；默认 -1 表示按上下方宽度自适应，
+        即 max(上方宽度, 下方宽度) + buffer。
+    buffer : float
+        自适应时长度相对上下方宽度较大值的余量，默认 1。
+    gap : float
+        上下方对象外沿与箭头直线的距离，默认 0.2；负值会被夹取为 0。
+    color : ManimColor
+        箭头与文本颜色，默认 WHITE。
+    font_size : float
+        字符串内容渲染成 MathTex 时的字号，默认 25。
+    **kwargs
+        传递给内部 Arrow 的额外参数（如 stroke_width、tip_length 等）。
+    """
+
+    def __init__(self,*,
+                 start:Vector3D,
+                 above:Mobject|list|str|None=None,
+                 below:Mobject|list|str|None=None,
+                 length:float=-1.0,
+                 buffer:float=reaction_arrow_buffer,
+                 gap:float=reaction_arrow_gap,
+                 color=WHITE,
+                 font_size:float=reaction_arrow_font_size,
+                 **kwargs):
+
+        if length!=-1.0 and length<=0:
+            raise ValueError(f"length 必须为正数，或用 -1 表示自适应，实际为 {length}。")
+        if buffer<0:
+            raise ValueError(f"buffer 不能为负数，实际为 {buffer}。")
+        if font_size<=0:
+            raise ValueError(f"font_size 必须大于 0，实际为 {font_size}。")
+
+        super().__init__(color=color)
+
+        self.above=self._build_side(items=above,color=color,font_size=font_size)
+        self.below=self._build_side(items=below,color=color,font_size=font_size)
+
+        if self.above is None and self.below is None:
+            raise ValueError("ReactionArrow 的 above 与 below 不能同时为空。")
+
+        self.start_point=np.array(start,dtype=float)
+        self.buffer=buffer
+        self.gap=max(gap,0)  # 负间距会让文本压住箭头，夹取为 0
+        self.color=color
+        self.font_size=font_size
+        self.arrow_kwargs=dict(kwargs)
+
+        if length==-1.0:
+            self._apply_auto_length()  # 自适应：max(上方宽度, 下方宽度) + buffer
+        else:
+            self.length=float(length)  # 显式给定长度时不参与自适应
+        self.arrow=self._new_arrow()
+        self.add(self.arrow)
+        self._layout()
+
+    def _build_side(self,*,items,color,font_size)->VGroup|None:
+        """把一侧的输入统一整理成竖直堆叠的 VGroup；无内容时返回 None。"""
+        if items is None:
+            return None
+        if isinstance(items,(str,Mobject)):
+            items=[items]
+        else:
+            items=list(items)
+        if len(items)==0:
+            return None
+
+        mobjects=[]
+        for item in items:
+            if isinstance(item,str):
+                mobjects.append(MathTex(item,color=color,font_size=font_size,
+                                        tex_template=mytemplate))
+            else:
+                mobjects.append(item)
+
+        if len(mobjects)==1:
+            group=VGroup(mobjects[0])
+        else:
+            group=VGroup(*mobjects).arrange(DOWN,buff=0.2)
+        for mobject in group:
+            mobject.set_z_index(max(float(mobject.z_index),2.))  # 文本压在箭头之上
+        return group
+
+    @staticmethod
+    def _side_width(group:VGroup|None)->float:
+        return 0. if group is None else float(group.width)
+
+    def _apply_auto_length(self)->None:
+        """按上下方对象的当前宽度重新计算自适应长度。"""
+        self.length=max(self._side_width(self.above),self._side_width(self.below))+self.buffer
+
+    def _new_arrow(self)->Arrow:
+        """按当前起点与长度新建内部箭头（复用构造时传入的 Arrow 参数）。"""
+        return Arrow(start=self.start_point,end=self.start_point+RIGHT*self.length,
+                     buff=0,color=self.color,**self.arrow_kwargs)
+
+    def _layout(self)->None:
+        """按当前长度与两侧尺寸重新摆放箭头与上下方对象。"""
+        start_point=np.array(self.arrow.get_start(),dtype=float)
+        mid=start_point+np.array([self.length/2,0,0])
+        if self.above is not None:
+            self.above.move_to([mid[0],start_point[1]+self.gap+self.above.height/2,0])
+        if self.below is not None:
+            self.below.move_to([mid[0],start_point[1]-self.gap-self.below.height/2,0])
+
+    def rebuild(self)->None:
+        """按上下方对象的当前尺寸重新自适应长度并重排（内容或字号改变后调用）。
+
+        起点以箭头当前的实际位置为准，因此 move_to/shift 之后再调用
+        rebuild 仍保持几何契约。
+        """
+        self.remove(self.arrow)
+        if self.above is not None:
+            self.remove(self.above)
+        if self.below is not None:
+            self.remove(self.below)
+
+        self.start_point=np.array(self.arrow.get_start(),dtype=float)
+        self._apply_auto_length()
+        self.arrow=self._new_arrow()
+
+        self.add(self.arrow)
+        if self.above is not None:
+            self.add(self.above)
+        if self.below is not None:
+            self.add(self.below)
+        self._layout()
