@@ -4,6 +4,13 @@
 * text=auto
 
 ###############################################################################
+# Python 源文件固定使用 Windows CRLF 行尾，避免新建/重写文件时掉成裸 LF。
+# 说明：text=auto 只声明"按文本规范化"，并不会保证工作区为 CRLF；
+# 这里显式指定 eol=crlf，使检出与提交两侧都保持 CRLF 约定。
+###############################################################################
+*.py text eol=crlf
+
+###############################################################################
 # Set default behavior for command prompt diff.
 #
 # This is need for earlier builds of msysgit that does not have it on by
