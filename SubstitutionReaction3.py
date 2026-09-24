@@ -1086,8 +1086,13 @@ class test(Scene):
         H2_mob_current=acetone3.atomic_clusters["H2"][Mobject]
         self.play(FadeOut(OH2_mob_after,OH2_positive_after,OH2_H2_bond_after,H2_mob_current),run_time=1)
         acetone3.delete_atom(names=["OH2","H2"])
-        self.wait(0.5)
+        self.wait(1.5)
 
         #再让屏幕上所有对象消失
         self.play(FadeOut(*self.mobjects),run_time=1)
         self.wait(1.5)
+
+        #-----------------------Haloform reaction-----------------------
+
+        Haloform_reaction=Title(text=r"\text{卤仿反应}")
+        self.play(Write(Haloform_reaction))
