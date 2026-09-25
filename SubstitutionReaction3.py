@@ -1158,3 +1158,32 @@ class test(Scene):
                   substrate.animate.move_to(ORIGIN),
                   run_time=1.5)
         self.wait(1.5)
+
+        #CH3展开为无文本标签的C和三个H
+        substrate_expanded=StructuralFormula(name="C1",pos=ORIGIN,text=None)
+        substrate_expanded.add_atom(name="R",direction=210*DEGREES,text=r"\mathrm{R}",
+                                     bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        substrate_expanded.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
+                                     bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
+        substrate_expanded.add_atom(name="C2",direction=330*DEGREES,text=None,
+                                     bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        substrate_expanded.add_atom(name="H1",direction=30*DEGREES,text=r"\mathrm{H}",
+                                     bond_type=BondType.NORMAL_BOND,adjacency="C2")
+        substrate_expanded.add_atom(name="H2",direction=330*DEGREES,text=r"\mathrm{H}",
+                                     bond_type=BondType.NORMAL_BOND,adjacency="C2")
+        substrate_expanded.add_atom(name="H3",direction=270*DEGREES,text=r"\mathrm{H}",
+                                     bond_type=BondType.NORMAL_BOND,adjacency="C2")
+
+        expanded_methyl=VGroup(
+            substrate_expanded.atomic_clusters["H1"][Mobject],
+            substrate_expanded.atomic_clusters["H2"][Mobject],
+            substrate_expanded.atomic_clusters["H3"][Mobject],
+            substrate_expanded.atomic_clusters["H1"][Bond][0],
+            substrate_expanded.atomic_clusters["H2"][Bond][0],
+            substrate_expanded.atomic_clusters["H3"][Bond][0],
+        )
+        substrate_expanded.remove(*expanded_methyl.submobjects)
+        substrate_expanded.add(expanded_methyl)
+
+        self.play(ReplacementTransform(substrate,substrate_expanded),run_time=1.5)
+        self.wait(1.5)
