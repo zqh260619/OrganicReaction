@@ -1096,3 +1096,46 @@ class test(Scene):
 
         Haloform_reaction=Title(text=r"\text{卤仿反应}")
         self.play(Write(Haloform_reaction))
+
+        #卤仿反应总反应式：RCOCH3 + NaOH + X2 -> RCOONa + CHX3
+        substrate=StructuralFormula(name="C1",pos=ORIGIN,text=None)
+        substrate.add_atom(name="R",direction=210*DEGREES,text=r"\mathrm{R}",
+                           bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        substrate.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
+                           bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
+        substrate.add_atom(name="CH3",direction=330*DEGREES,text=r"\mathrm{CH_3}",
+                           bond_type=BondType.NORMAL_BOND,adjacency="C1",
+                           text_offset=np.array([0.2,-0.03,0]))
+
+        product=StructuralFormula(name="C1",pos=ORIGIN,text=None)
+        product.add_atom(name="R",direction=210*DEGREES,text=r"\mathrm{R}",
+                         bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        product.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
+                         bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
+        product.add_atom(name="O2",direction=330*DEGREES,text=r"\mathrm{O}",
+                         bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        product.add_charge(text="O2",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        Na_pos=product.atomic_clusters["O2"]["pos"]+np.array([0.7,0,0])
+        Na_mob=AtomicCluster(text=r"\mathrm{Na}",pos=Na_pos,attributes=product.attributes)
+        product.register_atom(name="Na",mobject=Na_mob)
+        product.add_charge(text="Na",pos=UR,charge_type=ChargeType.POSITIVE)
+
+        plus1=MathTex("+",font_size=txt_size)
+        NaOH_mob=MathTex(r"\mathrm{NaOH}",font_size=txt_size)
+        plus2=MathTex("+",font_size=txt_size)
+        X2_mob=MathTex(r"\mathrm{X_2}",font_size=txt_size)
+        plus3=MathTex("+",font_size=txt_size)
+        CHX3_mob=MathTex(r"\mathrm{CHX_3}",font_size=txt_size)
+
+        reaction_arrow=ReactionArrow(start=ORIGIN,above=r"\mathrm{H_2O}")
+        reaction_group=VGroup(substrate,plus1,NaOH_mob,plus2,X2_mob,
+                              reaction_arrow,product,plus3,CHX3_mob)
+        reaction_group.arrange(RIGHT,buff=0.25)
+        others=VGroup(substrate,plus1,NaOH_mob,plus2,X2_mob,product,plus3,CHX3_mob)
+        arrow_line_y=reaction_arrow.arrow.get_center()[1]
+        reaction_arrow.shift(UP*(others.get_center()[1]-arrow_line_y))
+        reaction_group.move_to(ORIGIN)
+
+        self.play(FadeIn(reaction_group))
+        self.wait(2)
