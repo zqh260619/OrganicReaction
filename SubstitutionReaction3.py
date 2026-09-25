@@ -1141,12 +1141,12 @@ class test(Scene):
         self.wait(2)
 
         #卤仿反应机理描述
-        text31=Description(text=r"\text{在}\mathrm{NaOH/H_2O}\text{的条件下，甲基酮、乙醛或可被氧化为甲基酮的醇可以与卤素单质反应生成羧酸钠和卤仿（此处以甲基酮底物为例）}")
-        text32=Description(text=r"\text{这个反应中发生了三次羰基活泼}\mathrm{\alpha-H}\text{的亲电取代和一次类似羧酸衍生物的亲核加成-消除机理的裂解反应}")
+        text31=Description(text=r"\text{在}\mathrm{NaOH/H_2O}\text{的条件下甲基酮、乙醛或可被氧化为甲基酮的醇可以与卤素单质反应，}\\\text{生成羧酸钠和卤仿（此处以甲基酮底物为例）}")
+        text32=Description(text=r"\text{这个反应中发生了三次羰基活泼}\mathrm{\alpha-H}\text{的亲电取代}\\\text{和一次类似羧酸衍生物的亲核加成-消除机理的裂解反应}")
         text33=Description(text=r"\text{首先，碱拔去一个}\mathrm{\alpha-H}\text{，形成烯醇负离子}")
-        text34=Description(text=r"\text{接着，}\mathrm{\alpha-C}\text{进攻卤素分子}\mathrm{X_2}\text{，一个卤素原子被引入，另一个以}\mathrm{X^-}\text{形式离去，发生了一次}\mathrm{\alpha-H}\text{的亲电取代}")
+        text34=Description(text=r"\text{接着，}\mathrm{\alpha-C}\text{进攻卤素分子}\mathrm{X_2}\text{，}\\\text{一个卤素原子被引入，另一个以}\mathrm{X^-}\text{形式离去，发生了一次}\mathrm{\alpha-H}\text{的亲电取代}")
         text35=Description(text=r"\text{以上过程再进行两次，直到三个}\mathrm{\alpha-H}\text{全部被卤原子取代}")
         text36=Description(text=r"\text{然后，}\mathrm{OH^-}\text{进攻羰基碳，形成四面体中间体}")
         text37=Description(text=r"\text{三个卤素原子通过强吸电子效应，使得}\mathrm{CX_3^-}\text{更稳定，更易离去}")
-        text38=Description(text=r"\text{最后，}\mathrm{CX_3^-}\text{离去，}\mathrm{C-C}\text{键断裂，羰基}\mathrm{C=O}\text{双键恢复，并发生质子转移，得到产物羧酸钠和卤仿}")
-        text39=Description(text=r"\text{这里如果卤素是}\mathrm{I_2}\text{，那么可以生成}\mathrm{CHI_3}\text{黄色沉淀，可用于鉴别甲基酮、乙醛和可被氧化为甲基酮的醇}")
+        text38=Description(text=r"\text{最后，}\mathrm{CX_3^-}\text{离去，}\mathrm{C-C}\text{键断裂，羰基}\mathrm{C=O}\text{双键恢复，}\\\text{并发生质子转移，得到产物羧酸钠和卤仿}")
+        text39=Description(text=r"\text{这里如果卤素是}\mathrm{I_2}\text{，那么可以生成}\mathrm{CHI_3}\text{黄色沉淀，}\\\text{可用于鉴别甲基酮、乙醛和可被氧化为甲基酮的醇}")
