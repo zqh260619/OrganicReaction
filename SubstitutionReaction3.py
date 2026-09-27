@@ -375,7 +375,7 @@ class test(Scene):
         acetyl_L.atomic_clusters["L"][Mobject]=X_mob
         acetyl_L.add(X_mob)
 
-        #左边：氧上的孤对电子和C-O单键变为双键，C-X键变为X^-，O左上30°出现正电荷
+        #左边：氧上的孤对电子和C-O单键变为双键，C-X键变为X^-，C-Nu楔形键变回单键，O左上30°出现正电荷
         direction150=np.array([np.cos(150*DEGREES),np.sin(150*DEGREES),0])
         left_C1_O1_single=acetyl_L.bond_lookup.between("C1","O1")
         left_O_lone_pair=acetyl_L.charges["O1"]
@@ -384,10 +384,13 @@ class test(Scene):
         left_C1_O1_double=acetyl_L.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
         left_X_negative=acetyl_L.build_charge(text="L",pos=UL,charge_type=ChargeType.NEGATIVE)
         left_O_positive=acetyl_L.build_charge(text="O1",pos=direction150,charge_type=ChargeType.POSITIVE)
+        left_C1_Nu_in=acetyl_L.bond_lookup.between("C1","Nu")
+        left_C1_Nu_normal=acetyl_L.build_bond(start="C1",end="Nu",bond_type=BondType.NORMAL_BOND)
 
         left_step_restore=ElectronMigrationStep(
             replace=[(VGroup(left_C1_O1_single,left_O_lone_pair),left_C1_O1_double),
-                     (left_C1_X_bond,left_X_negative)],
+                     (left_C1_X_bond,left_X_negative),
+                     (left_C1_Nu_in,left_C1_Nu_normal)],
             create=[left_O_positive],
         )
         self.play(acetyl_L.electron_migration(steps=[left_step_restore],run_time=1.5))
@@ -464,10 +467,13 @@ class test(Scene):
         right_C1_O1_double=right_mol.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
         right_L_lone_pair_after=right_mol.build_charge(text="L",pos=LEFT,charge_type=ChargeType.PAIR)
         right_O_positive=right_mol.build_charge(text="O1",pos=direction150,charge_type=ChargeType.POSITIVE)
+        right_C1_Nu_in=right_mol.bond_lookup.between("C1","Nu")
+        right_C1_Nu_normal=right_mol.build_bond(start="C1",end="Nu",bond_type=BondType.NORMAL_BOND)
 
         right_step_restore=ElectronMigrationStep(
             replace=[(VGroup(right_C1_O1_single,right_O_lone_pair),right_C1_O1_double),
-                     (right_C1_L_bond,right_L_lone_pair_after)],
+                     (right_C1_L_bond,right_L_lone_pair_after),
+                     (right_C1_Nu_in,right_C1_Nu_normal)],
             create=[right_O_positive],
             fadeout=[right_L_positive],
         )
@@ -1512,4 +1518,40 @@ class test(Scene):
                                        text_offset=np.array([0.2,-0.03,0]))
 
         self.play(ReplacementTransform(substrate_expanded,substrate_abbreviated),run_time=1.5)
+        self.wait(1.5)
+
+        #OH^-从CX3下方进攻羰基C
+        CX3_mob=substrate_abbreviated.atomic_clusters["CX3"][Mobject]
+        OH_start=CX3_mob.get_center()+np.array([0,-1.5*substrate_abbreviated.attributes.length_global,0])
+        OH_target=(substrate_abbreviated.atomic_clusters["C1"]["pos"]
+                   +np.array([np.cos(300*DEGREES),np.sin(300*DEGREES),0])*substrate_abbreviated.attributes.length_global)
+
+        OH_mob=AtomicCluster(text=r"\mathrm{OH}",pos=OH_start,attributes=substrate_abbreviated.attributes)
+        substrate_abbreviated.register_atom(name="OH",mobject=OH_mob)
+        substrate_abbreviated.add_charge(text="OH",pos=UL,charge_type=ChargeType.NEGATIVE)
+        OH_negative=substrate_abbreviated.charges["OH"]
+
+        self.add(OH_mob,OH_negative)
+        self.play(FadeIn(OH_mob),FadeIn(OH_negative))
+        self.wait(0.5)
+
+        #OH^-移动到羰基C的右下60°（300°）方向
+        OH_shift=OH_target-OH_mob.get_center()
+        self.play(OH_mob.animate.shift(OH_shift),
+                  OH_negative.animate.shift(OH_shift),
+                  run_time=1)
+        substrate_abbreviated.atomic_clusters["OH"]["pos"]=OH_target
+        self.wait(0.5)
+
+        #OH^-的电子对进攻羰基C形成四面体中间体：C=O变C-O单键并在O左上出现负电荷
+        C1_O1_double=substrate_abbreviated.bond_lookup.between("C1","O1")
+        C1_OH_bond=substrate_abbreviated.build_bond(start="C1",end="OH",bond_type=BondType.NORMAL_BOND)
+        C1_O1_single=substrate_abbreviated.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
+        O1_negative=substrate_abbreviated.build_charge(text="O1",pos=UL,charge_type=ChargeType.NEGATIVE)
+
+        step_oh_addition=ElectronMigrationStep(
+            replace=[(OH_negative,C1_OH_bond),
+                     (C1_O1_double,VGroup(C1_O1_single,O1_negative))],
+        )
+        self.play(substrate_abbreviated.electron_migration(steps=[step_oh_addition],run_time=1.5))
         self.wait(1.5)
