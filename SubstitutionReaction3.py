@@ -1298,3 +1298,189 @@ class test(Scene):
         C2_X1_bond.end=H1_pos
         C2_X1_bond.direction=np.arctan2((H1_pos-C2_pos)[1],(H1_pos-C2_pos)[0])
         self.wait(1.5)
+
+        #第二次alpha-H的亲电取代：H1被X取代
+        H1_pos=substrate_expanded.atomic_clusters["H1"]["pos"]
+        OHB_pos=H1_pos+np.array([substrate_expanded.attributes.length_global,0,0])
+        OHB_mob=AtomicCluster(text=r"\mathrm{OH}",pos=OHB_pos,text_offset=np.array([0.2,0,0]),attributes=substrate_expanded.attributes)
+        substrate_expanded.register_atom(name="OHB",mobject=OHB_mob)
+        substrate_expanded.add_charge(text="OHB",pos=UL,charge_type=ChargeType.NEGATIVE)
+        OHB_negative=substrate_expanded.charges["OHB"]
+
+        self.add(OHB_mob,OHB_negative)
+        self.play(FadeIn(OHB_mob),FadeIn(OHB_negative))
+        self.wait(0.5)
+
+        #OH^-进攻H1：C-H键断裂，形成C=C，C=O变C-O单键并在O左上出现负电荷
+        C2_H1_bond=substrate_expanded.bond_lookup.between("C2","H1")
+        C1_C2_bond=substrate_expanded.bond_lookup.between("C1","C2")
+        C1_O1_double=substrate_expanded.bond_lookup.between("C1","O1")
+        OHB_H1_bond=substrate_expanded.build_bond(start="OHB",end="H1",bond_type=BondType.NORMAL_BOND)
+        C1_C2_double=substrate_expanded.build_bond(start="C1",end="C2",bond_type=BondType.DOUBLE_BOND,side=1,
+                                                   start_side_edge=True,end_side_edge=True)
+        C1_O1_single=substrate_expanded.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
+        O1_negative=substrate_expanded.build_charge(text="O1",pos=UL,charge_type=ChargeType.NEGATIVE)
+
+        step_oh_attack_B=ElectronMigrationStep(
+            replace=[(OHB_negative,OHB_H1_bond),
+                     (VGroup(C2_H1_bond,C1_C2_bond),C1_C2_double),
+                     (C1_O1_double,VGroup(C1_O1_single,O1_negative))],
+        )
+        self.play(substrate_expanded.electron_migration(steps=[step_oh_attack_B],run_time=1.5))
+        self.wait(1.5)
+
+        #H1-OH消失
+        H1_mob=substrate_expanded.atomic_clusters["H1"][Mobject]
+        self.play(FadeOut(OHB_mob,H1_mob,OHB_H1_bond),run_time=1)
+        substrate_expanded.delete_atom(names=["OHB","H1"])
+        self.remove(OHB_mob,H1_mob,OHB_H1_bond)
+        self.wait(0.5)
+
+        #H1原来的位置出现X-X
+        XleftB_pos=H1_pos
+        XrightB_pos=XleftB_pos+np.array([substrate_expanded.attributes.length_global,0,0])
+        XleftB_mob=AtomicCluster(text=r"\mathrm{X}",pos=XleftB_pos,attributes=substrate_expanded.attributes)
+        XrightB_mob=AtomicCluster(text=r"\mathrm{X}",pos=XrightB_pos,attributes=substrate_expanded.attributes)
+        substrate_expanded.register_atom(name="XleftB",mobject=XleftB_mob)
+        substrate_expanded.register_atom(name="XrightB",mobject=XrightB_mob,
+                                         adjacency="XleftB",bond_type=BondType.NORMAL_BOND)
+        XleftB_XrightB_bond=substrate_expanded.bond_lookup.between("XleftB","XrightB")
+
+        self.add(XleftB_mob,XrightB_mob,XleftB_XrightB_bond)
+        self.play(FadeIn(XleftB_mob),FadeIn(XrightB_mob),FadeIn(XleftB_XrightB_bond))
+        self.wait(0.5)
+
+        #alpha-C进攻左侧X；O负电荷消失、C=O恢复；X-X变为右侧X右上负电荷
+        C1_C2_double=substrate_expanded.bond_lookup.between("C1","C2")
+        C1_O1_single=substrate_expanded.bond_lookup.between("C1","O1")
+        O1_negative=substrate_expanded.charges["O1"]
+        C1_C2_single=substrate_expanded.build_bond(start="C1",end="C2",bond_type=BondType.NORMAL_BOND)
+        C2_XleftB_bond=substrate_expanded.build_bond(start="C2",end="XleftB",bond_type=BondType.NORMAL_BOND)
+        C1_O1_double=substrate_expanded.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
+        XrightB_negative=substrate_expanded.build_charge(text="XrightB",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        step_x_attack_B=ElectronMigrationStep(
+            replace=[(VGroup(C1_O1_single,O1_negative),C1_O1_double),
+                     (C1_C2_double,VGroup(C1_C2_single,C2_XleftB_bond)),
+                     (XleftB_XrightB_bond,XrightB_negative)],
+        )
+        self.play(substrate_expanded.electron_migration(steps=[step_x_attack_B],run_time=1.5))
+        self.wait(1.5)
+
+        #X^-消失
+        XrightB_negative=substrate_expanded.charges["XrightB"]
+        self.play(FadeOut(XrightB_mob,XrightB_negative),run_time=1)
+        substrate_expanded.delete_atom(names=["XrightB"])
+        self.remove(XrightB_mob,XrightB_negative)
+        self.wait(0.5)
+
+        #右侧下方的H与中间的X交换位置，让H位于右侧中间再重复同样的取代过程
+        H3_mob=substrate_expanded.atomic_clusters["H3"][Mobject]
+        XleftB_mob=substrate_expanded.atomic_clusters["XleftB"][Mobject]
+        H3_pos=substrate_expanded.atomic_clusters["H3"]["pos"]
+        XleftB_pos=substrate_expanded.atomic_clusters["XleftB"]["pos"]
+        C2_H3_bond=substrate_expanded.bond_lookup.between("C2","H3")
+        C2_XleftB_bond=substrate_expanded.bond_lookup.between("C2","XleftB")
+
+        C2_pos=substrate_expanded.atomic_clusters["C2"]["pos"]
+        C2_H3_new=Bond(bond_type=BondType.NORMAL_BOND,
+                       start=C2_pos,end=XleftB_pos,
+                       start_edge=False,end_edge=True,
+                       attributes=substrate_expanded.attributes,
+                       atom1="C2",atom2="H3")
+        C2_XleftB_new=Bond(bond_type=BondType.NORMAL_BOND,
+                           start=C2_pos,end=H3_pos,
+                           start_edge=False,end_edge=True,
+                           attributes=substrate_expanded.attributes,
+                           atom1="C2",atom2="XleftB")
+
+        self.play(Transform(C2_H3_bond,C2_H3_new),
+                  Transform(C2_XleftB_bond,C2_XleftB_new),
+                  H3_mob.animate.move_to(XleftB_pos),
+                  XleftB_mob.animate.move_to(H3_pos),
+                  run_time=1.5)
+
+        substrate_expanded.atomic_clusters["H3"]["pos"]=XleftB_pos
+        substrate_expanded.atomic_clusters["XleftB"]["pos"]=H3_pos
+        C2_H3_bond.start=C2_pos
+        C2_H3_bond.end=XleftB_pos
+        C2_H3_bond.direction=np.arctan2((XleftB_pos-C2_pos)[1],(XleftB_pos-C2_pos)[0])
+        C2_XleftB_bond.start=C2_pos
+        C2_XleftB_bond.end=H3_pos
+        C2_XleftB_bond.direction=np.arctan2((H3_pos-C2_pos)[1],(H3_pos-C2_pos)[0])
+        self.wait(1.5)
+
+        #第三次alpha-H的亲电取代：H3被X取代
+        H3_pos=substrate_expanded.atomic_clusters["H3"]["pos"]
+        OHC_pos=H3_pos+np.array([substrate_expanded.attributes.length_global,0,0])
+        OHC_mob=AtomicCluster(text=r"\mathrm{OH}",pos=OHC_pos,text_offset=np.array([0.2,0,0]),attributes=substrate_expanded.attributes)
+        substrate_expanded.register_atom(name="OHC",mobject=OHC_mob)
+        substrate_expanded.add_charge(text="OHC",pos=UL,charge_type=ChargeType.NEGATIVE)
+        OHC_negative=substrate_expanded.charges["OHC"]
+
+        self.add(OHC_mob,OHC_negative)
+        self.play(FadeIn(OHC_mob),FadeIn(OHC_negative))
+        self.wait(0.5)
+
+        #OH^-进攻H3：C-H键断裂，形成C=C，C=O变C-O单键并在O左上出现负电荷
+        C2_H3_bond=substrate_expanded.bond_lookup.between("C2","H3")
+        C1_C2_bond=substrate_expanded.bond_lookup.between("C1","C2")
+        C1_O1_double=substrate_expanded.bond_lookup.between("C1","O1")
+        OHC_H3_bond=substrate_expanded.build_bond(start="OHC",end="H3",bond_type=BondType.NORMAL_BOND)
+        C1_C2_double=substrate_expanded.build_bond(start="C1",end="C2",bond_type=BondType.DOUBLE_BOND,side=1,
+                                                   start_side_edge=True,end_side_edge=True)
+        C1_O1_single=substrate_expanded.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
+        O1_negative=substrate_expanded.build_charge(text="O1",pos=UL,charge_type=ChargeType.NEGATIVE)
+
+        step_oh_attack_C=ElectronMigrationStep(
+            replace=[(OHC_negative,OHC_H3_bond),
+                     (VGroup(C2_H3_bond,C1_C2_bond),C1_C2_double),
+                     (C1_O1_double,VGroup(C1_O1_single,O1_negative))],
+        )
+        self.play(substrate_expanded.electron_migration(steps=[step_oh_attack_C],run_time=1.5))
+        self.wait(1.5)
+
+        #H3-OH消失
+        H3_mob=substrate_expanded.atomic_clusters["H3"][Mobject]
+        self.play(FadeOut(OHC_mob,H3_mob,OHC_H3_bond),run_time=1)
+        substrate_expanded.delete_atom(names=["OHC","H3"])
+        self.remove(OHC_mob,H3_mob,OHC_H3_bond)
+        self.wait(0.5)
+
+        #H3原来的位置出现X-X
+        XleftC_pos=H3_pos
+        XrightC_pos=XleftC_pos+np.array([substrate_expanded.attributes.length_global,0,0])
+        XleftC_mob=AtomicCluster(text=r"\mathrm{X}",pos=XleftC_pos,attributes=substrate_expanded.attributes)
+        XrightC_mob=AtomicCluster(text=r"\mathrm{X}",pos=XrightC_pos,attributes=substrate_expanded.attributes)
+        substrate_expanded.register_atom(name="XleftC",mobject=XleftC_mob)
+        substrate_expanded.register_atom(name="XrightC",mobject=XrightC_mob,
+                                         adjacency="XleftC",bond_type=BondType.NORMAL_BOND)
+        XleftC_XrightC_bond=substrate_expanded.bond_lookup.between("XleftC","XrightC")
+
+        self.add(XleftC_mob,XrightC_mob,XleftC_XrightC_bond)
+        self.play(FadeIn(XleftC_mob),FadeIn(XrightC_mob),FadeIn(XleftC_XrightC_bond))
+        self.wait(0.5)
+
+        #alpha-C进攻左侧X；O负电荷消失、C=O恢复；X-X变为右侧X右上负电荷
+        C1_C2_double=substrate_expanded.bond_lookup.between("C1","C2")
+        C1_O1_single=substrate_expanded.bond_lookup.between("C1","O1")
+        O1_negative=substrate_expanded.charges["O1"]
+        C1_C2_single=substrate_expanded.build_bond(start="C1",end="C2",bond_type=BondType.NORMAL_BOND)
+        C2_XleftC_bond=substrate_expanded.build_bond(start="C2",end="XleftC",bond_type=BondType.NORMAL_BOND)
+        C1_O1_double=substrate_expanded.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
+        XrightC_negative=substrate_expanded.build_charge(text="XrightC",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        step_x_attack_C=ElectronMigrationStep(
+            replace=[(VGroup(C1_O1_single,O1_negative),C1_O1_double),
+                     (C1_C2_double,VGroup(C1_C2_single,C2_XleftC_bond)),
+                     (XleftC_XrightC_bond,XrightC_negative)],
+        )
+        self.play(substrate_expanded.electron_migration(steps=[step_x_attack_C],run_time=1.5))
+        self.wait(1.5)
+
+        #X^-消失
+        XrightC_negative=substrate_expanded.charges["XrightC"]
+        self.play(FadeOut(XrightC_mob,XrightC_negative),run_time=1)
+        substrate_expanded.delete_atom(names=["XrightC"])
+        self.remove(XrightC_mob,XrightC_negative)
+        self.wait(1.5)
