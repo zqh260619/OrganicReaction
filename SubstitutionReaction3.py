@@ -1255,3 +1255,46 @@ class test(Scene):
         )
         self.play(substrate_expanded.electron_migration(steps=[step_x_attack],run_time=1.5))
         self.wait(1.5)
+
+        #X^-消失
+        X2_mob=substrate_expanded.atomic_clusters["X2"][Mobject]
+        self.play(FadeOut(X2_mob,X2_negative),run_time=1)
+        substrate_expanded.delete_atom(names=["X2"])
+        self.remove(X2_mob,X2_negative)
+        self.wait(0.5)
+
+        #右侧上方的H与中间的X交换位置
+        H1_mob=substrate_expanded.atomic_clusters["H1"][Mobject]
+        X1_mob=substrate_expanded.atomic_clusters["X1"][Mobject]
+        H1_pos=substrate_expanded.atomic_clusters["H1"]["pos"]
+        X1_pos=substrate_expanded.atomic_clusters["X1"]["pos"]
+        C2_H1_bond=substrate_expanded.bond_lookup.between("C2","H1")
+        C2_X1_bond=substrate_expanded.bond_lookup.between("C2","X1")
+
+        C2_pos=substrate_expanded.atomic_clusters["C2"]["pos"]
+        C2_H1_new=Bond(bond_type=BondType.NORMAL_BOND,
+                       start=C2_pos,end=X1_pos,
+                       start_edge=False,end_edge=True,
+                       attributes=substrate_expanded.attributes,
+                       atom1="C2",atom2="H1")
+        C2_X1_new=Bond(bond_type=BondType.NORMAL_BOND,
+                       start=C2_pos,end=H1_pos,
+                       start_edge=False,end_edge=True,
+                       attributes=substrate_expanded.attributes,
+                       atom1="C2",atom2="X1")
+
+        self.play(Transform(C2_H1_bond,C2_H1_new),
+                  Transform(C2_X1_bond,C2_X1_new),
+                  H1_mob.animate.move_to(X1_pos),
+                  X1_mob.animate.move_to(H1_pos),
+                  run_time=1.5)
+
+        substrate_expanded.atomic_clusters["H1"]["pos"]=X1_pos
+        substrate_expanded.atomic_clusters["X1"]["pos"]=H1_pos
+        C2_H1_bond.start=C2_pos
+        C2_H1_bond.end=X1_pos
+        C2_H1_bond.direction=np.arctan2((X1_pos-C2_pos)[1],(X1_pos-C2_pos)[0])
+        C2_X1_bond.start=C2_pos
+        C2_X1_bond.end=H1_pos
+        C2_X1_bond.direction=np.arctan2((H1_pos-C2_pos)[1],(H1_pos-C2_pos)[0])
+        self.wait(1.5)
