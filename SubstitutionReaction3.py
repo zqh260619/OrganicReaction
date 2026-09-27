@@ -1484,3 +1484,32 @@ class test(Scene):
         substrate_expanded.delete_atom(names=["X6"])
         self.remove(X6_mob,X6_negative)
         self.wait(1.5)
+
+        #展开的-CX3变换为缩写的-CX3
+        C1_R_bond=substrate_expanded.bond_lookup.between("C1","R")
+        R_mob=substrate_expanded.atomic_clusters["R"][Mobject]
+        C1_O1_double=substrate_expanded.bond_lookup.between("C1","O1")
+        O1_mob=substrate_expanded.atomic_clusters["O1"][Mobject]
+        C1_C2_single=substrate_expanded.bond_lookup.between("C1","C2")
+        expanded_cx3=VGroup(substrate_expanded.atomic_clusters["X1"][Mobject],
+                            substrate_expanded.atomic_clusters["X3"][Mobject],
+                            substrate_expanded.atomic_clusters["X5"][Mobject],
+                            substrate_expanded.bond_lookup.between("C2","X1"),
+                            substrate_expanded.bond_lookup.between("C2","X3"),
+                            substrate_expanded.bond_lookup.between("C2","X5"))
+
+        #重整submobject顺序，使展开式与缩写式逐项对应
+        substrate_expanded.remove(*substrate_expanded.submobjects)
+        substrate_expanded.add(C1_R_bond,R_mob,C1_O1_double,O1_mob,C1_C2_single,expanded_cx3)
+
+        substrate_abbreviated=StructuralFormula(name="C1",pos=ORIGIN,text=None)
+        substrate_abbreviated.add_atom(name="R",direction=210*DEGREES,text=r"\mathrm{R}",
+                                       bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        substrate_abbreviated.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
+                                       bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
+        substrate_abbreviated.add_atom(name="CX3",direction=330*DEGREES,text=r"\mathrm{CX_3}",
+                                       bond_type=BondType.NORMAL_BOND,adjacency="C1",
+                                       text_offset=np.array([0.2,-0.03,0]))
+
+        self.play(ReplacementTransform(substrate_expanded,substrate_abbreviated),run_time=1.5)
+        self.wait(1.5)
