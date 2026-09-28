@@ -1567,7 +1567,7 @@ class test(Scene):
         C1_OH_bond=substrate_abbreviated.bond_lookup.between("C1","OH")
         C1_O1_double=substrate_abbreviated.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
         C1_OH_normal=substrate_abbreviated.build_bond(start="C1",end="OH",bond_type=BondType.NORMAL_BOND)
-        CX3_negative=substrate_abbreviated.build_charge(text="CX3",pos=UR,charge_type=ChargeType.NEGATIVE)
+        CX3_negative=substrate_abbreviated.build_charge(text="CX3",pos=UL,charge_type=ChargeType.NEGATIVE)
 
         step_cx3_leave=ElectronMigrationStep(
             replace=[(VGroup(C1_O1_single,O1_negative),C1_O1_double),
@@ -1575,7 +1575,6 @@ class test(Scene):
                      (C1_OH_bond,C1_OH_normal)],
         )
         self.play(substrate_abbreviated.electron_migration(steps=[step_cx3_leave],run_time=1.5))
-        self.wait(1.5)
 
         #CX3^-移开
         CX3_mob=substrate_abbreviated.atomic_clusters["CX3"][Mobject]
@@ -1585,11 +1584,101 @@ class test(Scene):
                   CX3_negative.animate.shift(CX3_shift),
                   run_time=1)
         substrate_abbreviated.atomic_clusters["CX3"]["pos"]=substrate_abbreviated.atomic_clusters["CX3"]["pos"]+CX3_shift
-        self.wait(0.5)
 
         #C-OH旋转到原来C-CX3的角度（330°）
         self.play(substrate_abbreviated.rotate_atoms(atom_names="OH",
                                                      center="C1",
                                                      angle=30*DEGREES,
                                                      run_time=0.8))
+        self.wait(1.5)
+
+        #羧基的-OH展开成-O-H（H在O右上30°）
+        OH_mob=substrate_abbreviated.atomic_clusters["OH"][Mobject]
+        OH_pos=substrate_abbreviated.atomic_clusters["OH"]["pos"]
+        H_pos=(OH_pos
+               +np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])*substrate_abbreviated.attributes.length_global)
+        O_mob=AtomicCluster(text=r"\mathrm{O}",pos=OH_pos,attributes=substrate_abbreviated.attributes)
+        H_mob=AtomicCluster(text=r"\mathrm{H}",pos=H_pos,attributes=substrate_abbreviated.attributes)
+
+        substrate_abbreviated.register_atom(name="H",mobject=H_mob,adjacency="OH",bond_type=BondType.NORMAL_BOND)
+        OH_H_bond=substrate_abbreviated.bond_lookup.between("OH","H")
+
+        self.add(H_mob,OH_H_bond)
+        self.play(ReplacementTransform(OH_mob,O_mob),
+                  FadeIn(H_mob),FadeIn(OH_H_bond),
+                  run_time=1)
+
+        #文本替换放在播放之后：上一步rotate_atoms会把结构式重新聚合进场景，
+        #若提前add(O_mob)，O标签会在形变开始前就被渲染出来（闪现）
+        substrate_abbreviated.remove(OH_mob)
+        substrate_abbreviated.atomic_clusters["OH"][Mobject]=O_mob
+        substrate_abbreviated.add(O_mob)
+        self.wait(1.5)
+
+        #H右侧出现OH^-，CX3^-左侧出现HO-H
+        CX3_pos=substrate_abbreviated.atomic_clusters["CX3"]["pos"]
+        OH3_pos=H_pos+np.array([substrate_abbreviated.attributes.length_global,0,0])
+        OH3_mob=AtomicCluster(text=r"\mathrm{OH}",pos=OH3_pos,text_offset=np.array([0.2,0,0]),
+                              attributes=substrate_abbreviated.attributes)
+        substrate_abbreviated.register_atom(name="OH3",mobject=OH3_mob)
+        substrate_abbreviated.add_charge(text="OH3",pos=UL,charge_type=ChargeType.NEGATIVE)
+        OH3_negative=substrate_abbreviated.charges["OH3"]
+
+        OH2_pos=CX3_pos-np.array([2.5*substrate_abbreviated.attributes.length_global,0,0])
+        OH2_mob=AtomicCluster(text=r"\mathrm{HO}",pos=OH2_pos,text_offset=np.array([-0.2,0,0]),
+                              attributes=substrate_abbreviated.attributes)
+        substrate_abbreviated.register_atom(name="OH2",mobject=OH2_mob)
+        H2_pos=OH2_pos+np.array([substrate_abbreviated.attributes.length_global,0,0])
+        H2_mob=AtomicCluster(text=r"\mathrm{H}",pos=H2_pos,attributes=substrate_abbreviated.attributes)
+        substrate_abbreviated.register_atom(name="H2",mobject=H2_mob,
+                                            adjacency="OH2",bond_type=BondType.NORMAL_BOND)
+        OH2_H2_bond=substrate_abbreviated.bond_lookup.between("OH2","H2")
+
+        self.add(OH3_mob,OH3_negative,OH2_mob,H2_mob,OH2_H2_bond)
+        self.play(FadeIn(OH3_mob),FadeIn(OH3_negative),
+                  FadeIn(OH2_mob),FadeIn(H2_mob),FadeIn(OH2_H2_bond))
+        self.wait(0.5)
+
+        #两侧同时质子转移：OH^-接住羧基的H变成水，水把H给CX3^-变成OH^-，羧基O带负电荷
+        OH3_H_bond=substrate_abbreviated.build_bond(start="OH3",end="H",bond_type=BondType.NORMAL_BOND)
+        OH_negative=substrate_abbreviated.build_charge(text="OH",pos=UR,charge_type=ChargeType.NEGATIVE)
+        OH2_negative=substrate_abbreviated.build_charge(text="OH2",pos=UR,charge_type=ChargeType.NEGATIVE)
+        H2_target=CX3_pos-np.array([substrate_abbreviated.attributes.length_global,0,0])
+        CX3_H2_bond=Bond(bond_type=BondType.NORMAL_BOND,
+                         start=CX3_pos,end=H2_target,
+                         start_edge=True,end_edge=True,
+                         attributes=substrate_abbreviated.attributes,
+                         atom1="CX3",atom2="H2")
+
+        step_proton_transfer=ElectronMigrationStep(
+            replace=[(OH3_negative,OH3_H_bond),
+                     (OH_H_bond,OH_negative),
+                     (OH2_H2_bond,OH2_negative),
+                     (CX3_negative,CX3_H2_bond)],
+            lag_ratio=0,
+        )
+        self.play(H2_mob.animate.shift(H2_target-H2_pos),
+                  substrate_abbreviated.electron_migration(steps=[step_proton_transfer],run_time=1.5),
+                  run_time=1.5)
+        substrate_abbreviated.atomic_clusters["H2"]["pos"]=H2_target
+        self.wait(1.5)
+
+        #水分子和氢氧根离子消失
+        self.play(FadeOut(OH3_mob,H_mob,OH3_H_bond,OH2_mob,OH2_negative),run_time=1)
+        substrate_abbreviated.delete_atom(names=["OH3","H","OH2"])
+        self.wait(0.5)
+
+        #羧酸根负离子右侧出现Na^+，相对位置与总反应式中相同（阴离子O右侧0.7）
+        Na_pos=substrate_abbreviated.atomic_clusters["OH"]["pos"]+np.array([0.7,0,0])
+        Na_mob=AtomicCluster(text=r"\mathrm{Na}",pos=Na_pos,attributes=substrate_abbreviated.attributes)
+        substrate_abbreviated.register_atom(name="Na",mobject=Na_mob)
+        substrate_abbreviated.add_charge(text="Na",pos=UR,charge_type=ChargeType.POSITIVE)
+        Na_positive=substrate_abbreviated.charges["Na"]
+
+        self.add(Na_mob,Na_positive)
+        self.play(FadeIn(Na_mob),FadeIn(Na_positive))
+        self.wait(1.5)
+
+        #屏幕上所有对象消失
+        self.play(FadeOut(*self.mobjects),run_time=1)
         self.wait(1.5)
