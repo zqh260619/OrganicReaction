@@ -65,7 +65,13 @@ class OpacityEffect(Animation):
             self.mobject.set_opacity(opacity)
 
 class RotateAtoms(Animation):
-    """绕指定中心旋转一个或多个原子，相连化学键跟随伸缩。"""
+    """绕指定中心旋转一个或多个原子，相连化学键跟随伸缩。
+
+    原子文本标签的 text_offset（相对锚点的显示偏移）是固定位移：
+    旋转过程中标签始终位于"旋转后的锚点 + 原偏移"处，偏移既不丢失
+    也不随键转动。因此向右偏移的标签在原子转到任何角度后依旧向右，
+    需要"标签跟着分子一起转"时请在动画结束后自行重新设置偏移。
+    """
     def __init__(self,*,
                  structural_formula:'StructuralFormula',
                  atom_names:str|list[str],
@@ -99,6 +105,15 @@ class RotateAtoms(Animation):
         self.initial_positions={}
         for name in atom_names:
             self.initial_positions[name]=np.copy(structural_formula.atomic_clusters[name]["pos"])
+
+        # 存储原子文本标签相对锚点的初始偏移（text_offset）
+        # 逐帧把标签放回"锚点 + 该固定偏移"处：偏移不随键旋转，只跟着锚点平移。
+        self.text_offsets={}
+        for name in atom_names:
+            mobj=structural_formula.atomic_clusters[name][Mobject]
+            if mobj is not None:
+                self.text_offsets[name]=(np.array(mobj.get_center(),dtype=float)
+                                         -structural_formula.atomic_clusters[name]["pos"])
 
         # 建立 键→所连两原子名 的映射
         self.bond_to_atoms={}
@@ -207,13 +222,14 @@ class RotateAtoms(Animation):
     def interpolate_mobject(self,alpha:float):
         current_angle=self.angle*self.rate_func(alpha)
 
-        # 更新原子位置
+        # 更新原子位置：锚点随分子旋转，文本标签按"锚点 + 固定偏移"平移（偏移不转向）
         for name in self.atom_names:
             new_pos=_rotate_point_2d(self.initial_positions[name],self.center_point,current_angle)
             self.sf.atomic_clusters[name]["pos"]=new_pos
             mobj=self.sf.atomic_clusters[name][Mobject]
             if mobj is not None:
-                mobj.move_to(new_pos)
+                offset=self.text_offsets.get(name)
+                mobj.move_to(new_pos if offset is None else new_pos+offset)
 
         # 重建受影响的键
         for bond in self.bond_to_atoms:
@@ -233,7 +249,8 @@ class BondTypeTransform(Transform):
     2. 化学键绕指定点的旋转
 
     两者同时开始、同时结束，整个过程中键的几何体平滑过渡。
-    如果提供了 sf（StructuralFormula），关联的原子文本和电荷也会逐帧同步旋转。
+    如果提供了 sf（StructuralFormula），关联的原子文本和电荷也会逐帧同步旋转；
+    原子文本的 text_offset 是固定位移，只跟着锚点平移、方向不随键转动。
 
     Parameters
     ----------
@@ -279,6 +296,10 @@ class BondTypeTransform(Transform):
         self._atom2_mobj: Optional[Mobject] = None
         self._atom1_init_pos: Optional[np.ndarray] = None
         self._atom2_init_pos: Optional[np.ndarray] = None
+        self._atom1_init_center: Optional[np.ndarray] = None
+        self._atom2_init_center: Optional[np.ndarray] = None
+        self._atom1_text_offset: Optional[np.ndarray] = None
+        self._atom2_text_offset: Optional[np.ndarray] = None
         self._charge_offsets: dict[str, np.ndarray] = {}
 
         if sf is not None:
@@ -295,6 +316,9 @@ class BondTypeTransform(Transform):
                 self._atom1_init_pos = np.array(
                     sf.atomic_clusters[self._atom1_name]["pos"], dtype=float
                 )
+                if self._atom1_mobj is not None:
+                    self._atom1_init_center = np.array(self._atom1_mobj.get_center(), dtype=float)
+                    self._atom1_text_offset = self._atom1_init_center - self._atom1_init_pos
                 if self._atom1_name in sf.charges:
                     c = sf.charges[self._atom1_name]
                     self._charge_offsets[self._atom1_name] = (
@@ -306,6 +330,9 @@ class BondTypeTransform(Transform):
                 self._atom2_init_pos = np.array(
                     sf.atomic_clusters[self._atom2_name]["pos"], dtype=float
                 )
+                if self._atom2_mobj is not None:
+                    self._atom2_init_center = np.array(self._atom2_mobj.get_center(), dtype=float)
+                    self._atom2_text_offset = self._atom2_init_center - self._atom2_init_pos
                 if self._atom2_name in sf.charges:
                     c = sf.charges[self._atom2_name]
                     self._charge_offsets[self._atom2_name] = (
@@ -346,24 +373,51 @@ class BondTypeTransform(Transform):
             pt[2],
         ])
 
+    def _place_atom(self, *, mobj: Mobject, init_center: np.ndarray,
+                    text_offset: Optional[np.ndarray], cur_angle: float) -> np.ndarray:
+        """把原子文本标签移到"旋转后的锚点 + 固定 text_offset"处，返回该锚点。
+
+        init_center 为标签的初始中心（= 锚点 + text_offset）。text_offset 是
+        固定位移：旋转只作用于锚点，偏移方向不随键转动。
+        """
+        if text_offset is None:
+            new_pos = self._rotate_point(init_center, self._about_point, cur_angle)
+            mobj.move_to(new_pos)
+        else:
+            anchor = init_center - text_offset
+            new_pos = self._rotate_point(anchor, self._about_point, cur_angle)
+            mobj.move_to(new_pos + text_offset)  # 偏移保持原方向
+        return new_pos
+
     def _move_atoms_to_alpha(self, alpha: float) -> None:
         """根据 alpha 旋转原子 Mobject 和电荷到当前位置。"""
         cur_angle = self.rate_func(alpha) * self._angle
 
-        if self._atom1_mobj is not None and self._atom1_init_pos is not None:
-            new_pos = self._rotate_point(self._atom1_init_pos, self._about_point, cur_angle)
-            self._atom1_mobj.move_to(new_pos)
+        if self._atom1_mobj is not None and self._atom1_init_center is not None:
+            new_pos = self._place_atom(mobj=self._atom1_mobj,
+                                       init_center=self._atom1_init_center,
+                                       text_offset=self._atom1_text_offset,
+                                       cur_angle=cur_angle)
+            # 逐帧回写锚点，使元数据与画面一致（与 RotateAtoms 的做法相同）
+            if self._sf is not None:
+                self._sf.atomic_clusters[self._atom1_name]["pos"] = new_pos
             if self._atom1_name in self._charge_offsets:
                 self._sf.charges[self._atom1_name].move_to(
-                    new_pos + self._charge_offsets[self._atom1_name]
+                    self._atom1_init_center
+                    + self._charge_offsets[self._atom1_name]
                 )
 
-        if self._atom2_mobj is not None and self._atom2_init_pos is not None:
-            new_pos = self._rotate_point(self._atom2_init_pos, self._about_point, cur_angle)
-            self._atom2_mobj.move_to(new_pos)
+        if self._atom2_mobj is not None and self._atom2_init_center is not None:
+            new_pos = self._place_atom(mobj=self._atom2_mobj,
+                                       init_center=self._atom2_init_center,
+                                       text_offset=self._atom2_text_offset,
+                                       cur_angle=cur_angle)
+            if self._sf is not None:
+                self._sf.atomic_clusters[self._atom2_name]["pos"] = new_pos
             if self._atom2_name in self._charge_offsets:
                 self._sf.charges[self._atom2_name].move_to(
-                    new_pos + self._charge_offsets[self._atom2_name]
+                    self._atom2_init_center
+                    + self._charge_offsets[self._atom2_name]
                 )
 
     def interpolate_mobject(self, alpha: float) -> None:
