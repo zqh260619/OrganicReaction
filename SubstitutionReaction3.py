@@ -1526,7 +1526,8 @@ class test(Scene):
         OH_target=(substrate_abbreviated.atomic_clusters["C1"]["pos"]
                    +np.array([np.cos(300*DEGREES),np.sin(300*DEGREES),0])*substrate_abbreviated.attributes.length_global)
 
-        OH_mob=AtomicCluster(text=r"\mathrm{OH}",pos=OH_start,attributes=substrate_abbreviated.attributes)
+        OH_mob=AtomicCluster(text=r"\mathrm{OH}",pos=OH_start,text_offset=np.array([0.2,0,0]),
+                             attributes=substrate_abbreviated.attributes)
         substrate_abbreviated.register_atom(name="OH",mobject=OH_mob)
         substrate_abbreviated.add_charge(text="OH",pos=UL,charge_type=ChargeType.NEGATIVE)
         OH_negative=substrate_abbreviated.charges["OH"]
@@ -1536,22 +1537,59 @@ class test(Scene):
         self.wait(0.5)
 
         #OH^-移动到羰基C的右下60°（300°）方向
-        OH_shift=OH_target-OH_mob.get_center()
+        OH_shift=OH_target-OH_start
         self.play(OH_mob.animate.shift(OH_shift),
                   OH_negative.animate.shift(OH_shift),
                   run_time=1)
         substrate_abbreviated.atomic_clusters["OH"]["pos"]=OH_target
         self.wait(0.5)
 
-        #OH^-的电子对进攻羰基C形成四面体中间体：C=O变C-O单键并在O左上出现负电荷
+        #OH^-的电子对进攻羰基C形成四面体中间体：C=O变C-O单键、C-OH为OutBond、C-CX3为InBond，O左上出现负电荷
         C1_O1_double=substrate_abbreviated.bond_lookup.between("C1","O1")
-        C1_OH_bond=substrate_abbreviated.build_bond(start="C1",end="OH",bond_type=BondType.NORMAL_BOND)
+        C1_CX3_bond=substrate_abbreviated.bond_lookup.between("C1","CX3")
+        C1_OH_bond=substrate_abbreviated.build_bond(start="C1",end="OH",bond_type=BondType.OUT_BOND)
+        C1_CX3_in=substrate_abbreviated.build_bond(start="C1",end="CX3",bond_type=BondType.IN_BOND)
         C1_O1_single=substrate_abbreviated.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
         O1_negative=substrate_abbreviated.build_charge(text="O1",pos=UL,charge_type=ChargeType.NEGATIVE)
 
         step_oh_addition=ElectronMigrationStep(
             replace=[(OH_negative,C1_OH_bond),
-                     (C1_O1_double,VGroup(C1_O1_single,O1_negative))],
+                     (C1_O1_double,VGroup(C1_O1_single,O1_negative)),
+                     (C1_CX3_bond,C1_CX3_in)],
         )
         self.play(substrate_abbreviated.electron_migration(steps=[step_oh_addition],run_time=1.5))
+        self.wait(1.5)
+
+        #CX3^-离去：O负电荷变回C=O，C-CX3键断裂并以CX3^-形式离去，C-OH楔形键变回单键
+        C1_O1_single=substrate_abbreviated.bond_lookup.between("C1","O1")
+        O1_negative=substrate_abbreviated.charges["O1"]
+        C1_CX3_in=substrate_abbreviated.bond_lookup.between("C1","CX3")
+        C1_OH_bond=substrate_abbreviated.bond_lookup.between("C1","OH")
+        C1_O1_double=substrate_abbreviated.build_bond(start="C1",end="O1",bond_type=BondType.DOUBLE_BOND,side=0)
+        C1_OH_normal=substrate_abbreviated.build_bond(start="C1",end="OH",bond_type=BondType.NORMAL_BOND)
+        CX3_negative=substrate_abbreviated.build_charge(text="CX3",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        step_cx3_leave=ElectronMigrationStep(
+            replace=[(VGroup(C1_O1_single,O1_negative),C1_O1_double),
+                     (C1_CX3_in,CX3_negative),
+                     (C1_OH_bond,C1_OH_normal)],
+        )
+        self.play(substrate_abbreviated.electron_migration(steps=[step_cx3_leave],run_time=1.5))
+        self.wait(1.5)
+
+        #CX3^-移开
+        CX3_mob=substrate_abbreviated.atomic_clusters["CX3"][Mobject]
+        CX3_negative=substrate_abbreviated.charges["CX3"]
+        CX3_shift=np.array([2,-1,0],dtype=float)
+        self.play(CX3_mob.animate.shift(CX3_shift),
+                  CX3_negative.animate.shift(CX3_shift),
+                  run_time=1)
+        substrate_abbreviated.atomic_clusters["CX3"]["pos"]=substrate_abbreviated.atomic_clusters["CX3"]["pos"]+CX3_shift
+        self.wait(0.5)
+
+        #C-OH旋转到原来C-CX3的角度（330°）
+        self.play(substrate_abbreviated.rotate_atoms(atom_names="OH",
+                                                     center="C1",
+                                                     angle=30*DEGREES,
+                                                     run_time=0.8))
         self.wait(1.5)
