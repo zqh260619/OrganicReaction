@@ -239,7 +239,7 @@ class test(Scene):
 
         self.play(acetyl_L.electron_migration(steps=[step_protonation],run_time=1.0))
         self.play(ReplacementTransform(text7,text8))
-        self.wait(1.5)
+        self.wait(2)
 
         #碳氧双键变为C-O单键和O上的孤对电子，O的正电荷消失，C上出现正电荷
         C1_O1_single_oxy=acetyl_L.build_bond(start="C1",end="O1",bond_type=BondType.NORMAL_BOND)
@@ -524,8 +524,8 @@ class test(Scene):
         self.play(Write(alpha_H_substitution))
 
         #descriptions
-        text15=Description(text=r"\text{羰基}\mathrm{\alpha-H}\text{的活性较强，这有两个原因}")
-        text16=Description(text=r"\text{一个是羰基的吸电子诱导效应，一个是}\mathrm{\alpha}\text{碳氢键受到羰基的超共轭效应}")
+        text15=Description(text=r"\text{羰基}\mathrm{\alpha-H}\text{的活性较强，可以进行亲电取代}")
+        text16=Description(text=r"\mathrm{\alpha-H}\text{活性强有两个原因：}\\\text{一个是羰基的吸电子诱导效应，一个是}\mathrm{\alpha}\text{碳氢键受到羰基的超共轭效应}")
         text17=Description(text=r"\text{从诱导效应角度看，碳氧双键的极性很强}\\\text{双键的电子偏向氧，这让羰基碳带有部分正电荷}")
         text18=Description(text=r"\text{羰基碳带部分正电荷后，会通过}\mathrm{\sigma}\text{键拉扯}\mathrm{\alpha-C}\text{的电子，导致}\mathrm{\alpha-C}\text{也带部分正电荷}")
         text19=Description(text=r"\mathrm{\alpha-C}\text{又拉}\mathrm{\alpha-H}\text{的电子，最终让}\mathrm{\alpha-H}\text{也带上了部分正电荷}")
