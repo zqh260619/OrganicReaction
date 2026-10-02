@@ -1158,6 +1158,10 @@ class test(Scene):
 
         self.play(FadeIn(reaction_group),Write(text31))
         self.wait(2)
+        self.play(ReplacementTransform(text31,text32))
+        self.wait(1.5)
+        self.play(ReplacementTransform(text32,text33))
+        self.wait(1.5)
 
         #反应式中除RCOCH3外全部消失，RCOCH3移到画面中央
         self.play(FadeOut(plus1,NaOH_mob,plus2,X2_mob,
@@ -1193,7 +1197,9 @@ class test(Scene):
         substrate_expanded.add(expanded_methyl)
 
         self.play(ReplacementTransform(substrate,substrate_expanded),run_time=1.5)
-        self.wait(1.5)
+        self.wait(0.5)
+        self.play(ReplacementTransform(text33,text34))
+        self.wait(1)
 
         #右侧显示OH^-，其负电荷在左上角
         H2_pos=substrate_expanded.atomic_clusters["H2"]["pos"]
@@ -1245,6 +1251,8 @@ class test(Scene):
 
         self.add(X1_mob,X2_mob,X1_X2_bond)
         self.play(FadeIn(X1_mob),FadeIn(X2_mob),FadeIn(X1_X2_bond))
+        self.wait(0.5)
+        self.play(ReplacementTransform(text34,text35))
         self.wait(0.5)
 
         #alphaC进攻左侧X；O负电荷消失；X-X变为右侧X右上负电荷
@@ -1305,6 +1313,7 @@ class test(Scene):
         C2_X1_bond.end=H1_pos
         C2_X1_bond.direction=np.arctan2((H1_pos-C2_pos)[1],(H1_pos-C2_pos)[0])
         self.wait(1.5)
+        self.play(ReplacementTransform(text35,text36))
 
         #第二次alpha-H的亲电取代：H1被X取代
         H1_pos=substrate_expanded.atomic_clusters["H1"]["pos"]
@@ -1534,7 +1543,7 @@ class test(Scene):
         OH_negative=substrate_abbreviated.charges["OH"]
 
         self.add(OH_mob,OH_negative)
-        self.play(FadeIn(OH_mob),FadeIn(OH_negative))
+        self.play(FadeIn(OH_mob),FadeIn(OH_negative),ReplacementTransform(text36,text37))
         self.wait(0.5)
 
         #OH^-移动到羰基C的右下60°（300°）方向
@@ -1560,6 +1569,9 @@ class test(Scene):
         )
         self.play(substrate_abbreviated.electron_migration(steps=[step_oh_addition],run_time=1.5))
         self.wait(1.5)
+        self.play(ReplacementTransform(text37,text38))
+        self.wait(2.5)
+        self.play(ReplacementTransform(text38,text39))
 
         #CX3^-离去：O负电荷变回C=O，C-CX3键断裂并以CX3^-形式离去，C-OH楔形键变回单键
         C1_O1_single=substrate_abbreviated.bond_lookup.between("C1","O1")
@@ -1679,6 +1691,25 @@ class test(Scene):
         self.add(Na_mob,Na_positive)
         self.play(FadeIn(Na_mob),FadeIn(Na_positive))
         self.wait(1.5)
+
+        #H-CX3变为H-CI3（碘仿），同时显示最后一段说明和沉淀符号
+        CX3_mob=substrate_abbreviated.atomic_clusters["CX3"][Mobject]
+        CI3_mob=AtomicCluster(text=r"\mathrm{CI_3}",pos=substrate_abbreviated.atomic_clusters["CX3"]["pos"],
+                              text_offset=np.array([0.2,-0.03,0]),attributes=substrate_abbreviated.attributes)
+        CI3_down=MathTex(r"\downarrow",font_size=txt_size)
+        CI3_down.next_to(CI3_mob,RIGHT,buff=0.15)
+
+        self.add(CI3_down)
+        self.play(ReplacementTransform(CX3_mob,CI3_mob),
+                  ReplacementTransform(text39,text40),
+                  FadeIn(CI3_down),
+                  run_time=1.5)
+
+        #文本替换放在播放之后，避免标签在形变前被提前渲染
+        substrate_abbreviated.remove(CX3_mob)
+        substrate_abbreviated.atomic_clusters["CX3"][Mobject]=CI3_mob
+        substrate_abbreviated.add(CI3_mob)
+        self.wait(2.5)
 
         #屏幕上所有对象消失
         self.play(FadeOut(*self.mobjects),run_time=1)
