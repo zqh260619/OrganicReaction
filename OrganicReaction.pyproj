@@ -37,6 +37,7 @@
     <Compile Include="SubstitutionReaction1.py" />
     <Compile Include="SubstitutionReaction2.py" />
     <Compile Include="SubstitutionReaction3.py" />
+    <Compile Include="SubstitutionReaction4.py" />
     <Compile Include="test.py" />
   </ItemGroup>
   <ItemGroup>
