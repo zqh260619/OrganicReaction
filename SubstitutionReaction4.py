@@ -10,3 +10,9 @@ class test(Scene):
         self.play(Write(title),Write(subtitle))
         self.wait(1.5)
         self.play(FadeOut(title,subtitle))
+
+        #-----------------------ANRORC mechanism-----------------------
+
+        ANRORC_mechanism=Title(text=r"\mathrm{ANRORC}\text{（亲核加成}\mathrm{-}\text{开环}\mathrm{-}\text{闭环）}")
+        self.play(Write(ANRORC_mechanism))
+        self.wait(0.5)
