@@ -34,7 +34,9 @@ class BezierArrow(VGroup):
     def __init__(self,*,start_anchor:Vector3D,start_handle:Vector3D,end_anchor:Vector3D,end_handle:Vector3D,
                  color=WHITE,stroke_width=2,arrow_size=-1.0,opacity=1.0,**kwargs):
 
-        """此类中的魔法数字用于调整箭头的大小和位置，使得箭头与曲线不重叠且中心对齐，建议不要随意修改"""
+        """箭头尖按 arrow_size 缩放并朝向曲线末端的切线方向；曲线末端按箭头尖自身的
+        几何停在底边中点外侧，与箭头尖紧贴但不重叠（旧写法用固定魔数回缩，线宽一大
+        就露出缝）。"""
 
         if arrow_size==-1:
             arrow_size=np.sqrt((start_anchor[0]-end_anchor[0])**2+(start_anchor[1]-end_anchor[1])**2)*0.15
@@ -47,12 +49,11 @@ class BezierArrow(VGroup):
         self.tip=ArrowTriangleFilledTip(color=color,fill_opacity=opacity)
         self.tip.scale(arrow_size).rotate(angle+PI).move_to(end_anchor)
 
-        end_anchor-=arrow_size*(1/8.9*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
-                                           np.sin(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
-                                           0])+np.array([0,0.0363,0]))
-        end_handle-=arrow_size*(1/8.9*np.array([np.cos(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
-                                           np.sin(np.arctan2(end_anchor[1]-end_handle[1],end_anchor[0]-end_handle[0])),
-                                           0])+np.array([0,0.0363,0]))
+        #曲线末端挪到箭头尖底边中点：底边与末端切线垂直，故线端正好贴住底边而不重叠；
+        #底边位置随 arrow_size 变化，只能用箭头尖自己的几何来取，不能用固定魔数
+        shift=self.tip.base-end_anchor
+        end_anchor=end_anchor+shift
+        end_handle=end_handle+shift
 
         self.bezier=CubicBezier(start_anchor=start_anchor,start_handle=start_handle,end_handle=end_handle,end_anchor=end_anchor,
                       color=color,stroke_width=stroke_width,**kwargs)
