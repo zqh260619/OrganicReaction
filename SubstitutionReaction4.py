@@ -5,14 +5,14 @@ from OrganicReactionTools import *
 class test(Scene):
     def construct(self):
         
-        title=Title(text=r"\text{一些不怎么常见的取代反应的机理}\quad\text{补}",pos=ORIGIN)
+        title=Title(text=r"\text{一些不常见的取代反应的机理}\quad\text{补}",pos=ORIGIN)
         subtitle=Subtitle(text=r"\text{芳环上的取代反应}",pos=[0,-0.7,0])
         self.play(Write(title),Write(subtitle))
         self.wait(1.5)
         self.play(FadeOut(title,subtitle))
 
-        #-----------------------ANRORC mechanism-----------------------
+        #-----------------------VNS mechanism-----------------------
 
-        ANRORC_mechanism=Title(text=r"\mathrm{ANRORC}\text{（亲核加成}\mathrm{-}\text{开环}\mathrm{-}\text{闭环）}")
-        self.play(Write(ANRORC_mechanism))
+        VNS_mechanism=Title(text=r"\mathrm{VNS}\text{（间接芳香亲核取代）}")
+        self.play(Write(VNS_mechanism))
         self.wait(0.5)
