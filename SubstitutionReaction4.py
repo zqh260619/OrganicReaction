@@ -62,7 +62,28 @@ class test(Scene):
 
         self.play(FadeIn(reaction_group),run_time=1.5)
         self.wait(2)
-        self.play(FadeOut(reaction_group),run_time=1)
+
+        #X变形为H：没有可离去的基团，产物一侧消失，同时在箭头中间打上红叉表示反应无法直接进行
+        X_leaving_mob=substrate.atomic_clusters["X"][Mobject]
+        H_mob=AtomicCluster(text=r"\mathrm{H}",pos=X_leaving_mob.get_center(),
+                            attributes=substrate.attributes)
+        #Cross 按参照物的对角线画叉，直接套在细长箭头上会被压成扁叉，所以用一个不显示的小方框当参照物
+        cross_frame=Square(side_length=0.6).move_to(reaction_arrow.arrow.get_center())
+        refusal_cross=Cross(cross_frame,stroke_color=RED,stroke_width=6)
+
+        self.play(ReplacementTransform(X_leaving_mob,H_mob),
+                  FadeOut(product,plus2,X_negative),
+                  Create(refusal_cross),
+                  run_time=1.5)
+        self.wait(2)
+
+        #对原子表的修改放在播放之后，避免新标签在形变前闪现
+        substrate.remove(X_leaving_mob)
+        substrate.atomic_clusters["X"][Mobject]=H_mob
+        substrate.add(H_mob)
+
+        #反应式与红叉一起退出
+        self.play(FadeOut(reaction_group,refusal_cross),run_time=1)
         self.wait(0.5)
 
         #-----------------------VNS mechanism-----------------------
