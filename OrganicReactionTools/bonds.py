@@ -77,14 +77,18 @@ class NormalBond(Line):
 
 class DoubleBond(VGroup):
     def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder',
-                 side:int,start_side_edge:bool,end_side_edge:bool):
+                 side:int=0,start_side_edge:bool=False,end_side_edge:bool=False):
 
         """
         手平行于屏幕平面，手掌心向屏幕内侧，食指从start指向end，大拇指的方向为较短的键的位置。
         side=0时：双键左右对称，两侧一样长。
         side=1时：右手确定较短的键的位置。
         side=-1时：左手确定较短的键的位置。
+        side 缺省为 0（对称双线），两侧缩进缺省为 False。
         """
+
+        if side not in (0,1,-1):
+            raise ValueError(f"双键的 side 只能取 0、1、-1，实际为 {side}。")
 
         super().__init__(color=attributes.color)
 
@@ -176,6 +180,11 @@ class Bond(VGroup):
             self.start=start.atom_pos  # 键端点取原子锚点，不受 text_offset 影响
         if isinstance(end,AtomicCluster):
             self.end=end.atom_pos
+        if bond_type==BondType.DOUBLE_BOND:
+            # 双键的 side 与两侧缩进允许省略：省略时按对称双线、不额外缩进处理
+            side=0 if side is None else side
+            start_side_edge=bool(start_side_edge)
+            end_side_edge=bool(end_side_edge)
         self.start_edge=start_edge
         self.end_edge=end_edge
         self.side=side

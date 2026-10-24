@@ -16,8 +16,11 @@ class BracketBetweenPoints(VGroup):
         the lower end is the ending point
         """
 
-        direction=np.array([x-y for x,y in zip(end,start)])
-        direction/=np.sqrt(direction[0]**2+direction[1]**2)
+        direction=np.array([x-y for x,y in zip(end,start)],dtype=float)
+        main_length=np.sqrt(direction[0]**2+direction[1]**2)
+        if main_length==0:
+            raise ValueError("括号的两端不能重合。")
+        direction/=main_length
         edge_direction=[-direction[1],direction[0],0]
 
         main=Line(start=start,end=end,**kwargs)
