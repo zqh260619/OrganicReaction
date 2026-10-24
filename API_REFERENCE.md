@@ -332,17 +332,25 @@ class NormalBond(Line):
 ```python
 class DoubleBond(VGroup):
     def __init__(self, *, start, direction, start_edge=False, end_edge=False,
-                 attributes, side: int, start_side_edge: bool, end_side_edge: bool)
+                 attributes, side: int = 0, start_side_edge: bool = False,
+                 end_side_edge: bool = False)
 ```
 
-- **用途**：双键。通过 `side` 控制"两条线等长"还是"一长一短"（画不对称双键，如共轭/芳香体系常用）。
+- **用途**：双键。双线的排法由 `side` 控制（画不对称双键，如共轭/芳香体系常用）。
 - **方向约定（源码注释的手性规则）**：右手平行屏幕、掌心向屏幕内侧、食指从 `start` 指向 `end`，
-  **大拇指所指的一侧就是较短那条线的位置**。
-- **三种取值**：
-  - `side=0`：两线左右对称（各偏移 `0.5*length_global*edge_ratio_double`），等长；
-  - `side=1`：主线在法向 `-` 侧、短线在 `+` 侧，右手法；
-  - `side=-1`：短线在 `-` 侧，左手法。
-  短线端是否额外缩进由 `start_side_edge` / `end_side_edge` 控制（`edge_ratio_double`）。
+  **大拇指所指的一侧就是第二条（较短）线的位置**。
+- **三种取值（实测几何）**：
+  - `side=0`：两线**关于键轴对称**，各偏移 `0.5*length_global*edge_ratio_double`，等长；
+  - `side=1`：第一条线（主线）**就在键轴上**，第二条线向 `+` 法向偏移
+    `length_global*distance_double`（右手法，即短线在大拇指一侧）；
+  - `side=-1`：第一条线在键轴上，第二条线向 `-` 法向偏移同样的距离（左手法）。
+  第二条线的两端是否再额外缩进，由 `start_side_edge` / `end_side_edge` 控制（各缩进 `edge_ratio_double`）。
+- **参数缺省与校验**：`side` 传 `None` 或不传时按 `0` 处理；`start_side_edge` / `end_side_edge`
+  传 `None` 或不传时按 `False` 处理；`side` 只允许 `0`、`1`、`-1`，其它值抛
+  `ValueError("双键的 side 只能取 0、1、-1，实际为 …。")`。
+  `Bond` 包装器会把解析后的值写回 `bond.side` / `bond.start_side_edge` / `bond.end_side_edge`，
+  `rotate_atoms` 的逐帧重建依赖这三个字段，因此通过 `add_atom` / `add_bond` / `build_bond` 建双键时
+  可以放心省略它们。
 - **返回**：`VGroup`，`submobjects[0]` 是主线、`[1]` 是第二条线；`RotateAtoms`/`BondTypeTransform`
   按此顺序原地重建几何。
 
@@ -619,6 +627,8 @@ class BracketBetweenPoints(VGroup):
 - **约定（源码注释）**：按左括号理解，**上端是 `start`、下端是 `end`**。
 - **几何**：`main` 为主线；两端各加一条沿法向 `(-dy, dx, 0)`、长度 `ratio_edge` 的短线。
 - **参数**：`ratio_edge` 是短相对主线的比例；`**kwargs` 透传给三条 `Line`（可设 `color`、`stroke_width`）。
+- **坐标类型**：`start` / `end` 传整数或浮点坐标都可以（内部按浮点运算）。
+- **校验**：两端重合时抛 `ValueError("括号的两端不能重合。")`。
 - **返回**：`VGroup(edge_start, main, edge_end)`。
 
 ### 6.2 `BezierArrow` — 三次贝塞尔曲线箭头
@@ -1138,6 +1148,7 @@ class StructuralFormula(VGroup):
   **空结构式**：只接受 `pos`（必须给）；**非空结构式**：`adjacency`、`direction`、`bond_type` **三者都必填**。
   新原子坐标 = `length_global*[cos(direction), sin(direction), 0] + 邻接原子 pos`。
   键的 `start_edge` / `end_edge` 自动按两端"是否有文本"决定。重复的 `name` 抛 `ValueError`。
+  `side` / `start_side_edge` / `end_side_edge` 只对 `DOUBLE_BOND` 有意义，且可以省略（缺省语义见 4.5）。
 - **`register_atom(*, name, mobject, adjacency=None, bond_type=None, side=None, start_side_edge=None, end_side_edge=None)`**
   把**外部已创建**的 mobject 注册为原子（如把独立画好的亲电试剂 E⁺ 并入结构式，以便参与电子迁移）。
   坐标取 `AtomicCluster.atom_pos`（若传入的是 `AtomicCluster`）或 `mobject.get_center()`；
@@ -1302,9 +1313,11 @@ class Description(MathTex):
 
 ## 12. 使用示例与配套资料
 
-- **`test.py`**（1857 行，21 个 `Scene`）：覆盖电子迁移、`PairCharge` 垂直线性质断言、
-  `Benzene` 三种场景、极性箭头 `side`/`offset`/`length` 组合、`BondTypeTransform` 独立与联动、
-  12 种电子云类型、`PartialCharge` 定位模式等 —— 是最好的**用法字典**。
+- **`test.py`**（2551 行，25 个 `Scene`、251 处 `assert`、47 处 `np.allclose`）：覆盖电子迁移、
+  `PairCharge` 垂直线性质断言、`Benzene` 三种场景、极性箭头 `side`/`offset`/`length` 组合、
+  `BondTypeTransform` 独立与联动、12 种电子云类型、`PartialCharge` 定位模式、
+  双键参数缺省（`side` / `side_edge`）与 `BracketBetweenPoints`（整数/浮点坐标）等
+  —— 是最好的**用法字典**。
 - **`SubstitutionReaction1/2/3.py`**：三个完整教学动画（亲核取代反应），演示多步机理编排。
 - **渲染产物**：`media/videos/**` 与 `media/images/SubstitutionReaction1/test_ManimCE_v0.20.1.png`。
 - **渲染命令**（文件头注释给出）：`manim test.py test -pqh`（p=预览、q=高质量、h=1080p60）。
