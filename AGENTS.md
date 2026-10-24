@@ -48,7 +48,7 @@
 **测试文件**（仅 `test.py`，风格与作品文件不同，不要互相混用）：
 
 - 用常规写法：注释写 `# 文字`（带空格），逗号后带空格。
-- 一个场景一个 `class`；断言与可视化并重（现有 226 处 `assert`、41 处 `np.allclose` 坐标校验）。
+- 一个场景一个 `class`；断言与可视化并重（现有 251 处 `assert`、47 处 `np.allclose` 坐标校验）。
 - 测试代码只写在 `test.py`，不新建其它测试文件。
 
 **包**（`OrganicReactionTools/`）：
@@ -62,10 +62,12 @@
   - 约定一：电荷类型必须与「原子有无文本标签」匹配 —— 无文本标签的原子只能用 `*_COORDINATE` 版。
   - 约定二：`ElectronCloud` 的 6 种分子轨道必须传两个真实存在的文本标签。
 - Windows + PowerShell（`pwsh -Command`）：不支持 heredoc，多行脚本用 `@'...'@ | python -` 管道；`Get-Content` 控制台可能显示乱码，核对中文请用 read 工具。
-- manim 0.21.0 / Python 3.12（解释器 `D:\pythion312\python.exe`）；manim 用 PyAV（`av 17.1.0`，自带完整 libav*）合成视频，**不需要外部 ffmpeg**。
+- manim **0.22.0** / Python **3.12.10**（解释器 `D:\python312\python.exe`；旧路径 `D:\pythion312` 已废弃）；PyAV `av 19.0.1`（自带完整 libav*）合成视频，**不需要外部 ffmpeg**；依赖另有 numpy 2.5.3、Pillow 12.3.0。
+- manim 0.22 的 CLI 把输出开关合并成 `--format`：`--write_to_movie`/`-g`/`-i`/`--custom_folders`/`--flush_cache` 已移除（清缓存改用 `manim cache clear`），`-p` 改为“打开已渲染的产物”；`-pqh`、`-s`、`-a`、`-o`、`--media_dir`、`--disable_caching` 仍可用，文件头的 `manim xxx.py test -pqh` 不受影响，产物路径仍是 `media/videos/<模块名>/1080p60/<场景>.mp4`。
+- 只想验证 `test.py` 的断言、不想出片时用 `manim --dry_run -ql test.py -a`（跑完全部场景但不写媒体；2026-10 实测 23 场景全过）。它只替代“跑断言”，不能替代 API 改动后的真实渲染抽帧核对。
 - 抽帧核对用 PyAV：`av.open(...)` → `container.seek(int(t / stream.time_base))` → `frame.to_image()`（Pillow 已装），无外部依赖、也不受 PATH 影响。
 - 备选：B 站客户端自带的 `%APPDATA%\bilibili\ffmpeg\ffmpeg.exe`（正版 FFmpeg 3.0.1，2016 年构建，带上海哔哩哔哩数字签名、未改动）可用 `-ss <t> -i <mp4> -frames:v 1` 抽帧；但该二进制随客户端升级/卸载会变动或消失，且版本过旧，故只作后备，优先用 PyAV。
-- 渲染偶发 MiKTeX/dvisvgm 日志权限失败，可用管理员权限 + 外部 `--media_dir` 绕过。
+- `media\Tex\*.log` 的 `PermissionError [Win32 32]`（文件被占用）多数是**两个 manim 进程共用同一 media 目录**抢同一个 `.log`：串行渲染，或给并发的那次加 `--media_dir` 指到别处；若是真正的 LaTeX/dvisvgm 权限问题，再用管理员权限 + 外部 `--media_dir` 绕过。
 
 ## 当前目标
 
@@ -78,4 +80,6 @@
 - 两个反复踩到的「场景成员关系」坑：
   1. `electron_migration`（以及某些 `self.add(...)`）会把 `StructuralFormula` 从 `Scene.mobjects` 中**拆散**；此后往结构式里新增的对象必须显式 `self.add(...)` 才会渲染。注意 `FadeIn`/`Create`/`Write` 是 introducer，`Scene.add_mobjects_from_animations` 会跳过它们，只加 `FadeIn` 救不回来。
   2. `rotate_atoms` 的动画 `mobject` 就是结构式本身且不是 introducer，会把结构式**重新聚合回场景**；此后 `sf.add(x)` 会立刻渲染 x。所以「替换原子文本」这类改动要把原子表更新（`remove` / `atomic_clusters[...][Mobject]=` / `add`）放到 `self.play` **之后**，否则新标签会在形变前闪现。
+- manim 0.22 的场景成员语义（实测）：`ReplacementTransform` 收尾走 `Scene.replace`，它在**父组里就地换掉子对象**、不解散分组；只有 `Scene.remove`（`FadeOut`、`self.remove` 的收尾）会经 `restructure_mobjects` 把组拆开——“拆散”只由后者引起。
+- manim 0.22 把 `Mobject.get_width/get_height/get_depth/get_points` 降为兼容层（返回同名属性并抛 `DeprecationWarning`）；新代码一律用 `.width/.height/.depth/.points`（仓库现有代码没有调用它们）。
 - 渲染产物：`media/videos/SubstitutionReaction3/1080p60/test.mp4`（用户渲染后会显示为已修改）。
