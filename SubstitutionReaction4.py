@@ -12,7 +12,10 @@ class test(Scene):
         self.play(FadeOut(title,subtitle))
 
         #SNAr反应式：亲核试剂Nu取代芳环上邻位于硝基的X，X以负离子形式离去
-        substrate=Benzene(center=ORIGIN,c_names=["C1","C2","C3","C4","C5","C6"])
+        #反应式整体缩到 0.8 倍，键线宽按同一比例调细（原来顶得太满、线条也太粗）
+        scale_equation=0.8
+        bond_width=3.2
+        substrate=Benzene(center=ORIGIN,c_names=["C1","C2","C3","C4","C5","C6"],bond_stroke_width=bond_width)
         substrate.add_atom(name="N1",direction=90*DEGREES,text=r"\mathrm{N}",
                            bond_type=BondType.NORMAL_BOND,adjacency="C1")
         substrate.add_atom(name="O1",direction=150*DEGREES,text=r"\mathrm{O}",
@@ -24,7 +27,7 @@ class test(Scene):
         substrate.add_atom(name="X",direction=30*DEGREES,text=r"\mathrm{X}",
                            bond_type=BondType.NORMAL_BOND,adjacency="C2")
 
-        product=Benzene(center=ORIGIN,c_names=["C1","C2","C3","C4","C5","C6"])
+        product=Benzene(center=ORIGIN,c_names=["C1","C2","C3","C4","C5","C6"],bond_stroke_width=bond_width)
         product.add_atom(name="N1",direction=90*DEGREES,text=r"\mathrm{N}",
                          bond_type=BondType.NORMAL_BOND,adjacency="C1")
         product.add_atom(name="O1",direction=150*DEGREES,text=r"\mathrm{O}",
@@ -47,7 +50,7 @@ class test(Scene):
         plus1=MathTex("+",font_size=txt_size)
         plus2=MathTex("+",font_size=txt_size)
         #上下都不放对象的反应箭头：above 传空串只为通过「至少一侧有内容」的校验
-        reaction_arrow=ReactionArrow(start=ORIGIN,above="",length=1.4)
+        reaction_arrow=ReactionArrow(start=ORIGIN,above="",length=1.4,stroke_width=1.6)
 
         #横向排开：各对象只沿x平移，苯环中心与箭头始终在同一水平线上
         buff=0.35
@@ -57,7 +60,9 @@ class test(Scene):
         product.shift(RIGHT*(reaction_arrow.arrow.get_end()[0]+buff-product.get_left()[0]))
         plus2.shift(RIGHT*(product.get_right()[0]+buff-plus2.get_left()[0]))
         X_negative.shift(RIGHT*(plus2.get_right()[0]+buff-X_negative.get_left()[0]))
+        #整组缩放，后面新建的 H 与红叉也按同一比例
         reaction_group=VGroup(substrate,plus1,Nu_negative,reaction_arrow,product,plus2,X_negative)
+        reaction_group.scale(scale_equation)
         reaction_group.move_to(ORIGIN)
 
         self.play(FadeIn(reaction_group),run_time=1.5)
@@ -67,8 +72,9 @@ class test(Scene):
         X_leaving_mob=substrate.atomic_clusters["X"][Mobject]
         H_mob=AtomicCluster(text=r"\mathrm{H}",pos=X_leaving_mob.get_center(),
                             attributes=substrate.attributes)
+        H_mob.scale(scale_equation)
         #Cross 按参照物的对角线画叉，直接套在细长箭头上会被压成扁叉，所以用一个不显示的小方框当参照物
-        cross_frame=Square(side_length=0.6).move_to(reaction_arrow.arrow.get_center())
+        cross_frame=Square(side_length=0.6*scale_equation).move_to(reaction_arrow.arrow.get_center())
         refusal_cross=Cross(cross_frame,stroke_color=RED,stroke_width=6)
 
         self.play(ReplacementTransform(X_leaving_mob,H_mob),
