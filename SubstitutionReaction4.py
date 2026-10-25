@@ -36,8 +36,10 @@ class test(Scene):
                          bond_type=BondType.DOUBLE_BOND,adjacency="N1",side=0)
         product.add_charge(text="N1",pos=LEFT,charge_type=ChargeType.POSITIVE)
         product.add_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+        #Nu 是较宽的原子（团）符号，标签沿键方向外移，避免键与文字重合
         product.add_atom(name="Nu",direction=30*DEGREES,text=r"\mathrm{Nu}",
-                         bond_type=BondType.NORMAL_BOND,adjacency="C2")
+                         bond_type=BondType.NORMAL_BOND,adjacency="C2",
+                         text_offset=0.15*np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0]))
 
         #左侧的Nu^-与右侧的X^-独立显示，负电荷都挂在右上角
         Nu_mob=AtomicCluster(text=r"\mathrm{Nu}",pos=ORIGIN,attributes=substrate.attributes)
@@ -88,12 +90,108 @@ class test(Scene):
         substrate.atomic_clusters["X"][Mobject]=H_mob
         substrate.add(H_mob)
 
+        #这三个对象已在上面被 FadeOut 过，manim 收尾会把它们的透明度复原成 1；
+        #从组里摘掉，否则最后整组淡出时它们会被重新加回场景而闪现
+        reaction_group.remove(product,plus2,X_negative)
+
         #反应式与红叉一起退出
         self.play(FadeOut(reaction_group,refusal_cross),run_time=1)
         self.wait(0.5)
 
         #-----------------------VNS mechanism-----------------------
 
-        VNS_mechanism=Title(text=r"\mathrm{VNS}\text{（间接芳香亲核取代）}")
+        #VNS反应式：硝基苯与氯甲基苯基砜在KOH/DMSO中反应，再经酸处理，生成苯基砜甲基在硝基邻位、对位的两种产物
+        #两个箭头要等长、且长度要盖过上方较宽的氯甲基苯基砜，整式因此更宽，第二式再缩一点；键线宽按同一比例收，观感与第一式一致
+        scale_vns=0.72
+        bond_width_vns=bond_width*scale_vns/scale_equation
+        substrate_vns=Benzene(center=ORIGIN,c_names=["C1","C2","C3","C4","C5","C6"],bond_stroke_width=bond_width_vns)
+        substrate_vns.add_atom(name="N1",direction=90*DEGREES,text=r"\mathrm{N}",
+                               bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        substrate_vns.add_atom(name="O1",direction=150*DEGREES,text=r"\mathrm{O}",
+                               bond_type=BondType.NORMAL_BOND,adjacency="N1")
+        substrate_vns.add_atom(name="O2",direction=30*DEGREES,text=r"\mathrm{O}",
+                               bond_type=BondType.DOUBLE_BOND,adjacency="N1",side=0)
+        substrate_vns.add_charge(text="N1",pos=LEFT,charge_type=ChargeType.POSITIVE)
+        substrate_vns.add_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        #第一个箭头上方：氯甲基苯基砜，中心C无文本标签，左下30°连Cl、右下30°连S，S的右上60°/左下60°为双键O、右下30°为Ph
+        sulfone_vns=StructuralFormula(name="C1",pos=ORIGIN,text=None,bond_stroke_width=bond_width_vns)
+        sulfone_vns.add_atom(name="Cl1",direction=210*DEGREES,text=r"\mathrm{Cl}",
+                             bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        sulfone_vns.add_atom(name="S1",direction=330*DEGREES,text=r"\mathrm{S}",
+                             bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        sulfone_vns.add_atom(name="O1",direction=60*DEGREES,text=r"\mathrm{O}",
+                             bond_type=BondType.DOUBLE_BOND,adjacency="S1",side=0)
+        sulfone_vns.add_atom(name="O2",direction=240*DEGREES,text=r"\mathrm{O}",
+                             bond_type=BondType.DOUBLE_BOND,adjacency="S1",side=0)
+        #Ph 是较宽的原子（团）符号，标签沿键方向外移，避免键与文字重合
+        sulfone_vns.add_atom(name="Ph1",direction=330*DEGREES,text=r"\mathrm{Ph}",
+                             bond_type=BondType.NORMAL_BOND,adjacency="S1",
+                             text_offset=0.15*np.array([np.cos(330*DEGREES),np.sin(330*DEGREES),0]))
+
+        #两个箭头等长（长度盖过上方较宽的氯甲基苯基砜）：第一个下方KOH/DMSO，第二个上方H3O+
+        #箭头上下方的条件文字比默认字号大一号（整式缩到 0.72 后仍清楚）
+        arrow_font_size=32
+        arrow_length=sulfone_vns.width+0.1
+        arrow1_vns=ReactionArrow(start=ORIGIN,above=sulfone_vns,below=r"\mathrm{KOH/DMSO}",length=arrow_length,
+                                 font_size=arrow_font_size)
+        arrow2_vns=ReactionArrow(start=ORIGIN,above=r"\mathrm{H_3O^+}",length=arrow_length,font_size=arrow_font_size)
+
+        #SO2Ph 标签整体右移，使键正对首字符S的中心，而不是整段文字的中心
+        SO2Ph_label=MathTex(r"\mathrm{SO_2Ph}",font_size=substrate_vns.attributes.font_size,tex_template=mytemplate)
+        SO2Ph_first=MathTex(r"\mathrm{S}",font_size=substrate_vns.attributes.font_size,tex_template=mytemplate)
+        SO2Ph_offset=RIGHT*(SO2Ph_label.width/2-SO2Ph_first.width/2)
+
+        #产物一：苯基砜甲基在硝基邻位（C2），SO2Ph朝右下30°连出
+        product_ortho_vns=Benzene(center=ORIGIN,c_names=["C1","C2","C3","C4","C5","C6"],bond_stroke_width=bond_width_vns)
+        product_ortho_vns.add_atom(name="N1",direction=90*DEGREES,text=r"\mathrm{N}",
+                                   bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        product_ortho_vns.add_atom(name="O1",direction=150*DEGREES,text=r"\mathrm{O}",
+                                   bond_type=BondType.NORMAL_BOND,adjacency="N1")
+        product_ortho_vns.add_atom(name="O2",direction=30*DEGREES,text=r"\mathrm{O}",
+                                   bond_type=BondType.DOUBLE_BOND,adjacency="N1",side=0)
+        product_ortho_vns.add_charge(text="N1",pos=LEFT,charge_type=ChargeType.POSITIVE)
+        product_ortho_vns.add_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+        product_ortho_vns.add_atom(name="CH2",direction=30*DEGREES,text=None,
+                                   bond_type=BondType.NORMAL_BOND,adjacency="C2")
+        product_ortho_vns.add_atom(name="SO2Ph",direction=330*DEGREES,text=r"\mathrm{SO_2Ph}",
+                                   bond_type=BondType.NORMAL_BOND,adjacency="CH2",
+                                   text_offset=SO2Ph_offset)
+
+        #产物二：苯基砜甲基在硝基对位（C4）
+        product_para_vns=Benzene(center=ORIGIN,c_names=["C1","C2","C3","C4","C5","C6"],bond_stroke_width=bond_width_vns)
+        product_para_vns.add_atom(name="N1",direction=90*DEGREES,text=r"\mathrm{N}",
+                                  bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        product_para_vns.add_atom(name="O1",direction=150*DEGREES,text=r"\mathrm{O}",
+                                  bond_type=BondType.NORMAL_BOND,adjacency="N1")
+        product_para_vns.add_atom(name="O2",direction=30*DEGREES,text=r"\mathrm{O}",
+                                  bond_type=BondType.DOUBLE_BOND,adjacency="N1",side=0)
+        product_para_vns.add_charge(text="N1",pos=LEFT,charge_type=ChargeType.POSITIVE)
+        product_para_vns.add_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+        product_para_vns.add_atom(name="CH2",direction=270*DEGREES,text=None,
+                                  bond_type=BondType.NORMAL_BOND,adjacency="C4")
+        product_para_vns.add_atom(name="SO2Ph",direction=330*DEGREES,text=r"\mathrm{SO_2Ph}",
+                                  bond_type=BondType.NORMAL_BOND,adjacency="CH2",
+                                  text_offset=SO2Ph_offset)
+
+        plus_vns=MathTex("+",font_size=txt_size)
+
+        #横向排开：各对象只沿x平移，苯环中心与箭头始终在同一水平线上；两种产物之间用加号连接
+        buff=0.3
+        substrate_vns.shift(RIGHT*(-5.0))
+        arrow1_vns.shift(RIGHT*(substrate_vns.get_right()[0]+buff-arrow1_vns.get_left()[0]))
+        arrow2_vns.shift(RIGHT*(arrow1_vns.get_right()[0]+buff-arrow2_vns.get_left()[0]))
+        product_ortho_vns.shift(RIGHT*(arrow2_vns.get_right()[0]+buff-product_ortho_vns.get_left()[0]))
+        plus_vns.shift(RIGHT*(product_ortho_vns.get_right()[0]+buff-plus_vns.get_left()[0]))
+        product_para_vns.shift(RIGHT*(plus_vns.get_right()[0]+buff-product_para_vns.get_left()[0]))
+        reaction_group_vns=VGroup(substrate_vns,arrow1_vns,arrow2_vns,
+                                  product_ortho_vns,plus_vns,product_para_vns)
+        reaction_group_vns.scale(scale_vns)
+        reaction_group_vns.move_to(ORIGIN)
+
+        self.play(FadeIn(reaction_group_vns),run_time=1.5)
+        self.wait(2)
+
+        VNS_mechanism=Title(text=r"\mathrm{VNS}")
         self.play(Write(VNS_mechanism))
         self.wait(0.5)
