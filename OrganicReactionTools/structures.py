@@ -5,7 +5,7 @@ from manim.typing import Vector3D
 import numpy as np
 from typing import Callable
 
-from .parameters import bond_length, ratio_transition_state, edge, txt_size, default_charge_edge, partial_charge_font_size
+from .parameters import bond_length, bond_stroke_width, ratio_transition_state, edge, txt_size, default_charge_edge, partial_charge_font_size
 from .attributes import AttributeHolder
 from .atoms import AtomicCluster
 from .bonds import Bond, BondType, BondLookup
@@ -22,6 +22,7 @@ class StructuralFormula(VGroup):
                  dashed_ratio_dashedbond=0.5,
                  ratio_transition_state_dashedbond=bond_length*ratio_transition_state,
                  length_global=bond_length,
+                 bond_stroke_width=bond_stroke_width,
                  color=WHITE,
                  edge_global=edge,
                  font_size=txt_size,
@@ -51,6 +52,7 @@ class StructuralFormula(VGroup):
                                         dashed_ratio_dashedbond=dashed_ratio_dashedbond,
                                         ratio_transition_state_dashedbond=ratio_transition_state_dashedbond,
                                         length_global=length_global,
+                                        bond_stroke_width=bond_stroke_width,
                                         color=color,
                                         edge_global=edge_global,
                                         font_size=font_size,

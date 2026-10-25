@@ -2,7 +2,7 @@
 
 from manim import WHITE, ManimColor
 
-from .parameters import bond_length, ratio_transition_state, edge, txt_size, default_charge_edge, partial_charge_font_size
+from .parameters import bond_length, bond_stroke_width, ratio_transition_state, edge, txt_size, default_charge_edge, partial_charge_font_size
 
 class AttributeHolder:
     def __init__(self,*,
@@ -13,6 +13,7 @@ class AttributeHolder:
                  dashed_ratio_dashedbond:float,
                  ratio_transition_state_dashedbond:float,
                  length_global:float,
+                 bond_stroke_width:float,
                  color:ManimColor,
                  edge_global:float,
                  font_size:float,
@@ -37,6 +38,7 @@ class AttributeHolder:
         self.dashed_ratio_dashedbond=dashed_ratio_dashedbond
         self.ratio_transition_state_dashedbond=ratio_transition_state_dashedbond
         self.length_global=length_global
+        self.bond_stroke_width=bond_stroke_width
         self.color=color
         self.edge_global=edge_global
         self.font_size=font_size
@@ -62,6 +64,7 @@ DEFAULT_ATTRIBUTES=AttributeHolder(base_ratio_outbond=0.2,
                                    dashed_ratio_dashedbond=0.5,
                                    ratio_transition_state_dashedbond=bond_length*ratio_transition_state,
                                    length_global=bond_length,
+                                   bond_stroke_width=bond_stroke_width,
                                    color=WHITE,
                                    edge_global=edge,
                                    font_size=txt_size,

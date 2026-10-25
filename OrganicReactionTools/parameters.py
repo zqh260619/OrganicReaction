@@ -1,6 +1,6 @@
 """全局参数、常量与默认文本基类。"""
 
-from manim import TexTemplate, MathTex as _ManimMathTex
+from manim import TexTemplate, MathTex as _ManimMathTex, DEFAULT_STROKE_WIDTH
 import numpy as np
 
 mytemplate = TexTemplate()
@@ -23,6 +23,8 @@ class MathTex(_ManimMathTex):
 #structures
 bond_length=1
 """键长"""
+bond_stroke_width=DEFAULT_STROKE_WIDTH
+"""化学键线宽（默认取 manim 的 DEFAULT_STROKE_WIDTH，即 4）"""
 edge=0.25
 """键边距"""
 ratio_transition_state=1.2

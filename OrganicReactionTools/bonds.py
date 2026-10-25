@@ -43,7 +43,8 @@ class InBond(VGroup):
         for i in range(1,num+1):
             start_point_temp=end_point_1*i/num+start_point*(num-i)/num
             end_point_temp=end_point_2*i/num+start_point*(num-i)/num
-            temp=Line(start=start_point_temp,end=end_point_temp,color=attributes.color,stroke_width=2)
+            temp=Line(start=start_point_temp,end=end_point_temp,color=attributes.color,
+                      stroke_width=attributes.bond_stroke_width/2)
             lines.append(temp)
 
         super().__init__(*lines)
@@ -65,6 +66,7 @@ class DashedBond(DashedLine):
         end_point=start+np.array([np.cos(direction),np.sin(direction),0])*\
             (length-attributes.edge_global*end_edge)
         super().__init__(color=attributes.color,start=start_point,end=end_point,
+                       stroke_width=attributes.bond_stroke_width,
                        dash_length=attributes.dashed_length_dashedbond,
                        dashed_ratio=attributes.dashed_ratio_dashedbond)
 
@@ -73,7 +75,8 @@ class NormalBond(Line):
 
         start_point=start+np.array([np.cos(direction),np.sin(direction),0])*start_edge*attributes.edge_global
         end_point=start+np.array([np.cos(direction),np.sin(direction),0])*(attributes.length_global-end_edge*attributes.edge_global)
-        super().__init__(start=start_point,end=end_point,color=attributes.color)
+        super().__init__(start=start_point,end=end_point,color=attributes.color,
+                         stroke_width=attributes.bond_stroke_width)
 
 class DoubleBond(VGroup):
     def __init__(self,*,start:Vector3D,direction:float,start_edge=False,end_edge=False,attributes:'AttributeHolder',
@@ -121,8 +124,8 @@ class DoubleBond(VGroup):
             end2=end-direction_vector*(end_edge*attributes.edge_global+end_side_edge*attributes.edge_ratio_double)\
                 -normal_vector*attributes.length_global*attributes.distance_double
 
-        bond1=Line(start=start1,end=end1,color=attributes.color)
-        bond2=Line(start=start2,end=end2,color=attributes.color)
+        bond1=Line(start=start1,end=end1,color=attributes.color,stroke_width=attributes.bond_stroke_width)
+        bond2=Line(start=start2,end=end2,color=attributes.color,stroke_width=attributes.bond_stroke_width)
 
         self.add(bond1,bond2)
 
@@ -137,15 +140,15 @@ class TripleBond(VGroup):
 
         start1=start+direction_vector*start_edge*attributes.edge_global
         end1=end-direction_vector*end_edge*attributes.edge_global
-        bond1=Line(start=start1,end=end1,color=attributes.color)
+        bond1=Line(start=start1,end=end1,color=attributes.color,stroke_width=attributes.bond_stroke_width)
 
         start2=start+direction_vector*start_edge*attributes.edge_global-normal_vector*attributes.length_global*attributes.distance_triple
         end2=end-direction_vector*end_edge*attributes.edge_global-normal_vector*attributes.length_global*attributes.distance_triple
-        bond2=Line(start=start2,end=end2,color=attributes.color)
+        bond2=Line(start=start2,end=end2,color=attributes.color,stroke_width=attributes.bond_stroke_width)
 
         start3=start+direction_vector*start_edge*attributes.edge_global+normal_vector*attributes.length_global*attributes.distance_triple
         end3=end-direction_vector*end_edge*attributes.edge_global+normal_vector*attributes.length_global*attributes.distance_triple
-        bond3=Line(start=start3,end=end3,color=attributes.color)
+        bond3=Line(start=start3,end=end3,color=attributes.color,stroke_width=attributes.bond_stroke_width)
 
         self.add(bond1,bond2,bond3)
 

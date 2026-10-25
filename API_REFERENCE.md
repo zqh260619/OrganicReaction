@@ -168,6 +168,7 @@ class MathTex(_ManimMathTex):
 | 常量 | 默认值 | 含义 |
 |---|---|---|
 | `bond_length` | `1` | 键长，同时作为 `length_global` 与电子云尺寸基准 |
+| `bond_stroke_width` | `DEFAULT_STROKE_WIDTH`（=4） | 化学键线宽（普通/双/三/虚键用它，楔形 `InBond` 取它的一半） |
 | `edge` | `0.25` | 键两端相对原子文本的边距（避免线穿过文字） |
 | `ratio_transition_state` | `1.2` | 过渡态虚键长度的放大比例 |
 | `default_charge_edge` | `0.1` | 电荷相对原子文本的默认边距 |
@@ -196,7 +197,7 @@ class MathTex(_ManimMathTex):
 class AttributeHolder:
     def __init__(self, *, base_ratio_outbond, base_ratio_inbond, num_inbond,
                  dashed_length_dashedbond, dashed_ratio_dashedbond,
-                 ratio_transition_state_dashedbond, length_global, color,
+                 ratio_transition_state_dashedbond, length_global, bond_stroke_width, color,
                  edge_global, font_size, font_size_partial,
                  radius_negative, ratio_negative, stroke_width_negative, edge_charge,
                  radius_positive, ratio_positive, stroke_width_positive,
@@ -207,22 +208,24 @@ class AttributeHolder:
 - **用途**：纯数据持有者（无方法），把"键、电荷、文字"全部几何与配色参数打包成一个对象，
   由 `StructuralFormula`、`Bond`、`Charge`、`ElectronCloud` 共享引用。改一个对象的字段即可
   影响该结构式下所有后续生成的图形。
-- **23 个字段分组**：
+- **24 个字段分组**：
   - 键：`base_ratio_outbond` / `base_ratio_inbond`（箭头形键、多线键的张开比例）、`num_inbond`（内键线数）、
     `dashed_length_dashedbond` / `dashed_ratio_dashedbond`（虚键的实线段长与占空比）、
     `ratio_transition_state_dashedbond`（过渡态虚键标称长度）、`length_global`（键长）、
-    `edge_global`（键边距）、`distance_double` / `edge_ratio_double` / `distance_triple`（双键、三键线距）；
+    `edge_global`（键边距）、`bond_stroke_width`（化学键线宽）、`distance_double` / `edge_ratio_double` /
+    `distance_triple`（双键、三键线距）；
   - 电荷：`radius_negative` / `ratio_negative` / `stroke_width_negative`，`radius_positive` /
     `ratio_positive` / `stroke_width_positive`，`radius_single`、`distance_pair`（孤对电子两点间距）、
     `edge_charge`（电荷边距）、`font_size_partial`（δ 字号）；
   - 文本与颜色：`color`、`font_size`。
-- **构造方式**：必须全量给出 23 个关键字参数，通常不直接用，而是通过 `StructuralFormula`
+- **构造方式**：必须全量给出 24 个关键字参数，通常不直接用，而是通过 `StructuralFormula`
   的同名参数间接构造。
 
 ### 2.2 `DEFAULT_ATTRIBUTES` — 全局默认属性实例
 
 - 一个模块级 `AttributeHolder` 实例，取值全部来自 `parameters.py` 的全局常量
-  （如 `length_global=bond_length`、`color=WHITE`、`radius_negative=0.05`、`distance_pair=0.1`）。
+  （如 `length_global=bond_length`、`bond_stroke_width=bond_stroke_width`、`color=WHITE`、
+  `radius_negative=0.05`、`distance_pair=0.1`）。
 - **用途**：在没有 `StructuralFormula` 上下文时（例如单独使用 `BondTypeTransform`、
   `PolarityArrow`、`ElectronCloud`）作为兜底属性；`ElectronCloud` 的 `attributes` 参数默认就是它。
 
@@ -276,6 +279,12 @@ class AtomicCluster(MathTex):
 源码见 [bonds.py](OrganicReactionTools/bonds.py)。分三层：**几何类**（画线）→ **`BondType` 枚举**（登记）
 → **`Bond` 包装器**（元数据 + 复用能力）→ **`BondLookup`**（查询）。
 
+> **线宽**：所有键几何体的线宽统一取 `AttributeHolder.bond_stroke_width`（默认 4，来自
+> `parameters.bond_stroke_width`，即 manim 的 `DEFAULT_STROKE_WIDTH`）。普通/双/三/虚键都用该值，
+> 楔形 `InBond` 取它的一半，`OutBond` 是填充多边形、无描边。在 `StructuralFormula` / `Benzene` 上
+> 传 `bond_stroke_width=` 即可整体调细；`add_atom` / `add_bond` / `build_bond` 新建的键与
+> `rotate_atoms` 重建后的几何都会继承这个值。
+
 ### 4.1 `OutBond` — 外向楔形键（实心三角）
 
 ```python
@@ -299,7 +308,7 @@ class InBond(VGroup):
 
 - **用途**：立体化学中"远离观察者"的键。
 - **几何**：在起点与"终点±`base_ratio_inbond*…/2` 法向偏移"之间按 `num_inbond`（默认 5）等分插值，
-  画 `num_inbond` 条长度递增的 `Line`（`stroke_width=2`），形成从细到宽的梯形束。
+  画 `num_inbond` 条长度递增的 `Line`（线宽 `bond_stroke_width/2`，默认 2），形成从细到宽的梯形束。
 - **返回**：`VGroup`，子对象顺序即从窄到宽。
 
 ### 4.3 `DashedBond` — 过渡态虚键
@@ -1113,7 +1122,8 @@ class StructuralFormula(VGroup):
     def __init__(self, *, base_ratio_outbond=0.2, base_ratio_inbond=0.2, num_inbond=5,
                  dashed_length_dashedbond=0.1, dashed_ratio_dashedbond=0.5,
                  ratio_transition_state_dashedbond=bond_length*ratio_transition_state,
-                 length_global=bond_length, color=WHITE, edge_global=edge, font_size=txt_size,
+                 length_global=bond_length, bond_stroke_width=bond_stroke_width,
+                 color=WHITE, edge_global=edge, font_size=txt_size,
                  font_size_partial=partial_charge_font_size, radius_negative=0.05,
                  ratio_negative=0.6, stroke_width_negative=1.2, edge_charge=default_charge_edge,
                  radius_positive=0.05, ratio_positive=0.6, stroke_width_positive=1.2,
@@ -1122,7 +1132,7 @@ class StructuralFormula(VGroup):
                  name=None, pos=None, text=None, text_offset=[0,0,0])
 ```
 
-**构造参数** = `AttributeHolder` 的全部 23 个样式参数（可以直接在这里整体改样式）
+**构造参数** = `AttributeHolder` 的全部 24 个样式参数（可以直接在这里整体改样式）
 + 可选的首个原子：`name`（原子名）、`pos`（坐标）、`text`（TeX 文本，`None` 表示"无文本的碳节点"）、
 `text_offset`（只影响显示、不影响键端点）。
 
@@ -1313,7 +1323,7 @@ class Description(MathTex):
 
 ## 12. 使用示例与配套资料
 
-- **`test.py`**（2551 行，25 个 `Scene`、251 处 `assert`、47 处 `np.allclose`）：覆盖电子迁移、
+- **`test.py`**（2626 行，26 个 `Scene`、264 处 `assert`、47 处 `np.allclose`）：覆盖电子迁移、
   `PairCharge` 垂直线性质断言、`Benzene` 三种场景、极性箭头 `side`/`offset`/`length` 组合、
   `BondTypeTransform` 独立与联动、12 种电子云类型、`PartialCharge` 定位模式、
   双键参数缺省（`side` / `side_edge`）与 `BracketBetweenPoints`（整数/浮点坐标）等
@@ -1349,6 +1359,7 @@ class Description(MathTex):
 | 反键/成键轨道的 `show_border` 默认值 | ✅ 仅 `SIGMA_ANTIBOND_SS`（2 瓣）与 `PI_ANTIBOND_PP`（4 瓣）默认隐藏边界（`stroke_width=0`），其余 10 种保留边界 |
 | 12 种 `ElectronCloudType` 全部可构造（原子轨道给 1 个标签、分子轨道给 2 个标签） | ✅ 12/12 成功，`lobes` 数依次为 1, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 4 |
 | `DashedBond` 长度语义 | ✅ 独立构造标称 1.2；经 `Bond` 包装器画到真实端点距离 1.0 |
+| `bond_stroke_width` 线宽参数 | ✅ 默认 4；五种键型（普通/双/三/虚/楔形=一半）与 `Benzene`、`build_bond`、`rotate_atoms` 重建全部跟随 |
 | `merging_timeline` 同时间点合并 | ✅ 冲突时间点自动并为列表（`{0: [FadeIn, FadeOut], 1: [FadeIn]}`） |
 | `brownian_motion` 单对象与列表两种入参 | ✅ 返回类型统一为时间轴字典，可直接交 `play_timeline` |
 | **约定一** 配对规则（有文本 → 非坐标版，无文本 → 坐标版） | ✅ 正确配对全部成功；两种错配均按预期抛 `TypeError` |
