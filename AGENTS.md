@@ -81,5 +81,6 @@
   1. `electron_migration`（以及某些 `self.add(...)`）会把 `StructuralFormula` 从 `Scene.mobjects` 中**拆散**；此后往结构式里新增的对象必须显式 `self.add(...)` 才会渲染。注意 `FadeIn`/`Create`/`Write` 是 introducer，`Scene.add_mobjects_from_animations` 会跳过它们，只加 `FadeIn` 救不回来。
   2. `rotate_atoms` 的动画 `mobject` 就是结构式本身且不是 introducer，会把结构式**重新聚合回场景**；此后 `sf.add(x)` 会立刻渲染 x。所以「替换原子文本」这类改动要把原子表更新（`remove` / `atomic_clusters[...][Mobject]=` / `add`）放到 `self.play` **之后**，否则新标签会在形变前闪现。
 - manim 0.22 的场景成员语义（实测）：`ReplacementTransform` 收尾走 `Scene.replace`，它在**父组里就地换掉子对象**、不解散分组；只有 `Scene.remove`（`FadeOut`、`self.remove` 的收尾）会经 `restructure_mobjects` 把组拆开——“拆散”只由后者引起。
+- manim 的 `FadeOut` 收尾会走 `clean_up_from_scene` → `interpolate(0)`，把对象的**透明度复原成 1**（实测 0.0 → 1.0，它只是不在场景里而已）。所以已淡出的对象**必须从组里 `remove`**，否则之后整组再 `FadeOut` 时 manim 会把组重新加回场景，这些对象以不透明度 1 重新出场（闪现）。
 - manim 0.22 把 `Mobject.get_width/get_height/get_depth/get_points` 降为兼容层（返回同名属性并抛 `DeprecationWarning`）；新代码一律用 `.width/.height/.depth/.points`（仓库现有代码没有调用它们）。
 - 渲染产物：`media/videos/SubstitutionReaction3/1080p60/test.mp4`（用户渲染后会显示为已修改）。
