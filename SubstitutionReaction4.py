@@ -195,3 +195,7 @@ class test(Scene):
         VNS_mechanism=Title(text=r"\mathrm{VNS}")
         self.play(Write(VNS_mechanism))
         self.wait(0.5)
+
+        #反应式淡出，标题保留
+        self.play(FadeOut(reaction_group_vns),run_time=1)
+        self.wait(0.5)
