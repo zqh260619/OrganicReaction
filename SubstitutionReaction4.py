@@ -207,10 +207,13 @@ class test(Scene):
         self.play(FadeOut(reaction_group_vns),run_time=1)
         self.wait(0.5)
 
-        #VNS拆成三个字母，移到画面纵向中心，再分别扩展成三个单词
-        words=VGroup(MathTex(r"\mathrm{Vicarious}",font_size=title_size,tex_template=mytemplate),
-                     MathTex(r"\mathrm{Nucleophilic}",font_size=title_size,tex_template=mytemplate),
-                     MathTex(r"\mathrm{Substitution}",font_size=title_size,tex_template=mytemplate))
+        #VNS拆成三个字母，移到画面纵向中心，再分别扩展成三个单词；
+        #每个单词拆成“首字母 + 其余字母”两个子对象（arg_separator="" 保持同一行排版），
+        #只写其余字母，首字母不参与 Write，避免重复绘制产生边缘闪光
+        words=VGroup(MathTex(r"\mathrm{V}",r"\mathrm{icarious}",arg_separator="",font_size=title_size,tex_template=mytemplate),
+                     MathTex(r"\mathrm{N}",r"\mathrm{ucleophilic}",arg_separator="",font_size=title_size,tex_template=mytemplate),
+                     MathTex(r"\mathrm{S}",r"\mathrm{ubstitution}",arg_separator="",font_size=title_size,tex_template=mytemplate))
+
         #三个单词按基线对齐（不是包围盒中心：否则 "Nucleophilic" 因 p 的降部会整体上移）
         letters_vns=(V_letter,N_letter,S_letter)
         #单词间距取正常 LaTeX 词间距：同字号下“两词带空格整块宽 − 两词各自宽”= 墨迹间隙
@@ -218,31 +221,17 @@ class test(Scene):
                     -words[0].width-words[1].width)
         words.arrange(RIGHT,buff=word_space)
         baseline_y=-float(np.mean([letter.height for letter in letters_vns]))/2
-        for word,letter in zip(words,letters_vns):
-            word_points=np.concatenate([np.asarray(m.points) for m in word.get_family() if m.points.size>0])
-            first_select=word_points[word_points[:,0]<=word.get_left()[0]+letter.width*1.02]
-            word.shift(UP*(baseline_y-first_select[:,1].min()))
+        for word in words:
+            word.shift(UP*(baseline_y-word[0].get_bottom()[1]))
         words.shift(LEFT*float(np.mean([word.get_center()[0] for word in words])))
 
-        #每个单词首字母的字形中心（取该单词最左侧字形的点集：MathTex 的字形点在子对象里）；
-        #字母要对准这里而不是整词中心，此时三个字母自动落在同一条水平线上
-        first_centers=[]
-        for word,letter in zip(words,letters_vns):
-            word_points=np.concatenate([np.asarray(m.points) for m in word.get_family() if m.points.size>0])
-            first_select=word_points[word_points[:,0]<=word.get_left()[0]+letter.width*1.02]
-            first_centers.append(np.array([(first_select[:,0].min()+first_select[:,0].max())/2,
-                                           (first_select[:,1].min()+first_select[:,1].max())/2,0]))
-
-        #先把三个字母移到各自单词首字母的位置
-        self.play(V_letter.animate.move_to(first_centers[0]),
-                  N_letter.animate.move_to(first_centers[1]),
-                  S_letter.animate.move_to(first_centers[2]),
+        #先把三个字母移到各自单词首字母的位置（word[0] 就是首字母子对象），三个字母因此落在同一水平线上
+        self.play(V_letter.animate.move_to(words[0][0].get_center()),
+                  N_letter.animate.move_to(words[1][0].get_center()),
+                  S_letter.animate.move_to(words[2][0].get_center()),
                   run_time=1.5)
         self.wait(1)
 
-        #字母已就位且不再移动：写出三个单词（首字母与已有字母重合，看起来就是其余字母出现），
-        #写完再把原来的字母对象移除（同一位置，画面无变化）
-        self.play(Write(words[0]),Write(words[1]),Write(words[2]),run_time=2)
-        self.wait(0.5)
-        self.remove(V_letter,N_letter,S_letter)
-        self.wait(1.5)
+        #字母已就位且不再移动：只写每个单词的其余字母（word[1]），首字母完全不参与 Write
+        self.play(Write(words[0][1]),Write(words[1][1]),Write(words[2][1]),run_time=2)
+        self.wait(2)
