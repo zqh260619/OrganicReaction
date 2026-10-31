@@ -192,13 +192,13 @@ class test(Scene):
         self.play(FadeIn(reaction_group_vns),run_time=1.5)
         self.wait(2)
 
-        #标题用三个独立字母拼成（间距与整体排版的 VNS 一致），后面才能拆开并各自扩展成单词
+        #标题用三个独立字母拼成，坐标写死（由 test.py 的 TestVNSExpand 标定：总宽与整体排版的 VNS 一致）
         VNS_mechanism=VGroup(MathTex(r"\mathrm{V}",font_size=title_size,tex_template=mytemplate),
                              MathTex(r"\mathrm{N}",font_size=title_size,tex_template=mytemplate),
                              MathTex(r"\mathrm{S}",font_size=title_size,tex_template=mytemplate))
-        VNS_mechanism.arrange(RIGHT,buff=0)
-        title_buff=(MathTex(r"\mathrm{VNS}",font_size=title_size,tex_template=mytemplate).width-VNS_mechanism.width)/2
-        VNS_mechanism.arrange(RIGHT,buff=title_buff).move_to(title_coordinate)
+        VNS_mechanism[0].move_to([-0.4164,3.0,0])
+        VNS_mechanism[1].move_to([0.0879,3.0,0])
+        VNS_mechanism[2].move_to([0.5043,3.0,0])
         V_letter,N_letter,S_letter=VNS_mechanism
         self.play(Write(VNS_mechanism))
         self.wait(0.5)
@@ -207,31 +207,23 @@ class test(Scene):
         self.play(FadeOut(reaction_group_vns),run_time=1)
         self.wait(0.5)
 
-        #VNS拆成三个字母，移到画面纵向中心，再分别扩展成三个单词；
-        #每个单词拆成“首字母 + 其余字母”两个子对象（arg_separator="" 保持同一行排版），
+        #VNS拆成三个字母，移到画面纵向中心，再分别扩展成三个单词（坐标写死，由 test.py 的 TestVNSExpand 标定）
+        #每个单词拆成“首字母 + 其余字母”两段（arg_separator="" 保持同一行排版），
         #只写其余字母，首字母不参与 Write，避免重复绘制产生边缘闪光
         words=VGroup(MathTex(r"\mathrm{V}",r"\mathrm{icarious}",arg_separator="",font_size=title_size,tex_template=mytemplate),
                      MathTex(r"\mathrm{N}",r"\mathrm{ucleophilic}",arg_separator="",font_size=title_size,tex_template=mytemplate),
                      MathTex(r"\mathrm{S}",r"\mathrm{ubstitution}",arg_separator="",font_size=title_size,tex_template=mytemplate))
+        words[0].move_to([-3.4697,0,0])
+        words[1].move_to([-0.1384,-0.0673,0])
+        words[2].move_to([3.6081,0.0072,0])
 
-        #三个单词按基线对齐（不是包围盒中心：否则 "Nucleophilic" 因 p 的降部会整体上移）
-        letters_vns=(V_letter,N_letter,S_letter)
-        #单词间距取正常 LaTeX 词间距：同字号下“两词带空格整块宽 − 两词各自宽”= 墨迹间隙
-        word_space=(MathTex(r"\mathrm{Vicarious}\ \mathrm{Nucleophilic}",font_size=title_size,tex_template=mytemplate).width
-                    -words[0].width-words[1].width)
-        words.arrange(RIGHT,buff=word_space)
-        baseline_y=-float(np.mean([letter.height for letter in letters_vns]))/2
-        for word in words:
-            word.shift(UP*(baseline_y-word[0].get_bottom()[1]))
-        words.shift(LEFT*float(np.mean([word.get_center()[0] for word in words])))
-
-        #先把三个字母移到各自单词首字母的位置（word[0] 就是首字母子对象），三个字母因此落在同一水平线上
-        self.play(V_letter.animate.move_to(words[0][0].get_center()),
-                  N_letter.animate.move_to(words[1][0].get_center()),
-                  S_letter.animate.move_to(words[2][0].get_center()),
+        #三个字母移到各词首字母的位置（词距 0.263、基线 -0.2313）
+        self.play(V_letter.animate.move_to([-4.566,0,0]),
+                  N_letter.animate.move_to([-1.653,-0.0072,0]),
+                  S_letter.animate.move_to([2.0085,0.0072,0]),
                   run_time=1.5)
         self.wait(1)
 
-        #字母已就位且不再移动：只写每个单词的其余字母（word[1]），首字母完全不参与 Write
+        #只写每个单词的其余字母（word[1]），首字母完全不参与 Write
         self.play(Write(words[0][1]),Write(words[1][1]),Write(words[2][1]),run_time=2)
         self.wait(2)
