@@ -283,4 +283,30 @@ class test(Scene):
         H1_mob=sulfone_mob.atomic_clusters["H1"][Mobject]
         H2O_mob=AtomicCluster(text=r"\mathrm{H_2O}",pos=HO_pos+np.array([0.1,0.35,0]),attributes=sulfone_mob.attributes)
         self.play(ReplacementTransform(VGroup(HO_mob,H1_mob),H2O_mob),FadeOut(HO_H1_bond),run_time=1.5)
+        #把这一段的残留对象从结构式里摘掉：它们已被就地变形、且 FadeOut 收尾会把透明度复原，
+        #留在组里的话会在 H2O 淡出后随结构式重新画出来
+        sulfone_mob.remove(HO_mob,H1_mob,HO_H1_bond)
+        self.wait(2)
+
+        #H2O 消失，碳负离子右移让出位置
+        self.play(FadeOut(H2O_mob),run_time=1)
+        sulfone_mob.remove(H2O_mob)
+        self.wait(0.5)
+        self.play(sulfone_mob.animate.shift(RIGHT*1.0),run_time=1.5)
+        self.wait(0.5)
+
+        #硝基苯：硝基在正上方（C1 正上方 90°），硝基右侧的邻位 C2 上显示一个 H
+        nitrobenzene_mob=Benzene(center=np.array([-1.9,-0.4,0]),c_names=["C1","C2","C3","C4","C5","C6"])
+        nitrobenzene_mob.add_atom(name="N1",direction=90*DEGREES,text=r"\mathrm{N}",
+                                  bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        nitrobenzene_mob.add_atom(name="O1",direction=150*DEGREES,text=r"\mathrm{O}",
+                                  bond_type=BondType.NORMAL_BOND,adjacency="N1")
+        nitrobenzene_mob.add_atom(name="O2",direction=30*DEGREES,text=r"\mathrm{O}",
+                                  bond_type=BondType.DOUBLE_BOND,adjacency="N1",side=0)
+        nitrobenzene_mob.add_charge(text="N1",pos=LEFT,charge_type=ChargeType.POSITIVE)
+        nitrobenzene_mob.add_charge(text="O1",pos=UR,charge_type=ChargeType.NEGATIVE)
+        nitrobenzene_mob.add_atom(name="H1",direction=30*DEGREES,text=r"\mathrm{H}",
+                                  bond_type=BondType.NORMAL_BOND,adjacency="C2")
+
+        self.play(Create(nitrobenzene_mob),run_time=1.5)
         self.wait(2)
