@@ -227,3 +227,60 @@ class test(Scene):
         #只写每个单词的其余字母（word[1]），首字母完全不参与 Write
         self.play(Write(words[0][1]),Write(words[1][1]),Write(words[2][1]),run_time=2)
         self.wait(2)
+
+        #三个字母飞回标题位置（画面只保留 VNS），其余字母同时淡出
+        self.play(V_letter.animate.move_to([-0.4164,3.0,0]),
+                  N_letter.animate.move_to([0.0879,3.0,0]),
+                  S_letter.animate.move_to([0.5043,3.0,0]),
+                  FadeOut(words[0][1]),FadeOut(words[1][1]),FadeOut(words[2][1]),
+                  run_time=1.5)
+        self.wait(1.5)
+
+        #氯甲基苯基砜：中心 C 不带标签，左上150°、右下330° 各连一个 H，正下方270° 连 Cl，右上30° 连 SO2Ph
+        sulfone_mob=StructuralFormula(name="C1",pos=ORIGIN,text=None)
+        sulfone_mob.add_atom(name="H1",direction=150*DEGREES,text=r"\mathrm{H}",
+                             bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        sulfone_mob.add_atom(name="H2",direction=330*DEGREES,text=r"\mathrm{H}",
+                             bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        sulfone_mob.add_atom(name="Cl1",direction=270*DEGREES,text=r"\mathrm{Cl}",
+                             bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        #SO2Ph 标签沿用产物里的位移，让键正对首字符 S 的中心
+        sulfone_mob.add_atom(name="S1",direction=30*DEGREES,text=r"\mathrm{SO_2Ph}",
+                             bond_type=BondType.NORMAL_BOND,adjacency="C1",text_offset=SO2Ph_offset)
+
+        self.play(Create(sulfone_mob),run_time=1.5)
+        self.wait(2)
+
+        #左上角 H 的左侧显示 HO-（负电荷在 O 的右上）
+        H1_pos=sulfone_mob.atomic_clusters["H1"]["pos"]
+        HO_pos=H1_pos+np.array([-sulfone_mob.attributes.length_global,0,0])
+        #HO 标签整体左移：键要正对右侧 O 的中心，而不是整段文字的中心
+        HO_label=MathTex(r"\mathrm{HO}",font_size=sulfone_mob.attributes.font_size,tex_template=mytemplate)
+        HO_oxygen=MathTex(r"\mathrm{O}",font_size=sulfone_mob.attributes.font_size,tex_template=mytemplate)
+        HO_offset=LEFT*(HO_label.width/2-HO_oxygen.width/2)
+        HO_mob=AtomicCluster(text=r"\mathrm{HO}",pos=HO_pos,text_offset=HO_offset,attributes=sulfone_mob.attributes)
+        sulfone_mob.register_atom(name="HO",mobject=HO_mob)
+        sulfone_mob.add_charge(text="HO",pos=UR,charge_type=ChargeType.NEGATIVE)
+        HO_negative=sulfone_mob.charges["HO"]
+
+        self.add(HO_mob,HO_negative)
+        self.play(FadeIn(HO_mob),FadeIn(HO_negative),run_time=0.8)
+        self.wait(0.5)
+
+        #负电荷进攻H：O-H成键、C-H键断裂并在C上留下负电荷（碳负离子）
+        C1_H1_bond=sulfone_mob.bond_lookup.between("C1","H1")
+        HO_H1_bond=sulfone_mob.build_bond(start="HO",end="H1",bond_type=BondType.NORMAL_BOND)
+        C1_negative=sulfone_mob.build_charge(text="C1",pos=UL,charge_type=ChargeType.NEGATIVE_COORDINATE)
+
+        step_ho_attack=ElectronMigrationStep(
+            replace=[(HO_negative,HO_H1_bond),
+                     (C1_H1_bond,C1_negative)],
+        )
+        self.play(sulfone_mob.electron_migration(steps=[step_ho_attack],run_time=1.5))
+        self.wait(1)
+
+        #生成H2O：HO-与那个H合并成一个水分子（碳负离子留在原处）
+        H1_mob=sulfone_mob.atomic_clusters["H1"][Mobject]
+        H2O_mob=AtomicCluster(text=r"\mathrm{H_2O}",pos=HO_pos+np.array([0.1,0.35,0]),attributes=sulfone_mob.attributes)
+        self.play(ReplacementTransform(VGroup(HO_mob,H1_mob),H2O_mob),FadeOut(HO_H1_bond),run_time=1.5)
+        self.wait(2)
