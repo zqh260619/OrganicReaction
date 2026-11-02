@@ -5,7 +5,7 @@ from OrganicReactionTools import *
 class test(Scene):
     def construct(self):
         
-        title=Title(text=r"\text{一些不常见的取代反应的机理}\quad\text{补}",pos=ORIGIN)
+        title=Title(text=r"\text{一些常见的取代反应的机理}\quad\text{补}",pos=ORIGIN)
         subtitle=Subtitle(text=r"\text{芳环上的取代反应}",pos=[0,-0.7,0])
         self.play(Write(title),Write(subtitle))
         self.wait(1.5)
@@ -308,5 +308,6 @@ class test(Scene):
         nitrobenzene_mob.add_atom(name="H1",direction=30*DEGREES,text=r"\mathrm{H}",
                                   bond_type=BondType.NORMAL_BOND,adjacency="C2")
 
-        self.play(Create(nitrobenzene_mob),run_time=1.5)
-        self.wait(2)
+        #硝基苯出现得慢一些：2.25 s 绘制 + 3 s 停留 = 5.25 s，约为原来（1.5+2）的 1.5 倍
+        self.play(Create(nitrobenzene_mob),run_time=2.5)
+        self.wait(3)
