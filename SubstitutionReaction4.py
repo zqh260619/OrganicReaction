@@ -310,4 +310,40 @@ class test(Scene):
 
         #硝基苯出现得慢一些：2.25 s 绘制 + 3 s 停留 = 5.25 s，约为原来（1.5+2）的 1.5 倍
         self.play(Create(nitrobenzene_mob),run_time=2.5)
-        self.wait(3)
+        self.wait(2)
+
+        #碳负离子进攻苯环：先让两只分子就位——碳负离子的碳 C1 落在硝基苯 C2 的右下30°、相距一个键长
+        nitro_shift=RIGHT*0.58
+        C1_live=np.array(sulfone_mob.bond_lookup.between("C1","H2").submobjects[0].get_start())
+        C2_pos=np.array(nitrobenzene_mob.atomic_clusters["C2"]["pos"])+nitro_shift
+        C1_target=C2_pos+np.array([np.cos(330*DEGREES),np.sin(330*DEGREES),0])
+
+        self.play(nitrobenzene_mob.animate.shift(nitro_shift),
+                  sulfone_mob.animate.shift(C1_target-C1_live),run_time=1.5)
+        #位移后手动同步原子坐标数据（move/shift 不会更新 pos，后面建键要用）
+        for atom_vns in nitrobenzene_mob.atomic_clusters.values():
+            atom_vns["pos"]=np.array(atom_vns["pos"])+nitro_shift
+        self.wait(1)
+
+        #这一连串电子转移放在同一个转移动画里：
+        #碳负离子的负电荷 → C-C 单键；环右上双键 → C-N 变双键；N=O 双键 → O 上变成负电荷
+        cc_direction=np.arctan2(C2_pos[1]-C1_target[1],C2_pos[0]-C1_target[0])
+        cc_bond=NormalBond(start=C1_target,direction=cc_direction,
+                           start_edge=False,end_edge=False,attributes=sulfone_mob.attributes)
+
+        C1_C2_double=nitrobenzene_mob.bond_lookup.between("C1","C2")
+        C1_N1_single=nitrobenzene_mob.bond_lookup.between("C1","N1")
+        N1_O2_double=nitrobenzene_mob.bond_lookup.between("N1","O2")
+
+        C1_C2_single=nitrobenzene_mob.build_bond(start="C1",end="C2",bond_type=BondType.NORMAL_BOND)
+        C1_N1_double=nitrobenzene_mob.build_bond(start="C1",end="N1",bond_type=BondType.DOUBLE_BOND,side=0)
+        N1_O2_single=nitrobenzene_mob.build_bond(start="N1",end="O2",bond_type=BondType.NORMAL_BOND)
+        O2_negative=nitrobenzene_mob.build_charge(text="O2",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        step_attack=ElectronMigrationStep(
+            replace=[(C1_negative,cc_bond),
+                     (VGroup(C1_C2_double,C1_N1_single),VGroup(C1_C2_single,C1_N1_double)),
+                     (N1_O2_double,VGroup(N1_O2_single,O2_negative))],
+        )
+        self.play(nitrobenzene_mob.electron_migration(steps=[step_attack],run_time=2.0))
+        self.wait(2)
