@@ -236,13 +236,13 @@ class test(Scene):
                   run_time=1.5)
         self.wait(1.5)
 
-        #氯甲基苯基砜：中心 C 不带标签，左上150°、右下330° 各连一个 H，正下方270° 连 Cl，右上30° 连 SO2Ph
-        sulfone_mob=StructuralFormula(name="C1",pos=ORIGIN,text=None)
+        #氯甲基苯基砜：中心 C 带标签（便于楔形键收在字母边缘），左上150°、正下方270° 各连一个 H，右下330° 连 Cl，右上30° 连 SO2Ph
+        sulfone_mob=StructuralFormula(name="C1",pos=ORIGIN,text=r"\mathrm{C}")
         sulfone_mob.add_atom(name="H1",direction=150*DEGREES,text=r"\mathrm{H}",
                              bond_type=BondType.NORMAL_BOND,adjacency="C1")
-        sulfone_mob.add_atom(name="H2",direction=330*DEGREES,text=r"\mathrm{H}",
+        sulfone_mob.add_atom(name="H2",direction=270*DEGREES,text=r"\mathrm{H}",
                              bond_type=BondType.NORMAL_BOND,adjacency="C1")
-        sulfone_mob.add_atom(name="Cl1",direction=270*DEGREES,text=r"\mathrm{Cl}",
+        sulfone_mob.add_atom(name="Cl1",direction=330*DEGREES,text=r"\mathrm{Cl}",
                              bond_type=BondType.NORMAL_BOND,adjacency="C1")
         #SO2Ph 标签沿用产物里的位移，让键正对首字符 S 的中心
         sulfone_mob.add_atom(name="S1",direction=30*DEGREES,text=r"\mathrm{SO_2Ph}",
@@ -270,7 +270,7 @@ class test(Scene):
         #负电荷进攻H：O-H成键、C-H键断裂并在C上留下负电荷（碳负离子）
         C1_H1_bond=sulfone_mob.bond_lookup.between("C1","H1")
         HO_H1_bond=sulfone_mob.build_bond(start="HO",end="H1",bond_type=BondType.NORMAL_BOND)
-        C1_negative=sulfone_mob.build_charge(text="C1",pos=UL,charge_type=ChargeType.NEGATIVE_COORDINATE)
+        C1_negative=sulfone_mob.build_charge(text="C1",pos=DL,charge_type=ChargeType.NEGATIVE)
 
         step_ho_attack=ElectronMigrationStep(
             replace=[(HO_negative,HO_H1_bond),
@@ -282,7 +282,7 @@ class test(Scene):
         #生成H2O：HO-与那个H合并成一个水分子（碳负离子留在原处）
         H1_mob=sulfone_mob.atomic_clusters["H1"][Mobject]
         H2O_mob=AtomicCluster(text=r"\mathrm{H_2O}",pos=HO_pos+np.array([0.1,0.35,0]),attributes=sulfone_mob.attributes)
-        self.play(ReplacementTransform(VGroup(HO_mob,H1_mob),H2O_mob),FadeOut(HO_H1_bond),run_time=1.5)
+        self.play(ReplacementTransform(VGroup(HO_mob,H1_mob,HO_H1_bond),H2O_mob),run_time=1.5)
         #把这一段的残留对象从结构式里摘掉：它们已被就地变形、且 FadeOut 收尾会把透明度复原，
         #留在组里的话会在 H2O 淡出后随结构式重新画出来
         sulfone_mob.remove(HO_mob,H1_mob,HO_H1_bond)
@@ -293,6 +293,9 @@ class test(Scene):
         sulfone_mob.remove(H2O_mob)
         self.wait(0.5)
         self.play(sulfone_mob.animate.shift(RIGHT*1.0),run_time=1.5)
+        #位移后同步原子坐标数据（move/shift 不会更新 pos，rotate_atoms 依赖它）
+        for atom_vns in sulfone_mob.atomic_clusters.values():
+            atom_vns["pos"]=np.array(atom_vns["pos"])+RIGHT*1.0
         self.wait(0.5)
 
         #硝基苯：硝基在正上方（C1 正上方 90°），硝基右侧的邻位 C2 上显示一个 H
@@ -312,24 +315,42 @@ class test(Scene):
         self.play(Create(nitrobenzene_mob),run_time=2.5)
         self.wait(2)
 
-        #碳负离子进攻苯环：先让两只分子就位——碳负离子的碳 C1 落在硝基苯 C2 的右下30°、相距一个键长
-        nitro_shift=RIGHT*0.58
-        C1_live=np.array(sulfone_mob.bond_lookup.between("C1","H2").submobjects[0].get_start())
-        C2_pos=np.array(nitrobenzene_mob.atomic_clusters["C2"]["pos"])+nitro_shift
-        C1_target=C2_pos+np.array([np.cos(330*DEGREES),np.sin(330*DEGREES),0])
+        #碳负离子先逆时针转 15°（绕自己的碳 C1），再移到苯环旁边进攻
+        self.play(sulfone_mob.rotate_atoms(atom_names=["C1","H2","Cl1","S1"],center="C1",
+                                           angle=30*DEGREES,run_time=1.5))
+        self.wait(1)
 
+        #碳负离子进攻苯环：先让两只分子就位——碳负离子的碳 C1 落在硝基苯 C2 的正右侧、相距一个键长
+        nitro_shift=RIGHT*0.58
+        C1_live=np.array(sulfone_mob.atomic_clusters["C1"][Mobject].get_center())
+        C2_pos=np.array(nitrobenzene_mob.atomic_clusters["C2"]["pos"])+nitro_shift
+        C1_target=C2_pos+RIGHT
+
+        attack_shift=C1_target-C1_live
         self.play(nitrobenzene_mob.animate.shift(nitro_shift),
-                  sulfone_mob.animate.shift(C1_target-C1_live),run_time=1.5)
+                  sulfone_mob.animate.shift(attack_shift),run_time=1.5)
+        #就位后同样同步碳负离子的原子坐标数据
+        for atom_vns in sulfone_mob.atomic_clusters.values():
+            atom_vns["pos"]=np.array(atom_vns["pos"])+attack_shift
         #位移后手动同步原子坐标数据（move/shift 不会更新 pos，后面建键要用）
         for atom_vns in nitrobenzene_mob.atomic_clusters.values():
             atom_vns["pos"]=np.array(atom_vns["pos"])+nitro_shift
         self.wait(1)
 
         #这一连串电子转移放在同一个转移动画里：
-        #碳负离子的负电荷 → C-C 单键；环右上双键 → C-N 变双键；N=O 双键 → O 上变成负电荷
-        cc_direction=np.arctan2(C2_pos[1]-C1_target[1],C2_pos[0]-C1_target[0])
-        cc_bond=NormalBond(start=C1_target,direction=cc_direction,
-                           start_edge=False,end_edge=False,attributes=sulfone_mob.attributes)
+        #负电荷 → C-C 键（OutBond，朝向观察者）；环右上双键 → C-N 变双键；N=O 双键 → O 上变成负电荷；
+        #同时苯环上的 C-H 逆时针转 15°（30°→45°）并变成 InBond（背离观察者）
+        #end_edge=True：楔形粗端停在 C 标签边缘，两个角不会顶在键的交点上
+        cc_bond=OutBond(start=C2_pos,direction=0*DEGREES,
+                        start_edge=False,end_edge=True,attributes=sulfone_mob.attributes)
+
+        ring_H1_bond=nitrobenzene_mob.bond_lookup.between("C2","H1")
+        ring_H1_mob=nitrobenzene_mob.atomic_clusters["H1"][Mobject]
+        ring_H1_target=C2_pos+np.array([np.cos(45*DEGREES),np.sin(45*DEGREES),0])
+        #先把 H 的坐标数据改到 45°，build_bond 才会按新角度建出 InBond，且带上原子信息便于登记
+        nitrobenzene_mob.atomic_clusters["H1"]["pos"]=ring_H1_target
+        ring_H1_bond_in=nitrobenzene_mob.build_bond(start="C2",end="H1",bond_type=BondType.IN_BOND)
+        ring_H1_mob_new=ring_H1_mob.copy().move_to(ring_H1_target)
 
         C1_C2_double=nitrobenzene_mob.bond_lookup.between("C1","C2")
         C1_N1_single=nitrobenzene_mob.bond_lookup.between("C1","N1")
@@ -343,7 +364,11 @@ class test(Scene):
         step_attack=ElectronMigrationStep(
             replace=[(C1_negative,cc_bond),
                      (VGroup(C1_C2_double,C1_N1_single),VGroup(C1_C2_single,C1_N1_double)),
-                     (N1_O2_double,VGroup(N1_O2_single,O2_negative))],
+                     (N1_O2_double,VGroup(N1_O2_single,O2_negative)),
+                     (ring_H1_bond,ring_H1_bond_in),
+                     (ring_H1_mob,ring_H1_mob_new)],
         )
         self.play(nitrobenzene_mob.electron_migration(steps=[step_attack],run_time=2.0))
+        #换掉的 H 标签同步进原子表
+        nitrobenzene_mob.atomic_clusters["H1"][Mobject]=ring_H1_mob_new
         self.wait(2)
