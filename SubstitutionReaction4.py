@@ -361,14 +361,22 @@ class test(Scene):
         N1_O2_single=nitrobenzene_mob.build_bond(start="N1",end="O2",bond_type=BondType.NORMAL_BOND)
         O2_negative=nitrobenzene_mob.build_charge(text="O2",pos=UR,charge_type=ChargeType.NEGATIVE)
 
+        #C-H 逆时针转 15°（30°→45°）并变成 InBond：作为一个独立动画与电子转移同时开始（不塞进 electron_migration）。
+        #注意 self.play 会把各动画都拉到最长时长，所以旋转的 1 s 结束后用 Wait 补足，避免被外推；
+        #以后要让两者错开开始，在 ring_H1_turn 前面加 Wait(偏移) 即可
         step_attack=ElectronMigrationStep(
             replace=[(C1_negative,cc_bond),
                      (VGroup(C1_C2_double,C1_N1_single),VGroup(C1_C2_single,C1_N1_double)),
-                     (N1_O2_double,VGroup(N1_O2_single,O2_negative)),
-                     (ring_H1_bond,ring_H1_bond_in),
-                     (ring_H1_mob,ring_H1_mob_new)],
+                     (N1_O2_double,VGroup(N1_O2_single,O2_negative))],
         )
-        self.play(nitrobenzene_mob.electron_migration(steps=[step_attack],run_time=2.0))
-        #换掉的 H 标签同步进原子表
+        ring_H1_turn=AnimationGroup(ReplacementTransform(ring_H1_bond,ring_H1_bond_in,run_time=1),
+                                    ReplacementTransform(ring_H1_mob,ring_H1_mob_new,run_time=1),
+                                    lag_ratio=0)
+        attack_migration=nitrobenzene_mob.electron_migration(steps=[step_attack],run_time=2.0)
+        self.play(attack_migration,Succession(ring_H1_turn,Wait(attack_migration.run_time-1)))
+        #C-H 的旋转不在 electron_migration 里，原子表要手工同步：换旧键、登记新 InBond、更新 H 标签
+        nitrobenzene_mob.atomic_clusters["C2"][Bond].remove(ring_H1_bond)
+        nitrobenzene_mob.atomic_clusters["H1"][Bond].remove(ring_H1_bond)
+        nitrobenzene_mob.register_bond(start="C2",end="H1",bond=ring_H1_bond_in)
         nitrobenzene_mob.atomic_clusters["H1"][Mobject]=ring_H1_mob_new
         self.wait(2)
