@@ -374,9 +374,69 @@ class test(Scene):
                                     lag_ratio=0)
         attack_migration=nitrobenzene_mob.electron_migration(steps=[step_attack],run_time=2.0)
         self.play(attack_migration,Succession(ring_H1_turn,Wait(attack_migration.run_time-1)))
+        #攻击时那个负电荷的源对象已被就地形变成楔形、还留在这份结构式组里（跨结构式 begin() 摘不掉），手工清掉
+        sulfone_mob.remove(C1_negative)
         #C-H 的旋转不在 electron_migration 里，原子表要手工同步：换旧键、登记新 InBond、更新 H 标签
         nitrobenzene_mob.atomic_clusters["C2"][Bond].remove(ring_H1_bond)
         nitrobenzene_mob.atomic_clusters["H1"][Bond].remove(ring_H1_bond)
         nitrobenzene_mob.register_bond(start="C2",end="H1",bond=ring_H1_bond_in)
         nitrobenzene_mob.atomic_clusters["H1"][Mobject]=ring_H1_mob_new
         self.wait(2)
+
+        #消除 HCl：先在苯环上 H 的正上方显示 OH-（负电荷在 O 的左上）
+        ring_H1_pos=np.array(nitrobenzene_mob.atomic_clusters["H1"]["pos"])
+        OH_pos=ring_H1_pos+UP*1.0
+        #OH 标签整体右移，让键正对左侧 O 的中心
+        OH_label=MathTex(r"\mathrm{OH}",font_size=nitrobenzene_mob.attributes.font_size,tex_template=mytemplate)
+        OH_oxygen=MathTex(r"\mathrm{O}",font_size=nitrobenzene_mob.attributes.font_size,tex_template=mytemplate)
+        OH_offset=RIGHT*(OH_label.width/2-OH_oxygen.width/2)
+        OH_mob=AtomicCluster(text=r"\mathrm{OH}",pos=OH_pos,text_offset=OH_offset,
+                             attributes=nitrobenzene_mob.attributes)
+        nitrobenzene_mob.register_atom(name="OH",mobject=OH_mob)
+        nitrobenzene_mob.add_charge(text="OH",pos=UL,charge_type=ChargeType.NEGATIVE)
+        OH_negative=nitrobenzene_mob.charges["OH"]
+
+        self.add(OH_mob,OH_negative)
+        self.play(FadeIn(OH_mob),FadeIn(OH_negative),run_time=0.8)
+        self.wait(0.5)
+
+        #OH- 的负电荷变成 H-OH 键；环上 C-H 与 C-C 楔形键变成 C=C（side=0）；C-Cl 的电子给 Cl（右上负电荷）
+        C2_H1_bond=nitrobenzene_mob.bond_lookup.between("C2","H1")
+        C1_Cl1_bond=sulfone_mob.bond_lookup.between("C1","Cl1")
+        H_OH_bond=nitrobenzene_mob.build_bond(start="H1",end="OH",bond_type=BondType.NORMAL_BOND)
+        C2_C1_double=DoubleBond(start=C2_pos,direction=0*DEGREES,start_edge=False,end_edge=True,
+                                attributes=nitrobenzene_mob.attributes,side=0)
+        Cl1_negative=sulfone_mob.build_charge(text="Cl1",pos=UR,charge_type=ChargeType.NEGATIVE)
+
+        step_elimination=ElectronMigrationStep(
+            replace=[(OH_negative,H_OH_bond),
+                     (VGroup(C2_H1_bond,cc_bond),C2_C1_double),
+                     (C1_Cl1_bond,Cl1_negative)],
+        )
+        self.play(nitrobenzene_mob.electron_migration(steps=[step_elimination],run_time=1.5))
+        #C-Cl 属于碳负离子那份结构式：断键要手工从它的键表去掉，Cl 的电荷登记进去
+        sulfone_mob.atomic_clusters["C1"][Bond].remove(C1_Cl1_bond)
+        sulfone_mob.atomic_clusters["Cl1"][Bond].remove(C1_Cl1_bond)
+        sulfone_mob.register_charge(name="Cl1",charge=Cl1_negative)
+        #断掉的 C-Cl 键源对象同样被就地形变成电荷留在组里，摘掉
+        sulfone_mob.remove(C1_Cl1_bond)
+        #DoubleBond 是 VGroup：收尾会把两条线平铺进硝基苯组，删掉组里那两份，只保留可整体旋转的双键
+        for line_vns in C2_C1_double.submobjects:
+            nitrobenzene_mob.remove(line_vns)
+        #环上 C-H 的两份旧对象（被替换/断键后留下的变形原件）也清掉
+        nitrobenzene_mob.remove(ring_H1_bond,ring_H1_mob)
+        self.wait(1.5)
+
+        #H-OH 与 Cl- 离开
+        ring_H1_mob=nitrobenzene_mob.atomic_clusters["H1"][Mobject]
+        Cl1_mob=sulfone_mob.atomic_clusters["Cl1"][Mobject]
+        self.play(FadeOut(OH_mob,H_OH_bond,ring_H1_mob,Cl1_mob,Cl1_negative),run_time=1)
+        #淡出的对象要从结构式里摘掉，避免之后随组重绘
+        nitrobenzene_mob.remove(OH_mob,H_OH_bond,ring_H1_mob,Cl1_negative)
+        sulfone_mob.remove(Cl1_mob)
+
+        #连出去的那个 C=C 及其外侧的对象（碳负离子的碳、H、SO2Ph）一起绕苯环右上角的 C 逆时针转 30°
+        self.play(sulfone_mob.rotate_atoms(atom_names=["C1","H2","S1"],center=C2_pos,
+                                          angle=30*DEGREES,run_time=1.5),
+                  Rotate(C2_C1_double,angle=30*DEGREES,about_point=C2_pos,run_time=1.5))
+        self.wait(1.5)
