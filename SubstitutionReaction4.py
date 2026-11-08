@@ -425,7 +425,6 @@ class test(Scene):
             nitrobenzene_mob.remove(line_vns)
         #环上 C-H 的两份旧对象（被替换/断键后留下的变形原件）也清掉
         nitrobenzene_mob.remove(ring_H1_bond,ring_H1_mob)
-        self.wait(1.5)
 
         #H-OH 与 Cl- 离开
         ring_H1_mob=nitrobenzene_mob.atomic_clusters["H1"][Mobject]
