@@ -651,11 +651,11 @@ class StructuralFormula(VGroup):
         """
         unsynced=[]
         for step in steps:
-            for source,_ in step.replace:
+            for source in step._book_sources:
                 self._sync_unregister(source)
             for obj in step.fadeout:
                 self._sync_unregister(obj)
-            for _,target in step.replace:
+            for target in step._book_targets:
                 self._sync_register(target,unsynced)
             for obj in step.create:
                 self._sync_register(obj,unsynced)

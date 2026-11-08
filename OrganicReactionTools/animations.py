@@ -5,22 +5,112 @@ from manim import (Animation, Mobject, VGroup, AnimationGroup,
                    smooth, linear)
 from manim.typing import Vector3D
 import numpy as np
+from itertools import permutations
 from typing import Callable, Optional
 
 from .decorations import BezierArrow
-from .bonds import Bond, BondType
+from .bonds import (Bond, BondType, NormalBond, DashedBond, DoubleBond,
+                    TripleBond, InBond)
 from .charges import Charge
 from .attributes import DEFAULT_ATTRIBUTES
+
+def _bond_line_parts(mobject:Mobject)->tuple[list[Mobject],list[Mobject]]:
+    """把 Bond / 多线键 / 它们的 VGroup 展开成 (顶层键对象列表, 线段列表)。
+
+    只接受单键、双键、三键与虚键；电荷和楔形键（InBond/OutBond）不是线，
+    拆线配对没有意义，直接抛出 ValueError。
+    """
+    bonds:list[Mobject]=[]
+    lines:list[Mobject]=[]
+
+    def visit(obj:Mobject)->None:
+        if isinstance(obj,Bond):
+            if len(obj.submobjects)!=1:
+                raise ValueError(f"Bond 应当只包一个实体键，实际有 {len(obj.submobjects)} 个子对象。")
+            bonds.append(obj)
+            visit(obj.submobjects[0])
+        elif isinstance(obj,(DoubleBond,TripleBond)):
+            lines.extend(obj.submobjects)
+        elif isinstance(obj,(NormalBond,DashedBond)):
+            lines.append(obj)
+        elif isinstance(obj,VGroup) and not isinstance(obj,(InBond,Charge)):
+            for sub in obj.submobjects:
+                visit(sub)
+        else:
+            raise ValueError(f"拆线配对只接受单/双/三键，收到 {type(obj).__name__}。")
+
+    visit(mobject)
+    return bonds,lines
+
+def _pair_lines_by_distance(source_lines:list[Mobject],
+                            target_lines:list[Mobject])->list[tuple[Mobject,Mobject]]:
+    """按两线中心距离的总和最小做一一配对（n! 穷举，n≤6）。
+
+    返回列表按 source_lines 的顺序排列：第 i 项是 source_lines[i] 与配到的目标线。
+    """
+    n=len(source_lines)
+    if n!=len(target_lines):
+        raise ValueError(f"拆线配对的线段数不一致：源 {n} 条，目标 {len(target_lines)} 条。")
+    if n==0:
+        raise ValueError("拆线配对至少需要一条线段。")
+    if n>6:
+        raise ValueError(f"拆线配对最多支持 6 条线段，实际有 {n} 条。")
+    best_perm=tuple(range(n))
+    best_total=float("inf")
+    for perm in permutations(range(n)):
+        total=sum(float(np.linalg.norm(source_lines[i].get_center()-target_lines[j].get_center()))
+                  for i,j in enumerate(perm))
+        if total<best_total:
+            best_total=total
+            best_perm=perm
+    return [(source_lines[i],target_lines[j]) for i,j in enumerate(best_perm)]
+
+class BondLinePair:
+    """键级平移的一对键：两侧各自拆成线段，按总位移最小配对。
+
+    用法：放进 ElectronMigrationStep 的 replace 里，占一个对的位置。
+    动画使用拆出来的线段（π 线配 π 线、σ 线配 σ 线），
+    而 begin/finish/sync_migration 仍按传入的原键对象登记。
+
+    Parameters
+    ----------
+    source : Mobject
+        旧键对象（Bond）或它们的 VGroup。
+    target : Mobject
+        新键对象（Bond）或它们的 VGroup，线段数必须与 source 相同。
+
+    Raises
+    ------
+    ValueError
+        两侧线段数不一致、含电荷或楔形键，或线段数超过 6。
+    """
+    def __init__(self,*,
+                 source:Mobject,
+                 target:Mobject):
+        self.source=source
+        self.target=target
+        self.source_bonds,source_lines=_bond_line_parts(source)
+        self.target_bonds,target_lines=_bond_line_parts(target)
+        if len(source_lines)!=len(target_lines):
+            raise ValueError(f"拆线配对的线段数不一致：源 {len(source_lines)} 条，目标 {len(target_lines)} 条。")
+        self.pairs=_pair_lines_by_distance(source_lines,target_lines)
+        self.source_group=VGroup(*[source_line for source_line,_ in self.pairs])
+        self.target_group=VGroup(*[target_line for _,target_line in self.pairs])
+
+    def __iter__(self):
+        """兼容 for source,target in step.replace 的旧写法（产出拆线后的线段 VGroup）。"""
+        return iter((self.source_group,self.target_group))
 
 class ElectronMigrationStep:
     """电子迁移步骤的描述。
 
     Attributes
     ----------
-    replace : list[tuple[Mobject, Mobject]]
+    replace : list[tuple[Mobject, Mobject] | BondLinePair]
         要执行的 ReplacementTransform 列表，每项为 (source, target)，按顺序播放每一项变换动画。
         多对一：将多个 source 用 VGroup 包装。
         一对多：将多个 target 用 VGroup 包装，或使用 Mobject.copy()。
+        BondLinePair 用于两侧线段数相等的键级平移：动画按线段配对，登记仍按原键对象。
     create : list[Mobject]
         要在本步骤中 FadeIn 的新 Mobject 列表。
     fadeout : list[Mobject]
@@ -29,7 +119,7 @@ class ElectronMigrationStep:
         步骤内部子动画之间的延迟比率（0~1），类似 AnimationGroup.lag_ratio。
     """
     def __init__(self,*,
-                 replace:list[tuple[Mobject,Mobject]]|None=None,
+                 replace:list[tuple[Mobject,Mobject]|BondLinePair]|None=None,
                  create:list[Mobject]|None=None,
                  fadeout:list[Mobject]|None=None,
                  lag_ratio:float=0.3):
@@ -37,6 +127,21 @@ class ElectronMigrationStep:
         self.create=create or []
         self.fadeout=fadeout or []
         self.lag_ratio=lag_ratio
+
+        #动画侧用 _anim_pairs（拆线对是线段 VGroup），登记侧用 _book_*（仍是键对象）
+        self._anim_pairs:list[tuple[Mobject,Mobject]]=[]
+        self._book_sources:list[Mobject]=[]
+        self._book_targets:list[Mobject]=[]
+        for entry in self.replace:
+            if isinstance(entry,BondLinePair):
+                self._anim_pairs.append((entry.source_group,entry.target_group))
+                self._book_sources.append(entry.source)
+                self._book_targets.append(entry.target)
+            else:
+                source,target=entry
+                self._anim_pairs.append((source,target))
+                self._book_sources.append(source)
+                self._book_targets.append(target)
 
 def _rotate_point_2d(point:Vector3D,center:Vector3D,angle:float)->Vector3D:
     """绕 center 在 XY 平面内旋转 point，角度 angle（弧度）"""
@@ -497,9 +602,8 @@ class ElectronMigration(AnimationGroup):
         self._all_fadeouts:list[Mobject]=[]
 
         for step in steps:
-            for source,target in step.replace:
-                self._all_sources.append(source)
-                self._all_targets.append(target)
+            self._all_sources.extend(step._book_sources)
+            self._all_targets.extend(step._book_targets)
             for obj in step.create:
                 self._all_creates.append(obj)
             for obj in step.fadeout:
@@ -508,7 +612,7 @@ class ElectronMigration(AnimationGroup):
         step_anims=[]
         for step in steps:
             sub_anims=[]
-            for source,target in step.replace:
+            for source,target in step._anim_pairs:
                 sub_anims.append(ReplacementTransform(source,target,run_time=run_time))
             for obj in step.create:
                 sub_anims.append(FadeIn(obj,run_time=run_time))
