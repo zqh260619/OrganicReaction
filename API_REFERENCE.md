@@ -1025,12 +1025,38 @@ class ElectronMigrationStep:
 
 - **用途**：**纯数据**描述"一步电子迁移要做哪些变换"，本身不是动画。
 - **三个列表字段**：
-  - `replace: list[tuple[Mobject, Mobject]]` —— 每项 `(source, target)`，按顺序播放 `ReplacementTransform`。
+  - `replace: list[tuple[Mobject, Mobject] | BondLinePair]` —— 每项 `(source, target)`，按顺序播放 `ReplacementTransform`。
     多对一：把多个 source 用 `VGroup` 包起来；一对多：把多个 target 用 `VGroup` 包起来，或对 target 用 `Mobject.copy()`。
+    两侧键级整体平移（如 `A=B-C → A-B=C`）可整对写成 `BondLinePair`：动画按线段配对、登记仍按原键对象，见 §8.1.1。
   - `create: list[Mobject]` —— 本步要 `FadeIn` 的新对象；
   - `fadeout: list[Mobject]` —— 本步要 `FadeOut` 的对象。
 - **`lag_ratio`**：步内各子动画之间的延迟比率（0~1），语义同 `AnimationGroup.lag_ratio`。
 - **典型写法**（见 [test.py](test.py#L53-L58)）：把"旧电荷 + 旧单键"合成一个 `VGroup` 一起变换成新双键。
+- **拆线对**：`BondLinePair` 在 `ElectronMigrationStep` 构造时快照几何并算好配对；`begin` / `finish` / `sync_migration`
+  仍按原键对象处理，只有 `ReplacementTransform` 使用拆出来的线段。
+
+### 8.1.1 `BondLinePair` — 键级平移的拆线配对
+
+```python
+class BondLinePair:
+    def __init__(self, *, source: Mobject, target: Mobject)
+```
+
+- **用途**：把"双键 → 单键、单键 → 双键"这类**键级整体平移**写成 `replace` 的一项。动画侧把两侧的键拆成
+  **线段**、按"总位移最小"一一配对（π 线配 π 线、σ 线配 σ 线）；登记侧（`begin` / `finish` / `sync_migration`）
+  仍按传入的**原键对象**处理（`Bond.atom1` / `atom2`），所以旧键会自动注销、新键会自动登记。
+- **`source` / `target`**：`Bond`、`DoubleBond` / `TripleBond`，或它们组成的 `VGroup`；两侧线段数必须相等。
+  `InBond` / `OutBond` / `Charge` 不是"线"，传进来会 `raise ValueError`。
+- **配对规则**：对 n! 种一一配对穷举（n ≤ 6），取**两线中心距离之和**最小的一组；返回顺序与 source 的线段顺序一致，
+  源 / 目标线段 `VGroup` 都按该顺序构造，从而保证 `ReplacementTransform` 逐项配对。规则只看几何（构造时快照，
+  之后移动分子不影响已算好的配对），不做化学语义推断；若某例的化学意图与最小位移不一致，
+  退路是照旧显式传线段 `VGroup`（两种写法可在同一个 `replace` 里混用）。
+- **`__iter__`**：兼容旧代码 `for source, target in step.replace`，产出的是**拆线后的**两个线段 `VGroup`
+  （不是原键对象）。
+- **限制**：只在两侧线段数相等时可用；`双键 → 单键`（2 → 1）这类非对称变化仍用原来的键级配对。
+  `BondLinePair` 里只能放键；电荷照现有约定放进同一个 step 的另一对（`unsynced` 不受影响）。
+- **画面归属**：`ReplacementTransform` 收尾把场景里的源线段组换成目标线段组（目标线段可见），`finish()` 又把目标
+  键对象加回 `sf` —— 同一批线在场景组与结构式里各引用一次，像素完全重合（这是所有 `electron_migration` 的既有行为）。
 
 ### 8.2 `OpacityEffect` — 仅改透明度的通用动画
 
@@ -1101,7 +1127,9 @@ class ElectronMigration(AnimationGroup):
   组成一个 `AnimationGroup(lag_ratio=step.lag_ratio)`；步与步之间由外层 `lag_ratio` 控制
   （0 = 全部同时开始，1 = 依次执行）。
 - **`run_time`**：每个**子动画**的运行时间。
-- **构造时收集**四份清单（`_all_sources` / `_all_targets` / `_all_creates` / `_all_fadeouts`）供首尾钩子使用。
+- **构造时收集**四份清单（`_all_sources` / `_all_targets` / `_all_creates` / `_all_fadeouts`）供首尾钩子使用；
+  其中前两份取自各步骤的 `_book_sources` / `_book_targets`，所以 `BondLinePair` 在这两份清单里仍是原键对象
+  （只有子动画 `ReplacementTransform` 使用拆出来的线段）。
 - **`begin()`**：把 source 与被淡出的对象从 `sf` 中移除（**它们仍留在 Scene 里**，动画期间可见）。
   若某对象是 `VGroup` 且不是 `Bond`/`Charge`（即用户为"多对一"自组的组），则逐个移除其子对象。
 - **`finish()`**：把 target 与新建对象加入 `sf`（同样对自组 `VGroup` 展开子对象），
@@ -1199,7 +1227,8 @@ class StructuralFormula(VGroup):
   并在恰好找到两个端点时同步清理 `adj`（幂等）。
 - **`unregister_charge(charge: Charge) -> str | None`** — 从 `charges` 中按身份移除，**返回其所属原子名**（无则 `None`）。
 - **`sync_migration(steps: list[ElectronMigrationStep]) -> list`** — 按步骤列表同步元数据：
-  **先注销**（`replace` 的 source 与 `fadeout`）**后登记**（`replace` 的 target 与 `create`）。
+  **先注销**（`replace` 的 source 与 `fadeout`）**后登记**（`replace` 的 target 与 `create`）；
+  `BondLinePair` 在这里取的是**原键对象**（`_book_sources` / `_book_targets`），不用拆出来的线段。
   只自动登记**带标签**的对象（`Bond.atom1` / `atom2`、`Charge.atom_name`）；
   标签缺失或原子不存在时**打印警告**并把对象收集进返回列表，供手工登记。
   内部 `_sync_unregister` / `_sync_register` 对 `VGroup` 会**递归展开**子对象，因此 `VGroup(Bond, Charge)` 这种组合也能被正确同步。
