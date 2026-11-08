@@ -439,3 +439,56 @@ class test(Scene):
                                           angle=30*DEGREES,run_time=1.5),
                   Rotate(C2_C1_double,angle=30*DEGREES,about_point=C2_pos,run_time=1.5))
         self.wait(1.5)
+
+        #恢复芳香性：右侧 O 的负电荷 + N-O 键 → N=O；C=N 与环上 C-C → C-N 与环上 C=C；
+        #环外 C=C → 环外 C-C + 环外 C 上的负电荷
+        #先清掉两条早已离场的历史电荷记录，否则同一原子上无法再建电荷
+        sulfone_mob.charges.pop("C1",None)
+        sulfone_mob.charges.pop("Cl1",None)
+
+        N1_O2_single=nitrobenzene_mob.bond_lookup.between("N1","O2")
+        O2_negative=nitrobenzene_mob.charges["O2"]
+        N1_O2_double=nitrobenzene_mob.build_bond(start="N1",end="O2",bond_type=BondType.DOUBLE_BOND,side=0)
+
+        C1_N1_double=nitrobenzene_mob.bond_lookup.between("C1","N1")
+        C1_N1_single=nitrobenzene_mob.build_bond(start="C1",end="N1",bond_type=BondType.NORMAL_BOND)
+
+        C1_C2_single=nitrobenzene_mob.bond_lookup.between("C1","C2")
+        C1_C2_double=nitrobenzene_mob.build_bond(start="C1",end="C2",bond_type=BondType.DOUBLE_BOND,side=-1,
+                                                 start_side_edge=True,end_side_edge=True)
+
+        C2_C1_single=NormalBond(start=C2_pos,direction=30*DEGREES,start_edge=False,end_edge=True,
+                                attributes=nitrobenzene_mob.attributes)
+        C1_sub_negative=sulfone_mob.build_charge(text="C1",pos=RIGHT,charge_type=ChargeType.NEGATIVE)
+
+        #π 电子对要从 C=N 搬到环上 C-C，所以把这两根键拆到单线级别再配对：
+        #键级整体互换（双键→单键、单键→双键）只会让两个键在原地对调，看不出电子转移；
+        #拆开后让 C=N 靠 C2 一侧的那条 π 线自己走过去、成为环 C=C 的内侧短线，两条 σ 线原地不动
+        C1_N1_pi=max(C1_N1_double.submobjects[0].submobjects,key=lambda line:line.get_center()[0])
+        C1_N1_sigma=min(C1_N1_double.submobjects[0].submobjects,key=lambda line:line.get_center()[0])
+        C1_C2_sigma,C1_C2_pi=C1_C2_double.submobjects[0].submobjects
+        C1_N1_single_line=C1_N1_single.submobjects[0]
+        C1_C2_single_line=C1_C2_single.submobjects[0]
+
+        #双键位移这种"A=B-C → A-B=C"的成对变化，前后各合成一个 VGroup 整体变换，不拆成一键一变换；
+        #电荷也一起进 VGroup（环外 C=C → 环外 C-C + 环外 C 上的负电荷）
+        step_rearomatization=ElectronMigrationStep(
+            replace=[(VGroup(N1_O2_single,O2_negative),N1_O2_double),
+                     (VGroup(C1_N1_pi,C1_N1_sigma,C1_C2_single_line),VGroup(C1_C2_pi,C1_N1_single_line,C1_C2_sigma)),
+                     (C2_C1_double,VGroup(C2_C1_single,C1_sub_negative))],
+        )
+        self.play(nitrobenzene_mob.electron_migration(steps=[step_rearomatization],run_time=2.0))
+        #环外碳的负电荷属于碳负离子那份结构式：登记进去，并从硝基苯组里把这份重复登记摘掉
+        sulfone_mob.register_charge(name="C1",charge=C1_sub_negative)
+        nitrobenzene_mob.remove(C1_sub_negative,C2_C1_single)
+        #自动同步把它错记成了苯环 C1 的电荷，清掉这条记录（电荷本身已归到环外碳上）
+        nitrobenzene_mob.charges.pop("C1",None)
+        #上面把键拆成了裸线，自动同步认不出这些线：C-N 单键与环 C=C 双键的键表要手工换新
+        nitrobenzene_mob.unregister_bond(C1_N1_double)
+        nitrobenzene_mob.unregister_bond(C1_C2_single)
+        nitrobenzene_mob.register_bond(start="C1",end="N1",bond=C1_N1_single)
+        nitrobenzene_mob.register_bond(start="C1",end="C2",bond=C1_C2_double)
+        #旧的 C=N 双键、环 C-C 单键两个整体，以及收尾被展平进结构式的三条裸线都摘掉：
+        #这两根键在画面上只由这次变换的目标 VGroup 持有
+        nitrobenzene_mob.remove(C1_N1_double,C1_C2_single,C1_C2_pi,C1_N1_single_line,C1_C2_sigma)
+        self.wait(2)
