@@ -224,7 +224,6 @@ class test(Scene):
                   run_time=1.5)
         self.wait(1)
 
-        #只写每个单词的其余字母（word[1]），首字母完全不参与 Write
         self.play(Write(words[0][1]),Write(words[1][1]),Write(words[2][1]),run_time=2)
         self.wait(2)
 
@@ -311,11 +310,9 @@ class test(Scene):
         nitrobenzene_mob.add_atom(name="H1",direction=30*DEGREES,text=r"\mathrm{H}",
                                   bond_type=BondType.NORMAL_BOND,adjacency="C2")
 
-        #硝基苯出现得慢一些：2.25 s 绘制 + 3 s 停留 = 5.25 s，约为原来（1.5+2）的 1.5 倍
         self.play(Create(nitrobenzene_mob),run_time=2.5)
         self.wait(2)
 
-        #碳负离子先逆时针转 15°（绕自己的碳 C1），再移到苯环旁边进攻
         self.play(sulfone_mob.rotate_atoms(atom_names=["C1","H2","Cl1","S1"],center="C1",
                                            angle=30*DEGREES,run_time=1.5))
         self.wait(1)
@@ -329,7 +326,6 @@ class test(Scene):
         attack_shift=C1_target-C1_live
         self.play(nitrobenzene_mob.animate.shift(nitro_shift),
                   sulfone_mob.animate.shift(attack_shift),run_time=1.5)
-        #就位后同样同步碳负离子的原子坐标数据
         for atom_vns in sulfone_mob.atomic_clusters.values():
             atom_vns["pos"]=np.array(atom_vns["pos"])+attack_shift
         #位移后手动同步原子坐标数据（move/shift 不会更新 pos，后面建键要用）
@@ -362,8 +358,7 @@ class test(Scene):
         O2_negative=nitrobenzene_mob.build_charge(text="O2",pos=UR,charge_type=ChargeType.NEGATIVE)
 
         #C-H 逆时针转 15°（30°→45°）并变成 InBond：作为一个独立动画与电子转移同时开始（不塞进 electron_migration）。
-        #注意 self.play 会把各动画都拉到最长时长，所以旋转的 1 s 结束后用 Wait 补足，避免被外推；
-        #以后要让两者错开开始，在 ring_H1_turn 前面加 Wait(偏移) 即可
+        #注意 self.play 会把各动画都拉到最长时长，所以旋转的 1 s 结束后用 Wait 补足，避免被外推。
         step_attack=ElectronMigrationStep(
             replace=[(C1_negative,cc_bond),
                      BondLinePair(source=VGroup(C1_C2_double,C1_N1_single),
