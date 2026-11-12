@@ -478,3 +478,43 @@ class test(Scene):
         #自动同步把它错记成了苯环 C1 的电荷，清掉这条记录（电荷本身已归到环外碳上）
         nitrobenzene_mob.charges.pop("C1",None)
         self.wait(2)
+
+        #酸化：碳负离子右下出现 H-OH2+，左侧的 H 在 C 的右下 60°（H3O+ 的 H 就是待转移的那个质子）
+        C1_pos=np.array(sulfone_mob.atomic_clusters["C1"]["pos"])
+        acid_direction=np.array([np.cos(300*DEGREES),np.sin(300*DEGREES),0])
+        H3O_H_pos=C1_pos+acid_direction*sulfone_mob.attributes.length_global
+        H3O_O_pos=H3O_H_pos+acid_direction*sulfone_mob.attributes.length_global
+        H3O_H_mob=AtomicCluster(text=r"\mathrm{H}",pos=H3O_H_pos,attributes=sulfone_mob.attributes)
+        #OH_2 标签整体右移：H-O 键要正对左侧 O 的中心，而不是整段文字的中心
+        H3O_O_label=MathTex(r"\mathrm{OH_2}",font_size=sulfone_mob.attributes.font_size,tex_template=mytemplate)
+        H3O_O_char=MathTex(r"\mathrm{O}",font_size=sulfone_mob.attributes.font_size,tex_template=mytemplate)
+        H3O_O_offset=RIGHT*(H3O_O_label.width/2-H3O_O_char.width/2)
+        H3O_O_mob=AtomicCluster(text=r"\mathrm{OH_2}",pos=H3O_O_pos,text_offset=H3O_O_offset,
+                                attributes=sulfone_mob.attributes)
+        sulfone_mob.register_atom(name="H3",mobject=H3O_H_mob)
+        sulfone_mob.register_atom(name="O3",mobject=H3O_O_mob)
+        H3O_bond=sulfone_mob.build_bond(start="H3",end="O3",bond_type=BondType.NORMAL_BOND)
+        #正电荷放在 OH_2 的左下：左上被进键的 H-O 键占住，正左方要留给 H-O 键断裂后生成的孤对电子
+        sulfone_mob.add_charge(text="O3",pos=DL,charge_type=ChargeType.POSITIVE)
+        H3O_positive=sulfone_mob.charges["O3"]
+
+        self.add(H3O_H_mob,H3O_O_mob,H3O_bond,H3O_positive)
+        self.play(FadeIn(H3O_H_mob),FadeIn(H3O_O_mob),FadeIn(H3O_bond),FadeIn(H3O_positive),run_time=0.8)
+        self.wait(0.5)
+
+        #负电荷变成 C-H 键；H-O 键的电子变成 O 左侧的孤对电子，正电荷同时消失
+        C1_H3_bond=sulfone_mob.build_bond(start="C1",end="H3",bond_type=BondType.NORMAL_BOND)
+        H3O_lone_pair=sulfone_mob.build_charge(text="O3",pos=LEFT,charge_type=ChargeType.PAIR)
+        step_acidification=ElectronMigrationStep(
+            replace=[(C1_sub_negative,C1_H3_bond),
+                     (H3O_bond,H3O_lone_pair)],
+            fadeout=[H3O_positive],
+        )
+        self.play(sulfone_mob.electron_migration(steps=[step_acidification],run_time=1.5))
+        self.wait(1)
+
+        #剩下的水（OH_2，连同 O 上的孤对电子）退场
+        self.play(FadeOut(H3O_O_mob,H3O_lone_pair),run_time=1)
+        sulfone_mob.remove(H3O_O_mob,H3O_lone_pair)
+        sulfone_mob.charges.pop("O3",None)
+        self.wait(2)
