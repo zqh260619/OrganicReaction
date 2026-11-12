@@ -12,7 +12,7 @@ class test(Scene):
         self.play(FadeOut(title,subtitle))
 
         #SNAr反应式：亲核试剂Nu取代芳环上邻位于硝基的X，X以负离子形式离去
-        #反应式整体缩到 0.8 倍，键线宽按同一比例调细（原来顶得太满、线条也太粗）
+        #反应式整体缩到 0.8 倍，键线宽按同一比例调细
         scale_equation=0.8
         bond_width=3.2
         substrate=Benzene(center=ORIGIN,c_names=["C1","C2","C3","C4","C5","C6"],bond_stroke_width=bond_width)
@@ -51,7 +51,6 @@ class test(Scene):
 
         plus1=MathTex("+",font_size=txt_size)
         plus2=MathTex("+",font_size=txt_size)
-        #上下都不放对象的反应箭头：above 传空串只为通过「至少一侧有内容」的校验
         reaction_arrow=ReactionArrow(start=ORIGIN,above="",length=1.4,stroke_width=1.6)
 
         #横向排开：各对象只沿x平移，苯环中心与箭头始终在同一水平线上
@@ -75,7 +74,6 @@ class test(Scene):
         H_mob=AtomicCluster(text=r"\mathrm{H}",pos=X_leaving_mob.get_center(),
                             attributes=substrate.attributes)
         H_mob.scale(scale_equation)
-        #Cross 按参照物的对角线画叉，直接套在细长箭头上会被压成扁叉，所以用一个不显示的小方框当参照物
         cross_frame=Square(side_length=0.6*scale_equation).move_to(reaction_arrow.arrow.get_center())
         refusal_cross=Cross(cross_frame,stroke_color=RED,stroke_width=6)
 
@@ -85,13 +83,10 @@ class test(Scene):
                   run_time=1.5)
         self.wait(2)
 
-        #对原子表的修改放在播放之后，避免新标签在形变前闪现
         substrate.remove(X_leaving_mob)
         substrate.atomic_clusters["X"][Mobject]=H_mob
         substrate.add(H_mob)
 
-        #这三个对象已在上面被 FadeOut 过，manim 收尾会把它们的透明度复原成 1；
-        #从组里摘掉，否则最后整组淡出时它们会被重新加回场景而闪现
         reaction_group.remove(product,plus2,X_negative)
 
         #反应式与红叉一起退出
@@ -208,8 +203,6 @@ class test(Scene):
         self.wait(0.5)
 
         #VNS拆成三个字母，移到画面纵向中心，再分别扩展成三个单词（坐标写死，由 test.py 的 TestVNSExpand 标定）
-        #每个单词拆成“首字母 + 其余字母”两段（arg_separator="" 保持同一行排版），
-        #只写其余字母，首字母不参与 Write，避免重复绘制产生边缘闪光
         words=VGroup(MathTex(r"\mathrm{V}",r"\mathrm{icarious}",arg_separator="",font_size=title_size,tex_template=mytemplate),
                      MathTex(r"\mathrm{N}",r"\mathrm{ucleophilic}",arg_separator="",font_size=title_size,tex_template=mytemplate),
                      MathTex(r"\mathrm{S}",r"\mathrm{ubstitution}",arg_separator="",font_size=title_size,tex_template=mytemplate))
@@ -282,8 +275,6 @@ class test(Scene):
         H1_mob=sulfone_mob.atomic_clusters["H1"][Mobject]
         H2O_mob=AtomicCluster(text=r"\mathrm{H_2O}",pos=HO_pos+np.array([0.1,0.35,0]),attributes=sulfone_mob.attributes)
         self.play(ReplacementTransform(VGroup(HO_mob,H1_mob,HO_H1_bond),H2O_mob),run_time=1.5)
-        #把这一段的残留对象从结构式里摘掉：它们已被就地变形、且 FadeOut 收尾会把透明度复原，
-        #留在组里的话会在 H2O 淡出后随结构式重新画出来
         sulfone_mob.remove(HO_mob,H1_mob,HO_H1_bond)
         self.wait(2)
 
@@ -292,7 +283,6 @@ class test(Scene):
         sulfone_mob.remove(H2O_mob)
         self.wait(0.5)
         self.play(sulfone_mob.animate.shift(RIGHT*1.0),run_time=1.5)
-        #位移后同步原子坐标数据（move/shift 不会更新 pos，rotate_atoms 依赖它）
         for atom_vns in sulfone_mob.atomic_clusters.values():
             atom_vns["pos"]=np.array(atom_vns["pos"])+RIGHT*1.0
         self.wait(0.5)
@@ -328,7 +318,6 @@ class test(Scene):
                   sulfone_mob.animate.shift(attack_shift),run_time=1.5)
         for atom_vns in sulfone_mob.atomic_clusters.values():
             atom_vns["pos"]=np.array(atom_vns["pos"])+attack_shift
-        #位移后手动同步原子坐标数据（move/shift 不会更新 pos，后面建键要用）
         for atom_vns in nitrobenzene_mob.atomic_clusters.values():
             atom_vns["pos"]=np.array(atom_vns["pos"])+nitro_shift
         self.wait(1)
@@ -343,7 +332,6 @@ class test(Scene):
         ring_H1_bond=nitrobenzene_mob.bond_lookup.between("C2","H1")
         ring_H1_mob=nitrobenzene_mob.atomic_clusters["H1"][Mobject]
         ring_H1_target=C2_pos+np.array([np.cos(45*DEGREES),np.sin(45*DEGREES),0])
-        #先把 H 的坐标数据改到 45°，build_bond 才会按新角度建出 InBond，且带上原子信息便于登记
         nitrobenzene_mob.atomic_clusters["H1"]["pos"]=ring_H1_target
         ring_H1_bond_in=nitrobenzene_mob.build_bond(start="C2",end="H1",bond_type=BondType.IN_BOND)
         ring_H1_mob_new=ring_H1_mob.copy().move_to(ring_H1_target)
@@ -358,7 +346,6 @@ class test(Scene):
         O2_negative=nitrobenzene_mob.build_charge(text="O2",pos=UR,charge_type=ChargeType.NEGATIVE)
 
         #C-H 逆时针转 15°（30°→45°）并变成 InBond：作为一个独立动画与电子转移同时开始（不塞进 electron_migration）。
-        #注意 self.play 会把各动画都拉到最长时长，所以旋转的 1 s 结束后用 Wait 补足，避免被外推。
         step_attack=ElectronMigrationStep(
             replace=[(C1_negative,cc_bond),
                      BondLinePair(source=VGroup(C1_C2_double,C1_N1_single),
@@ -370,9 +357,7 @@ class test(Scene):
                                     lag_ratio=0)
         attack_migration=nitrobenzene_mob.electron_migration(steps=[step_attack],run_time=2.0)
         self.play(attack_migration,Succession(ring_H1_turn,Wait(attack_migration.run_time-1)))
-        #攻击时那个负电荷的源对象已被就地形变成楔形、还留在这份结构式组里（跨结构式 begin() 摘不掉），手工清掉
         sulfone_mob.remove(C1_negative)
-        #C-H 的旋转不在 electron_migration 里，原子表要手工同步：换旧键、登记新 InBond、更新 H 标签
         nitrobenzene_mob.atomic_clusters["C2"][Bond].remove(ring_H1_bond)
         nitrobenzene_mob.atomic_clusters["H1"][Bond].remove(ring_H1_bond)
         nitrobenzene_mob.register_bond(start="C2",end="H1",bond=ring_H1_bond_in)
@@ -410,23 +395,18 @@ class test(Scene):
                      (C1_Cl1_bond,Cl1_negative)],
         )
         self.play(nitrobenzene_mob.electron_migration(steps=[step_elimination],run_time=1.5))
-        #C-Cl 属于碳负离子那份结构式：断键要手工从它的键表去掉，Cl 的电荷登记进去
         sulfone_mob.atomic_clusters["C1"][Bond].remove(C1_Cl1_bond)
         sulfone_mob.atomic_clusters["Cl1"][Bond].remove(C1_Cl1_bond)
         sulfone_mob.register_charge(name="Cl1",charge=Cl1_negative)
-        #断掉的 C-Cl 键源对象同样被就地形变成电荷留在组里，摘掉
         sulfone_mob.remove(C1_Cl1_bond)
-        #DoubleBond 是 VGroup：收尾会把两条线平铺进硝基苯组，删掉组里那两份，只保留可整体旋转的双键
         for line_vns in C2_C1_double.submobjects:
             nitrobenzene_mob.remove(line_vns)
-        #环上 C-H 的两份旧对象（被替换/断键后留下的变形原件）也清掉
         nitrobenzene_mob.remove(ring_H1_bond,ring_H1_mob)
 
         #H-OH 与 Cl- 离开
         ring_H1_mob=nitrobenzene_mob.atomic_clusters["H1"][Mobject]
         Cl1_mob=sulfone_mob.atomic_clusters["Cl1"][Mobject]
         self.play(FadeOut(OH_mob,H_OH_bond,ring_H1_mob,Cl1_mob,Cl1_negative),run_time=1)
-        #淡出的对象要从结构式里摘掉，避免之后随组重绘
         nitrobenzene_mob.remove(OH_mob,H_OH_bond,ring_H1_mob,Cl1_negative)
         sulfone_mob.remove(Cl1_mob)
 
@@ -438,7 +418,6 @@ class test(Scene):
 
         #恢复芳香性：右侧 O 的负电荷 + N-O 键 → N=O；C=N 与环上 C-C → C-N 与环上 C=C；
         #环外 C=C → 环外 C-C + 环外 C 上的负电荷
-        #先清掉两条早已离场的历史电荷记录，否则同一原子上无法再建电荷
         sulfone_mob.charges.pop("C1",None)
         sulfone_mob.charges.pop("Cl1",None)
 
@@ -458,8 +437,7 @@ class test(Scene):
         C1_sub_negative=sulfone_mob.build_charge(text="C1",pos=RIGHT,charge_type=ChargeType.NEGATIVE)
 
         #C=N 与环 C-C 是键级整体互换，用 BondLinePair 把两侧的键拆成线段按最小位移配对：
-        #C=N 靠 C2 一侧的 π 线自己走过去、成为环 C=C 的内侧短线，两条 σ 线原地不动；
-        #登记仍用原键对象（旧键自动注销、新键自动登记），不用再手工换键表
+        #C=N 靠 C2 一侧的 π 线自己走过去、成为环 C=C 的内侧短线，两条 σ 线原地不动。
         step_rearomatization=ElectronMigrationStep(
             replace=[(VGroup(N1_O2_single,O2_negative),N1_O2_double),
                      BondLinePair(source=VGroup(C1_N1_double,C1_C2_single),
@@ -467,10 +445,8 @@ class test(Scene):
                      (C2_C1_double,VGroup(C2_C1_single,C1_sub_negative))],
         )
         self.play(nitrobenzene_mob.electron_migration(steps=[step_rearomatization],run_time=2.0))
-        #环外碳的负电荷属于碳负离子那份结构式：登记进去，并从硝基苯组里把这份重复登记摘掉
         sulfone_mob.register_charge(name="C1",charge=C1_sub_negative)
         nitrobenzene_mob.remove(C1_sub_negative,C2_C1_single)
-        #自动同步把它错记成了苯环 C1 的电荷，清掉这条记录（电荷本身已归到环外碳上）
         nitrobenzene_mob.charges.pop("C1",None)
         self.wait(2)
 
