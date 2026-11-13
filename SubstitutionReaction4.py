@@ -489,3 +489,6 @@ class test(Scene):
         sulfone_mob.remove(H3O_O_mob,H3O_lone_pair)
         sulfone_mob.charges.pop("O3",None)
         self.wait(2)
+
+        #画面上的对象一起淡出
+        self.play(*[FadeOut(mob) for mob in self.mobjects],run_time=1.5)
