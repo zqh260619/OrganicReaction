@@ -20,7 +20,9 @@
 - 不要在工作区留下不必要的文件：临时探针脚本用完即删；审查结论写在对话里，不落盘生成报告；确需新建文件先问用户。
 - 命名与文件既有风格一致：原子名用「元素 + 序号」（`C1`/`O1`/`X1`…）；变量用 `<原子>_<角色>`（`OH_mob`、`X4_negative`、`C2_X3_bond`）；步骤名用数字后缀（`step_oh_attack2`、`step_x_attack3`）。不要字母后缀、不要 camelCase。
 - 讲解文字统一用 `Description(text=...)`；化学式写 `\mathrm{...}`，不要在 `\text{}` 里直接写 Unicode 希腊字母或 `^`。
-- 多处讲解文字默认都落在同一坐标 `[0,-3,0]`，必须用 `ReplacementTransform` 顺次替换，不能同时 `Write`（会重叠）。
+- 多处讲解文字默认都落在同一坐标 `[0,-3,0]`，必须顺次替换、任一时刻只留一条，不能同时出现（会重叠）。
+- **说明性文本（`Description`）的文本动画一律由用户自己添加，我不要写**：不写 `Write`/`FadeIn`/`FadeOut`/`ReplacementTransform` 等文本动画，也不替用户 `self.add`/`self.remove` 这些文本对象；我只把 `Description` 声明好。
+- 用户说“参照前几部作品的代码”时，指的是**文本对象的声明位置**：每节开头用 `#descriptions` 块集中声明该节全部 `Description`（如 `SubstitutionReaction2.py`），画面代码里不出现文本的动画与增删。
 - `StructuralFormula` 的 submobject 顺序决定 `Transform` 的逐项配对：做结构展开/缩写前，先重整子对象顺序使两侧对应。
 - `text_offset`（`AtomicCluster` / `add_atom` / `register_atom`）是**固定位移**：它只随锚点平移，不随键或分子旋转（与 `RotateAtoms` 中电荷偏移的处理一致）。要让标签跟着分子转，须在动画结束后自行重设偏移。
 - `text_offset` 给标签定位时，键的正对点应是**与键相连的那个字符的中心**（不是整段文字中心）；哪个字符由分子结构决定（`SO2Ph` 对 `S`、左侧的 `HO⁻` 对右边的 `O`），拿不准先问用户。位移按「该字符中心落在锚点上」算（同字号单独排该字符量宽度；字符在最左时即 `RIGHT*(整段宽/2-字符宽/2)`）。`Ph`、`Br`、`Tos` 这类较宽的原子（团）符号也要位移（沿键方向外移），免得键压到文字。
