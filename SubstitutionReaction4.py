@@ -1,4 +1,4 @@
-#manim SubstitutionReaction4.py test -pqh
+#manim SubstitutionReaction4.py test -pqh --disable_caching
 
 from OrganicReactionTools import *
 
@@ -12,10 +12,10 @@ class test(Scene):
         self.play(FadeOut(title,subtitle))
 
         #descriptions
-        text1=Description(text=r"\text{当我们需要把一个亲核的基团连到苯环上时，第一时间想到的应该是}\mathrm{SNAr}")
-        text2=Description(text=r"\text{可是在}\mathrm{SNAr}\text{中，被取代的位点需要有一个可离去的基团}")
+        text1=Description(text=r"\text{当我们需要把一个亲核的基团连到苯环上时，第一时间想到的应该是}\mathrm{S_NAr}")
+        text2=Description(text=r"\text{可是在}\mathrm{S_NAr}\text{中，被取代的位点需要有一个可离去的基团}")
         text3=Description(text=r"\text{然而}\mathrm{H^-}\text{是一个极差的离去基团}")
-        text4=Description(text=r"\text{因此}\mathrm{SNAr}\text{面对没有离去基团的苯环时就会显得无能为力}")
+        text4=Description(text=r"\text{因此}\mathrm{S_NAr}\text{面对没有离去基团的苯环时就会显得无能为力}")
 
         #SNAr反应式：亲核试剂Nu取代芳环上邻位于硝基的X，X以负离子形式离去
         #反应式整体缩到 0.8 倍，键线宽按同一比例调细
@@ -72,8 +72,9 @@ class test(Scene):
         reaction_group.scale(scale_equation)
         reaction_group.move_to(ORIGIN)
 
-        self.play(FadeIn(reaction_group),run_time=1.5)
-        self.wait(2)
+        self.add_sound("audios/SubstitutionReaction4/text1.mp3")
+        self.play(FadeIn(reaction_group),Write(text1),run_time=1.5)
+        self.wait(5.15)
 
         #X变形为H：没有可离去的基团，产物一侧消失，同时在箭头中间打上红叉表示反应无法直接进行
         X_leaving_mob=substrate.atomic_clusters["X"][Mobject]
