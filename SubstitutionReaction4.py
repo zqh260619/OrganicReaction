@@ -103,14 +103,14 @@ class test(Scene):
 
         #descriptions
         text5=Description(text=r"\text{但是在1978年，J.Goli\'nski和M.Makosza发现}")
-        text6=Description(text=r"\text{在碱性条件下，氯甲基苯基砜可以在硝基芳香化合物的邻位或对位取代氢原子}")
+        text6=Description(text=r"\text{在碱性条件下，}\mathrm{ClCH_2SO_2Ph}\text{可以在硝基芳香化合物的邻位或对位取代氢原子}")
         text7=Description(text=r"\text{形成苯基砜甲基取代产物}")
         text8=Description(text=r"\text{进一步的实验表明，在邻位或者对位卤代的硝基苯中}")
-        text9=Description(text=r"\text{氢被取代的反应速率快于卤素原子被取代}")
+        text9=Description(text=r"\mathrm{H}\text{被取代的反应速率快于卤素原子被取代}")
         text10=Description(text=r"\text{这个反应的机理就是}\mathrm{VNS}\text{机理}")
         text11=Description(text=r"\mathrm{VNS}\text{机理，全称}\mathrm{Vicarious\ Nucleophilic\ Substitution}")
         text12=Description(text=r"\text{翻译为中文就是间接亲核取代反应}")
-        text13=Description(text=r"\text{意思就是底物中的氢不是被直接取代的，而是通过一种间接的方式离去}")
+        text13=Description(text=r"\text{意思就是底物中的}\mathrm{H}\text{不是被直接取代的，而是通过一种间接的方式离去}")
 
         #VNS反应式：硝基苯与氯甲基苯基砜在KOH/DMSO中反应，再经酸处理，生成苯基砜甲基在硝基邻位、对位的两种产物
         #两个箭头要等长、且长度要盖过上方较宽的氯甲基苯基砜，整式因此更宽，第二式再缩一点；键线宽按同一比例收，观感与第一式一致
@@ -248,8 +248,8 @@ class test(Scene):
         #descriptions
         text14=Description(text=r"\text{首先体系中的碱夺取}\mathrm{ClCH_2SO_2Ph}\text{的酸性}\mathrm{\alpha-H}\text{，形成碳负离子}")
         text15=Description(text=r"\text{然后这个碳负离子进攻苯环上硝基的邻位或者对位（此处以邻位为例）}")
-        text16=Description(text=r"\text{形成}\mathrm{\sigma}\text{-络合物}")
-        text17=Description(text=r"\text{接着发生}\mathrm{\beta}\text{-消除，生成一分子的}\mathrm{HX}\text{，环恢复芳香性}")
+        text16=Description(text=r"\text{形成}\mathrm{\sigma-}\text{络合物}")
+        text17=Description(text=r"\text{接着发生}\mathrm{\beta-}\text{消除，生成一分子的}\mathrm{HCl}\text{，环恢复芳香性}")
         text18=Description(text=r"\text{最后将体系酸化，碳负离子被质子化，得到产物}")
 
         #氯甲基苯基砜：中心 C 带标签（便于楔形键收在字母边缘），左上150°、正下方270° 各连一个 H，右下330° 连 Cl，右上30° 连 SO2Ph
