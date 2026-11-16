@@ -8,6 +8,8 @@ import numpy as np
 from itertools import permutations
 from typing import Callable, Optional
 
+from OrganicReactionTools.texts import Description
+
 from .decorations import BezierArrow
 from .bonds import (Bond, BondType, NormalBond, DashedBond, DoubleBond,
                     TripleBond, InBond)
@@ -652,3 +654,13 @@ class ElectronMigration(AnimationGroup):
             self.sf.add(obj)
         if self.sync:
             self.unsynced=self.sf.sync_migration(self.steps)
+
+class ShowText(Animation):
+    def __init__(self, *, text_from: Description | None, text_to: Description, sound: str, **kwargs):
+        self.text_from = text_from
+        self.text_to = text_to
+        self.sound = sound
+        super().__init__(**kwargs)
+
+    def interpolate_mobject(self, alpha: float):
+        pass
