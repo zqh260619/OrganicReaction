@@ -1136,6 +1136,42 @@ class ElectronMigration(AnimationGroup):
   然后在 `sync=True` 时调用 `sf.sync_migration(steps)` 自动同步元数据，把无法同步的对象收进 **`self.unsynced`**。
 - **`sync`**：默认 `True`；设为 `False` 可完全手工管理登记。
 
+### 8.6 `ShowText` — 字幕动画 + 同步音频
+
+```python
+class ShowText(Animation):
+    sound_dir: str = ""
+    def __init__(self, *, text_from: Description | None, text_to: Description,
+                 sound: str, **kwargs)
+```
+
+- **用途**：显示/替换一条 `Description`，并在动画开始时用 `Scene.add_sound` 同步播放音频。
+- **两种动画**：`text_from is None` → `Write(text_to)`；否则 `ReplacementTransform(text_from, text_to)`。
+  内部动画保存在 `text_animation`，`begin` / `interpolate` / `finish` / `clean_up_from_scene` 全部转发给它，
+  所以场景成员关系与直接 play 内部动画一致（`Write` 结束时 `text_to` 留在场景；替换结束时 `text_to` 顶替 `text_from`）。
+- **音频目录**：`sound` 只传文件名（含扩展名，如 `"text1.mp3"`），目录在场景 `construct()` 开头设置一次：
+
+  ```python
+  class test(Scene):
+      def construct(self):
+          ShowText.sound_dir = "audios/SubstitutionReaction4"
+          text1 = Description(text=r"...")
+          text2 = Description(text=r"...")
+          self.play(ShowText(text_from=None, text_to=text1, sound="text1.mp3"))
+          self.play(ShowText(text_from=text1, text_to=text2, sound="text2.mp3"))
+  ```
+
+  注意：不能在 `construct()` 里靠改 `config.assets_dir` 生效 —— `SceneFileWriter` 在 `Scene.__init__` 时就把
+  `assets_dir` 快照成绝对路径了。
+- **时间**：音频加入时刻 = 本动画的 `begin()`（即这次 play 的开始）；音频比动画长时会继续播放，适合旁白式字幕。
+- **`run_time`**：默认取内部动画的默认时长；`self.play(..., run_time=...)` 改外层时长也能用（内部按 alpha 走完）。
+- **`rate_func`**：沿用内部 `Write` / `ReplacementTransform` 的默认速率曲线，外层 `rate_func` 不参与插值。
+- **校验**：`sound` 带目录、`sound_dir` 未配置、音频文件不存在都会抛 `ValueError`（中文提示）；
+  `--dry_run` 也会执行 `begin()` 并解析（必要时转换）音频，只是不写出视频，所以缺文件能提前发现。
+- **同时播放**：与其它动画一起 play 时，声音在 play 开始处加入；嵌套在带 `lag` 的 `AnimationGroup` 里时，
+  声音也在 group 开始时加入（可能早于该子动画的视觉开始），需要精确对齐时请用 `Succession`。
+- **依赖**：音频文件不随仓库提交（`/audios/` 在 `.gitignore` 中），运行前需自备。
+
 ---
 
 ## 9. `structures.py`：结构式
