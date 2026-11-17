@@ -670,7 +670,7 @@ class ShowText(Animation):
     sound_dir:str=""
 
     def __init__(self,*,
-                 text_from:Description|None,
+                 text_from:Description|None=None,
                  text_to:Description,
                  sound:str,
                  **kwargs):
