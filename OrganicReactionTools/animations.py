@@ -2,10 +2,11 @@
 
 from manim import (Animation, Mobject, VGroup, AnimationGroup,
                    ReplacementTransform, FadeIn, FadeOut, Transform,
-                   smooth, linear)
+                   Write, smooth, linear)
 from manim.typing import Vector3D
 import numpy as np
 from itertools import permutations
+from pathlib import Path
 from typing import Callable, Optional
 
 from OrganicReactionTools.texts import Description
@@ -656,11 +657,60 @@ class ElectronMigration(AnimationGroup):
             self.unsynced=self.sf.sync_migration(self.steps)
 
 class ShowText(Animation):
-    def __init__(self, *, text_from: Description | None, text_to: Description, sound: str, **kwargs):
-        self.text_from = text_from
-        self.text_to = text_to
-        self.sound = sound
-        super().__init__(**kwargs)
+    """显示或替换一条说明文字，并在动画开始时同步播放音频。
 
-    def interpolate_mobject(self, alpha: float):
-        pass
+    text_from 为 None 时播放 Write(text_to)；否则播放
+    ReplacementTransform(text_from,text_to)。声音在 begin() 中通过
+    Scene.add_sound 加入，时间戳即本动画开始处。
+
+    音频目录由类属性 sound_dir 统一配置，在场景 construct() 开头设置：
+        ShowText.sound_dir="audios/SubstitutionReaction4"
+    sound 只传文件名（如 "text1.mp3"），不能带目录。
+    """
+    sound_dir:str=""
+
+    def __init__(self,*,
+                 text_from:Description|None,
+                 text_to:Description,
+                 sound:str,
+                 **kwargs):
+        if Path(sound).name!=sound:
+            raise ValueError(f"sound 只能传音频文件名（不能带目录），实际为 {sound!r}。")
+        self.text_from=text_from
+        self.text_to=text_to
+        self.sound=sound
+        self.text_animation=Write(text_to) if text_from is None else ReplacementTransform(text_from,text_to)
+        self.scene=None
+        kwargs.setdefault("run_time",self.text_animation.run_time)
+        kwargs.setdefault("introducer",self.text_animation.introducer)
+        super().__init__(mobject=self.text_animation.mobject,**kwargs)
+
+    def _setup_scene(self,scene:'Scene')->None:
+        self.scene=scene
+        self.text_animation._setup_scene(scene)
+
+    def _sound_path(self)->Path:
+        if not ShowText.sound_dir:
+            raise ValueError("ShowText.sound_dir 未配置：请在场景 construct() 开头设置音频目录。")
+        path=Path(ShowText.sound_dir)/self.sound
+        if not path.is_file():
+            raise ValueError(f"找不到音频文件：{path}")
+        return path
+
+    def begin(self)->None:
+        if self.scene is None:
+            raise RuntimeError("ShowText 需要通过 Scene.play 播放。")
+        self.scene.add_sound(str(self._sound_path()))
+        self.text_animation.begin()
+
+    def interpolate_mobject(self,alpha:float)->None:
+        self.text_animation.interpolate(alpha)
+
+    def update_mobjects(self,dt:float)->None:
+        self.text_animation.update_mobjects(dt)
+
+    def finish(self)->None:
+        self.text_animation.finish()
+
+    def clean_up_from_scene(self,scene:'Scene')->None:
+        self.text_animation.clean_up_from_scene(scene)
