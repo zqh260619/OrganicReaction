@@ -4,6 +4,8 @@ from OrganicReactionTools import *
 
 class test(Scene):
     def construct(self):
+
+        ShowText.sound_dir="audios/SubstitutionReaction4/"
         
         title=Title(text=r"\text{一些常见的取代反应的机理}\quad\text{补}",pos=ORIGIN)
         subtitle=Subtitle(text=r"\text{芳环上的取代反应}",pos=[0,-0.7,0])
@@ -72,8 +74,7 @@ class test(Scene):
         reaction_group.scale(scale_equation)
         reaction_group.move_to(ORIGIN)
 
-        self.add_sound("audios/SubstitutionReaction4/text1.mp3")
-        self.play(FadeIn(reaction_group),Write(text1),run_time=1.5)
+        self.play(FadeIn(reaction_group),ShowText(text_to=text1,sound="text1.mp3"),run_time=1.5)
         self.wait(5.15)
 
         #X变形为H：没有可离去的基团，产物一侧消失，同时在箭头中间打上红叉表示反应无法直接进行
