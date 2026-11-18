@@ -75,7 +75,7 @@ class test(Scene):
         reaction_group.move_to(ORIGIN)
 
         self.play(FadeIn(reaction_group),ShowText(text_to=text1,sound="text1.mp3"),run_time=1.5)
-        self.wait(5.15)
+        self.wait(5.65)
 
         #X变形为H：没有可离去的基团，产物一侧消失，同时在箭头中间打上红叉表示反应无法直接进行
         X_leaving_mob=substrate.atomic_clusters["X"][Mobject]
@@ -88,8 +88,15 @@ class test(Scene):
         self.play(ReplacementTransform(X_leaving_mob,H_mob),
                   FadeOut(product,plus2,X_negative),
                   Create(refusal_cross),
+                  ShowText(text_from=text1,text_to=text2,sound="text2.mp3"),
                   run_time=1.5)
-        self.wait(2)
+        self.wait(4.59)
+        self.play(ShowText(text_from=text2,text_to=text3,sound="text3.mp3"))
+        #H 闪一下：闪到中间时变红并放大，提示这个 H 是极差的离去基团
+        self.play(H_mob.animate.set_color(RED).scale(1.5),rate_func=there_and_back,run_time=1.5)
+        self.wait(1.15)
+        self.play(ShowText(text_from=text3,text_to=text4,sound="text4.mp3"))
+        self.wait(5.31)
 
         substrate.remove(X_leaving_mob)
         substrate.atomic_clusters["X"][Mobject]=H_mob
@@ -98,7 +105,7 @@ class test(Scene):
         reaction_group.remove(product,plus2,X_negative)
 
         #反应式与红叉一起退出
-        self.play(FadeOut(reaction_group,refusal_cross),run_time=1)
+        self.play(FadeOut(reaction_group,refusal_cross,text4),run_time=1)
         self.wait(0.5)
 
         #-----------------------VNS mechanism-----------------------
