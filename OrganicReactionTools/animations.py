@@ -664,7 +664,7 @@ class ShowText(Animation):
     Scene.add_sound 加入，时间戳即本动画开始处。
 
     音频目录由类属性 sound_dir 统一配置，在场景 construct() 开头设置：
-        ShowText.sound_dir="audios/SubstitutionReaction4"
+        ShowText.sound_dir="audios/..."
     sound 只传文件名（如 "text1.mp3"），不能带目录。
     """
     sound_dir:str=""
