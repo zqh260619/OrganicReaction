@@ -210,8 +210,16 @@ class test(Scene):
         reaction_group_vns.scale(scale_vns)
         reaction_group_vns.move_to(ORIGIN)
 
-        self.play(FadeIn(reaction_group_vns),run_time=1.5)
-        self.wait(2)
+        self.play(FadeIn(reaction_group_vns),ShowText(text_to=text5,sound="text5.mp3"),run_time=1.5)
+        self.wait(3.13)
+        self.play(ShowText(text_from=text5,text_to=text6,sound="text6.mp3"))
+        self.wait(5.86)
+        self.play(ShowText(text_from=text6,text_to=text7,sound="text7.mp3"))
+        self.wait(1.93)
+        self.play(ShowText(text_from=text7,text_to=text8,sound="text8.mp3"))
+        self.wait(3.44)
+        self.play(ShowText(text_from=text8,text_to=text9,sound="text9.mp3"))
+        self.wait(2.77)
 
         #标题用三个独立字母拼成，坐标写死（由 test.py 的 TestVNSExpand 标定：总宽与整体排版的 VNS 一致）
         VNS_mechanism=VGroup(MathTex(r"\mathrm{V}",font_size=title_size,tex_template=mytemplate),
@@ -221,8 +229,9 @@ class test(Scene):
         VNS_mechanism[1].move_to([0.0879,3.0,0])
         VNS_mechanism[2].move_to([0.5043,3.0,0])
         V_letter,N_letter,S_letter=VNS_mechanism
+        self.play(ShowText(text_from=text9,text_to=text10,sound="text10.mp3"))
         self.play(Write(VNS_mechanism))
-        self.wait(0.5)
+        self.wait(2.12)
 
         #反应式淡出，标题保留
         self.play(FadeOut(reaction_group_vns),run_time=1)
@@ -240,17 +249,22 @@ class test(Scene):
         self.play(V_letter.animate.move_to([-4.566,0,0]),
                   N_letter.animate.move_to([-1.653,-0.0072,0]),
                   S_letter.animate.move_to([2.0085,0.0072,0]),
+                  ShowText(text_from=text10,text_to=text11,sound="text11.mp3"),
                   run_time=1.5)
-        self.wait(1)
+        self.wait(0.5)
 
-        self.play(Write(words[0][1]),Write(words[1][1]),Write(words[2][1]),run_time=2)
-        self.wait(2)
+        self.play(Write(words[0][1]),Write(words[1][1]),Write(words[2][1]),run_time=1.5)
+        self.wait(1.49)
+        self.play(ShowText(text_from=text11,text_to=text12,sound="text12.mp3"))
+        self.wait(2.48)
+        self.play(ShowText(text_from=text12,text_to=text13,sound="text13.mp3"))
+        self.wait(5.18)
 
         #三个字母飞回标题位置（画面只保留 VNS），其余字母同时淡出
         self.play(V_letter.animate.move_to([-0.4164,3.0,0]),
                   N_letter.animate.move_to([0.0879,3.0,0]),
                   S_letter.animate.move_to([0.5043,3.0,0]),
-                  FadeOut(words[0][1]),FadeOut(words[1][1]),FadeOut(words[2][1]),
+                  FadeOut(words[0][1]),FadeOut(words[1][1]),FadeOut(words[2][1]),FadeOut(text13),
                   run_time=1.5)
         self.wait(1.5)
 
