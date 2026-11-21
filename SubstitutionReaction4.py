@@ -305,6 +305,7 @@ class test(Scene):
         self.add(HO_mob,HO_negative)
         self.play(FadeIn(HO_mob),FadeIn(HO_negative),run_time=0.8)
         self.wait(0.5)
+        self.play(ShowText(text_to=text14,sound="text14.mp3"))
 
         #负电荷进攻H：O-H成键、C-H键断裂并在C上留下负电荷（碳负离子）
         C1_H1_bond=sulfone_mob.bond_lookup.between("C1","H1")
@@ -316,14 +317,14 @@ class test(Scene):
                      (C1_H1_bond,C1_negative)],
         )
         self.play(sulfone_mob.electron_migration(steps=[step_ho_attack],run_time=1.5))
-        self.wait(1)
+        self.wait(0.5)
 
         #生成H2O：HO-与那个H合并成一个水分子（碳负离子留在原处）
         H1_mob=sulfone_mob.atomic_clusters["H1"][Mobject]
         H2O_mob=AtomicCluster(text=r"\mathrm{H_2O}",pos=HO_pos+np.array([0.1,0.35,0]),attributes=sulfone_mob.attributes)
         self.play(ReplacementTransform(VGroup(HO_mob,H1_mob,HO_H1_bond),H2O_mob),run_time=1.5)
         sulfone_mob.remove(HO_mob,H1_mob,HO_H1_bond)
-        self.wait(2)
+        self.wait(1)
 
         #H2O 消失，碳负离子右移让出位置
         self.play(FadeOut(H2O_mob),run_time=1)
@@ -347,12 +348,10 @@ class test(Scene):
         nitrobenzene_mob.add_atom(name="H1",direction=30*DEGREES,text=r"\mathrm{H}",
                                   bond_type=BondType.NORMAL_BOND,adjacency="C2")
 
-        self.play(Create(nitrobenzene_mob),run_time=2.5)
-        self.wait(2)
-
+        self.play(Create(nitrobenzene_mob),ShowText(text_from=text14,text_to=text15,sound="text15.mp3"),run_time=2.5)
         self.play(sulfone_mob.rotate_atoms(atom_names=["C1","H2","Cl1","S1"],center="C1",
                                            angle=30*DEGREES,run_time=1.5))
-        self.wait(1)
+        self.wait(0.5)
 
         #碳负离子进攻苯环：先让两只分子就位——碳负离子的碳 C1 落在硝基苯 C2 的正右侧、相距一个键长
         nitro_shift=RIGHT*0.58
@@ -367,7 +366,6 @@ class test(Scene):
             atom_vns["pos"]=np.array(atom_vns["pos"])+attack_shift
         for atom_vns in nitrobenzene_mob.atomic_clusters.values():
             atom_vns["pos"]=np.array(atom_vns["pos"])+nitro_shift
-        self.wait(1)
 
         #这一连串电子转移放在同一个转移动画里：
         #负电荷 → C-C 键（OutBond，朝向观察者）；环右上双键 → C-N 变双键；N=O 双键 → O 上变成负电荷；
@@ -403,7 +401,9 @@ class test(Scene):
                                     ReplacementTransform(ring_H1_mob,ring_H1_mob_new,run_time=1),
                                     lag_ratio=0)
         attack_migration=nitrobenzene_mob.electron_migration(steps=[step_attack],run_time=2.0)
-        self.play(attack_migration,Succession(ring_H1_turn,Wait(attack_migration.run_time-1)))
+        self.play(attack_migration,
+                  Succession(ring_H1_turn,Wait(attack_migration.run_time-1)),
+                  ShowText(text_from=text15,text_to=text16,sound="text16.mp3"))
         sulfone_mob.remove(C1_negative)
         nitrobenzene_mob.atomic_clusters["C2"][Bond].remove(ring_H1_bond)
         nitrobenzene_mob.atomic_clusters["H1"][Bond].remove(ring_H1_bond)
@@ -426,7 +426,7 @@ class test(Scene):
 
         self.add(OH_mob,OH_negative)
         self.play(FadeIn(OH_mob),FadeIn(OH_negative),run_time=0.8)
-        self.wait(0.5)
+        self.play(ShowText(text_from=text16,text_to=text17,sound="text17.mp3"))
 
         #OH- 的负电荷变成 H-OH 键；环上 C-H 与 C-C 楔形键变成 C=C（side=0）；C-Cl 的电子给 Cl（右上负电荷）
         C2_H1_bond=nitrobenzene_mob.bond_lookup.between("C2","H1")
@@ -495,7 +495,7 @@ class test(Scene):
         sulfone_mob.register_charge(name="C1",charge=C1_sub_negative)
         nitrobenzene_mob.remove(C1_sub_negative,C2_C1_single)
         nitrobenzene_mob.charges.pop("C1",None)
-        self.wait(2)
+        self.wait(1)
 
         #酸化：碳负离子右下出现 H-OH2+，左侧的 H 在 C 的右下 60°（H3O+ 的 H 就是待转移的那个质子）
         C1_pos=np.array(sulfone_mob.atomic_clusters["C1"]["pos"])
@@ -517,8 +517,10 @@ class test(Scene):
         H3O_positive=sulfone_mob.charges["O3"]
 
         self.add(H3O_H_mob,H3O_O_mob,H3O_bond,H3O_positive)
-        self.play(FadeIn(H3O_H_mob),FadeIn(H3O_O_mob),FadeIn(H3O_bond),FadeIn(H3O_positive),run_time=0.8)
-        self.wait(0.5)
+        self.play(FadeIn(H3O_H_mob),FadeIn(H3O_O_mob),FadeIn(H3O_bond),FadeIn(H3O_positive),
+                  ShowText(text_from=text17,text_to=text18,sound="text18.mp3"),
+                  run_time=1)
+        self.wait(4.16)
 
         #负电荷变成 C-H 键；H-O 键的电子变成 O 左侧的孤对电子，正电荷同时消失
         C1_H3_bond=sulfone_mob.build_bond(start="C1",end="H3",bond_type=BondType.NORMAL_BOND)
