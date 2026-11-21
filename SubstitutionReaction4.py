@@ -539,5 +539,124 @@ class test(Scene):
         sulfone_mob.charges.pop("O3",None)
         self.wait(2)
 
-        #画面上的对象一起淡出
+        #α-卤代酮的竞争副反应：标题保留、其余对象淡出，演示碳负离子去进攻羰基并闭环成环氧
+        self.play(*[FadeOut(mob) for mob in self.mobjects if mob not in VNS_mechanism.get_family()],run_time=1.5)
+        self.wait(0.5)
+
+        #氯代丙酮：羰基碳在左、O 向上、H3C 左下；α 碳右下，H 朝右、H 朝左下、Cl 朝下
+        side_mob=StructuralFormula(name="C1",pos=np.array([-0.85,0.2,0]),text=None)
+        side_mob.add_atom(name="O1",direction=90*DEGREES,text=r"\mathrm{O}",
+                          bond_type=BondType.DOUBLE_BOND,adjacency="C1",side=0)
+        #H3C 标签的 C 在最右，键从右上连入，标签整体左移让 C 落在锚点上
+        side_CH3_label=MathTex(r"\mathrm{H_3C}",font_size=side_mob.attributes.font_size,tex_template=mytemplate)
+        side_C_char=MathTex(r"\mathrm{C}",font_size=side_mob.attributes.font_size,tex_template=mytemplate)
+        side_CH3_offset=LEFT*(side_CH3_label.width/2-side_C_char.width/2)
+        side_mob.add_atom(name="C2",direction=210*DEGREES,text=r"\mathrm{H_3C}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C1",text_offset=side_CH3_offset)
+        side_mob.add_atom(name="C3",direction=330*DEGREES,text=None,
+                          bond_type=BondType.NORMAL_BOND,adjacency="C1")
+        side_mob.add_atom(name="H1",direction=0*DEGREES,text=r"\mathrm{H}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C3")
+        side_mob.add_atom(name="H2",direction=210*DEGREES,text=r"\mathrm{H}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C3")
+        side_mob.add_atom(name="Cl1",direction=270*DEGREES,text=r"\mathrm{Cl}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C3")
+
+        #HO- 接在右侧那个 α-H 外面，键正对 O
+        side_H1_pos=np.array(side_mob.atomic_clusters["H1"]["pos"])
+        side_HO_pos=side_H1_pos+RIGHT*side_mob.attributes.length_global
+        side_HO_label=MathTex(r"\mathrm{HO}",font_size=side_mob.attributes.font_size,tex_template=mytemplate)
+        side_O_char=MathTex(r"\mathrm{O}",font_size=side_mob.attributes.font_size,tex_template=mytemplate)
+        side_HO_offset=LEFT*(side_HO_label.width/2-side_O_char.width/2)
+        side_HO_mob=AtomicCluster(text=r"\mathrm{HO}",pos=side_HO_pos,text_offset=side_HO_offset,
+                                  attributes=side_mob.attributes)
+        side_mob.register_atom(name="HO",mobject=side_HO_mob)
+        side_mob.add_charge(text="HO",pos=UR,charge_type=ChargeType.NEGATIVE)
+        side_HO_negative=side_mob.charges["HO"]
+
+        self.play(Create(side_mob),run_time=1.5)
+        self.wait(1)
+        #后加的对象要显式 add，否则随组加进来不渲染
+        self.add(side_HO_mob,side_HO_negative)
+        self.play(FadeIn(side_HO_mob),FadeIn(side_HO_negative),run_time=0.8)
+        self.wait(1.5)
+
+        #拔 α-H：O 的负电荷变成 O-H 键，C-H 键的电子留成 α 碳上的负电荷
+        side_C3_H1_bond=side_mob.bond_lookup.between("C3","H1")
+        side_HO_H1_bond=side_mob.build_bond(start="HO",end="H1",bond_type=BondType.NORMAL_BOND)
+        side_C3_negative=side_mob.build_charge(text="C3",pos=UR,charge_type=ChargeType.NEGATIVE_COORDINATE)
+        step_side_deprotonation=ElectronMigrationStep(
+            replace=[(side_HO_negative,side_HO_H1_bond),
+                     (side_C3_H1_bond,side_C3_negative)],
+        )
+        self.play(side_mob.electron_migration(steps=[step_side_deprotonation],run_time=1.5))
+        self.wait(1.5)
+
+        #水离开，留下碳负离子
+        side_H1_mob=side_mob.atomic_clusters["H1"][Mobject]
+        side_H2O_mob=AtomicCluster(text=r"\mathrm{H_2O}",pos=side_HO_pos+np.array([0.1,0.35,0]),
+                                   attributes=side_mob.attributes)
+        self.play(ReplacementTransform(VGroup(side_HO_mob,side_H1_mob,side_HO_H1_bond),side_H2O_mob),run_time=1.5)
+        side_mob.remove(side_HO_mob,side_H1_mob,side_HO_H1_bond)
+        self.wait(0.5)
+        self.play(FadeOut(side_H2O_mob),run_time=1)
+        side_mob.remove(side_H2O_mob)
+        self.wait(0.5)
+
+        #第二分子氯代丙酮：羰基碳 C4 在 C3 右上 30°、相距一个键长；O 朝下，闭环时正好是正三角形
+        side_C3_pos=np.array(side_mob.atomic_clusters["C3"]["pos"])
+        side_C4_pos=side_C3_pos+np.array([np.cos(30*DEGREES),np.sin(30*DEGREES),0])*side_mob.attributes.length_global
+        side_mob.atomic_clusters["C4"]={Mobject:None,"pos":side_C4_pos,"adj":[],Bond:[]}
+        side_mob.add_atom(name="O2",direction=270*DEGREES,text=r"\mathrm{O}",
+                          bond_type=BondType.DOUBLE_BOND,adjacency="C4",side=0)
+        side_mob.add_atom(name="C5",direction=150*DEGREES,text=r"\mathrm{H_3C}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C4",text_offset=side_CH3_offset)
+        #CH2Cl 标签的 C 在最左，键从左侧连入，标签整体右移让 C 落在锚点上
+        side_CH2Cl_label=MathTex(r"\mathrm{CH_2Cl}",font_size=side_mob.attributes.font_size,tex_template=mytemplate)
+        side_CH2Cl_offset=RIGHT*(side_CH2Cl_label.width/2-side_C_char.width/2)
+        side_mob.add_atom(name="C6",direction=30*DEGREES,text=r"\mathrm{CH_2Cl}",
+                          bond_type=BondType.NORMAL_BOND,adjacency="C4",text_offset=side_CH2Cl_offset)
+        side_b_mobs=VGroup(
+            side_mob.atomic_clusters["O2"][Mobject],
+            side_mob.atomic_clusters["C5"][Mobject],
+            side_mob.atomic_clusters["C6"][Mobject],
+            side_mob.bond_lookup.between("C4","O2"),
+            side_mob.bond_lookup.between("C4","C5"),
+            side_mob.bond_lookup.between("C4","C6"),
+        )
+        self.add(*side_b_mobs)
+        self.play(*[FadeIn(mob) for mob in side_b_mobs],run_time=1.5)
+        self.wait(1.5)
+
+        #碳负离子进攻羰基：C3-C4 成键，C=O 变 C-O⁻
+        side_C3_C4_bond=side_mob.build_bond(start="C3",end="C4",bond_type=BondType.NORMAL_BOND)
+        side_C4_O2_double=side_mob.bond_lookup.between("C4","O2")
+        side_C4_O2_single=side_mob.build_bond(start="C4",end="O2",bond_type=BondType.NORMAL_BOND)
+        side_O2_negative=side_mob.build_charge(text="O2",pos=DOWN,charge_type=ChargeType.NEGATIVE)
+        step_side_attack=ElectronMigrationStep(
+            replace=[(side_C3_negative,side_C3_C4_bond),
+                     (side_C4_O2_double,VGroup(side_C4_O2_single,side_O2_negative))],
+        )
+        self.play(side_mob.electron_migration(steps=[step_side_attack],run_time=1.5))
+        self.wait(1.5)
+
+        #醇盐内闭环：O2 的负电荷变成 O2-C3 键，C3-Cl1 变成 Cl-
+        side_C3_Cl1_bond=side_mob.bond_lookup.between("C3","Cl1")
+        side_O2_C3_bond=side_mob.build_bond(start="O2",end="C3",bond_type=BondType.NORMAL_BOND)
+        side_Cl1_negative=side_mob.build_charge(text="Cl1",pos=UR,charge_type=ChargeType.NEGATIVE)
+        step_side_closure=ElectronMigrationStep(
+            replace=[(side_O2_negative,side_O2_C3_bond),
+                     (side_C3_Cl1_bond,side_Cl1_negative)],
+        )
+        self.play(side_mob.electron_migration(steps=[step_side_closure],run_time=1.5))
+        self.wait(1.5)
+
+        #Cl- 离去
+        side_Cl1_mob=side_mob.atomic_clusters["Cl1"][Mobject]
+        self.play(FadeOut(side_Cl1_mob,side_Cl1_negative),run_time=1)
+        side_mob.remove(side_Cl1_mob,side_Cl1_negative)
+        side_mob.charges.pop("Cl1",None)
+        self.wait(1)
+
+        #收尾：画面上的对象一起淡出
         self.play(*[FadeOut(mob) for mob in self.mobjects],run_time=1.5)
